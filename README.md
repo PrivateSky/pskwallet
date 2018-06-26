@@ -1,0 +1,2 @@
+# wallet
+PrivateSky wallet
