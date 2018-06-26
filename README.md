@@ -14,15 +14,23 @@ pskwallet add module localFolder | add a module  | used during development or at
 pskwallet add library localFolder | add a libray  | used during development or at updates to add a library
 pskwallet transfer agent walletAgent| transfer control of the local agent to a remote agent (eg a wallet agent of another user or company) | call a transfer swarm and remove the privateKey from the local CSB
 pskwallet export key agentname| exports the private key of the agent  | print in console
-pskwallet publish domain remote | creates an CSB with the domain constitution, publish the CSB | start the domain remote
-pskwallet parent domainName  | add domainName as parent to the current domain |  add parrent
+pskwallet publish domain remoteEndPoint | creates an CSB with the domain constitution, publish the CSB, starts a domain remote and update the keys in the remote PDS  | starts a production  domain on a remoteEndPoint
+pskwallet add parent domainName  | add domainName as parent to the current domain | add parrent
+pskwallet set shares howMany  | set the number of shares | set the amount of shares in the domain. Implicit 100.
+pskwallet give shares howMany toAgent   | give voting rights to another agent | give shares
+pskwallet delegate votingAgent | delegate the voting rights to another agent | delegate the voting power to another agent
+pskwallet undelegate votingAgent | delegate the voting rights to another agent | delegate the voting power to another agent
 
 
-Swarms available to the pskwallet
+
+Swarms available to the pskwallet:
 
 Swarm | Description
 ------------------------ | ------------------------------------------------------
 core/transfer            | give and receive control of a remote agent (receive the private key), generate a new privatekey and update in domain 
 core/initDomain          | initialise a domain
-core/addAgent            | creates an agent
+core/agents              | manage agents
+core/parents             | manage parents
 core/updateKey           | updates a key in a domain
+core/shares              | manage the shares
+
