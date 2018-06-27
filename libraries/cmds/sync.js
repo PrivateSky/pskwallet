@@ -9,5 +9,5 @@ function doSync(){
 
 
 
-addCommand("sync", null, doSync);
+addCommand("sync", null, doSync, "\t\t\t\t\t\t |synchronise the current wallet with all the remote endpoints");
 

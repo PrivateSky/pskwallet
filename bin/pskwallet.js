@@ -30,9 +30,9 @@ function doHelp(){
     }
 }
 
-addCommand("-h", null, doHelp);
-addCommand("/?", null, doHelp);
-addCommand("help", null, doHelp);
+addCommand("-h", null, doHelp, "\t\t\t\t\t\t |just print the help");
+addCommand("/?", null, doHelp, "\t\t\t\t\t\t |just print the help");
+addCommand("help", null, doHelp, "\t\t\t\t\t\t |just print the help");
 
 
 function runCommand(){
@@ -62,7 +62,7 @@ function runCommand(){
     cmd = doHelp;
   }
 
-  cmd(argv);
+  cmd.apply(null,argv);
 
 }
 
