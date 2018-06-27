@@ -1,18 +1,32 @@
 
 
 var commands = {};
+var commands_help = {};
 require("callflow");
 
-$$.__global.addCommand = function addCommand(verb, adverbe, funct){
+//global function addCommand
+addCommand = function addCommand(verb, adverbe, funct, helpLine){
     var cmdId;
     if(adverbe){
-        cmdId = verb + "&" +  adverbe;
+        cmdId = verb + " & " +  adverbe;
+        helpLine = verb + " " +  adverbe + helpLine;
     } else {
         cmdId = verb;
+        helpLine = verb + helpLine;
     }
     commands[cmdId] = funct;
+        commands_help[cmdId] = helpLine;
 }
 
+function doHelp(){
+    for(var l in commands_help){
+        console.log(commands_help[l]);
+    }
+}
+
+addCommand("-h", null, doHelp);
+addCommand("/?", null, doHelp);
+addCommand("help", null, doHelp);
 
 
 
@@ -21,24 +35,25 @@ function runCommand(){
   var cmdId = "help";
   console.log(argv.length);
   var cmd = null;
-  if(argv.length >=3){
-      cmdId = argv[3];
+  argv.shift();
+  argv.shift();
+  if(argv.length >=1){
+      cmdId = argv[1];
       cmd = commands[cmdId];
+      argv.shift();
   }
 
-  if(!cmd && argv.length >=4){
+  if(!cmd && argv.length >=1){
       cmdId = argv[3] + "&" + argv[4];
       cmd = commands[cmdId];
   }
-
   if(!cmd){
-
+    console.log("Unkwnown command: ", cmdId);
+    cmd = "use";
   } else {
-      cmd();
+      cmd(argv);
   }
 }
-
-addCommand  = $$.__global.addCommand;
 
 $$.requireLibrary("cmds");
 

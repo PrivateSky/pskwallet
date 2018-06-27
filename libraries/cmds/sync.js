@@ -9,5 +9,5 @@ function doSync(){
 
 
 
-addCommand("sync", null, doHelp);
+addCommand("sync", null, doSync);
 
