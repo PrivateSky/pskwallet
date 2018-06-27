@@ -29,7 +29,6 @@ addCommand("/?", null, doHelp);
 addCommand("help", null, doHelp);
 
 
-
 function runCommand(){
   var argv = process.argv;
   var cmdId = "help";
@@ -55,8 +54,9 @@ function runCommand(){
   }
 }
 
-$$.requireLibrary("cmds");
+$$.__global.__loadLibrayRoot = __dirname + "/../libraries/";
 
+$$.requireLibrary("cmds");
 
 
 runCommand();
