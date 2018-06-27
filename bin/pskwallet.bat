@@ -1,0 +1,1 @@
+node.js ./pskwallet.js %*

@@ -1,0 +1,4 @@
+#!/bin/bash
+export NODE_PATH=/home/salboaie/work/privatesky/modules
+node ./pskwallet.js "$@"
+
