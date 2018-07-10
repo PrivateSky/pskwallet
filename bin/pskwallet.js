@@ -1,8 +1,8 @@
-
+require("../../../engine/core");
 
 var commands = {};
 var commands_help = {};
-require("callflow");
+$$.requireModule("callflow");
 
 //global function addCommand
 addCommand = function addCommand(verb, adverbe, funct, helpLine){
