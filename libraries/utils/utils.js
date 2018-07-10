@@ -15,11 +15,9 @@ exports.extensions = {
 
 exports.defaultCSB = function() {
 	var csb = {
-		'id': '',
 		'version': 1,
 		'protocolVersion': 1
 	};
-	csb['id'] = exports.generateID();
 
 	return csb;
 };
@@ -28,9 +26,11 @@ exports.ensureMasterCSBExists = function(pin) {
 	if (!fs.existsSync(exports.paths.auxFolder)) {
 		fs.mkdirSync(exports.paths.auxFolder);
 	}
-	if (!fs.existsSync(exports.paths.masterCSB)) {
+	exports.ensureDseedExists(pin, 'master');
+	// var pathMasterCsb = exports.paths.auxFolder + exports.generateCsbId(pin, 'master');
+	var pathMasterCsb = path.join(exports.paths.auxFolder, 'master' + exports.extensions.csb);
+	if (!fs.existsSync(pathMasterCsb)) {
 		var masterCSB = {};
-		exports.ensureDseedExists(pin, 'master');
 		exports.writeCSB(pin, 'master', masterCSB);
 	}
 
@@ -45,35 +45,38 @@ exports.ensureDseedExists = function(pin, aliasCSB){
 };
 
 exports.readCSB = function(pin, aliasCSB){
-	var pathCSB = '';
-	var dseedPath ='';
-	if(aliasCSB == 'master'){
-		pathCSB = exports.paths.masterCSB;
-		dseedPath = exports.paths.masterDseed;
-	}else{
-		pathCSB = aliasCSB + exports.extensions.csb;
-		dseedPath = path.join(exports.paths.auxFolder, aliasCSB + exports.extensions.dseed);
+	var pathCSB = "./";
+	if(aliasCSB == 'master') {
+		pathCSB = exports.paths.auxFolder;
 	}
+	// pathCSB += exports.generateCsbId(pin, aliasCSB);
+	pathCSB = path.join(pathCSB, aliasCSB + exports.extensions.csb);
+	var dseedPath = path.join(exports.paths.auxFolder, aliasCSB + exports.extensions.dseed);
 	var encryptedCSB = fs.readFileSync(pathCSB);
 
 	return crypto.decryptJson(encryptedCSB, pin, dseedPath);
 };
 
 exports.writeCSB = function(pin, aliasCSB, csb){
-	var pathCSB = '';
-	var dseedPath ='';
-	if(aliasCSB == 'master'){
-		pathCSB = exports.paths.masterCSB;
-		dseedPath = exports.paths.masterDseed;
-	}else{
-		pathCSB = aliasCSB + exports.extensions.csb;
-		dseedPath = path.join(exports.paths.auxFolder, aliasCSB + exports.extensions.dseed);
+	var pathCSB = "./";
+	if(aliasCSB == 'master') {
+		pathCSB = exports.paths.auxFolder;
 	}
+	var dseedPath = path.join(exports.paths.auxFolder, aliasCSB + exports.extensions.dseed);
+	// pathCSB += exports.generateCsbId(pin, aliasCSB);
+	pathCSB = path.join(pathCSB, aliasCSB + exports.extensions.csb);
 	fs.writeFileSync(pathCSB, crypto.encryptJson(csb, pin, dseedPath));
 };
 
-exports.generateID = function (){
-	return Math.random().toString(36).substring(2, 20)
+exports.generateCsbId = function (pin, aliasCSB) {
+	var pathCSB = "./";
+	if(aliasCSB == 'master'){
+		pathCSB = exports.paths.auxFolder;
+	}
+	pathCSB = path.resolve(pathCSB);
+	var dseedPath = path.join(exports.paths.auxFolder, aliasCSB + exports.extensions.dseed);
+	var dseed = crypto.decryptDseed(pin, dseedPath);
+	var csbId = Buffer.concat([Buffer.from(pathCSB), dseed]);
+	return crypto.hashBlob(csbId);
 };
-
 
