@@ -3,65 +3,34 @@ var fs = require('fs');
 var utils = require('../utils/utils');
 var path = require('path');
 
-
-function setPinRecursive(newPin, oldPin, aliasCsb) {
-	var csb = utils.readCSB(oldPin, aliasCsb);
-	if(!csb['csb']){
-		var dseedPath = path.join(utils.paths.auxFolder, aliasCsb + utils.extensions.dseed);
-		crypto.setPin(oldPin, newPin, dseedPath);
-		utils.writeCSB(newPin, aliasCsb, csb);
-	}else{
-		var childCSBs = csb['csb'];
-		for(var seed in childCSBs){
-			setPinRecursive(newPin, oldPin, childCSBs[seed]);
-		}
-	}
-}
-
 doSetPin = function(newPin, oldPin){
-	var masterCSB = utils.readCSB(oldPin, 'master');
-	for(var s in masterCSB){
-		setPinRecursive(newPin, oldPin, masterCSB[s]);
-	}
-	crypto.setPin(oldPin, newPin, utils.paths.masterDseed);
-	utils.writeCSB(newPin, 'master', masterCSB);
+	var masterCSB = utils.readMasterCsb(oldPin);
+	crypto.encryptDSeed(masterCSB.dseed, newPin, utils.paths.dseed);
+	fs.writeFileSync(utils.paths.masterCSB, crypto.encryptJson(masterCSB.csbData, masterCSB.dseed));
 	console.log('setPin:');
 };
 
 doAddCSB = function (pin, aliasCSB) {
-	utils.ensureMasterCSBExists(pin);
-	var csb = utils.defaultCSB();
-	var seed = crypto.generateSeed();
-	var masterCSB = utils.readCSB(pin, 'master');
-	for(var s in masterCSB){
-		if(masterCSB[s] == aliasCSB){
+	utils.ensureMasterCSBExists();
+	var csb       = utils.defaultCSB();
+	var seed      = crypto.generateSeed();
+	var masterCSB = utils.readMasterCsb(pin);
+	for (var s in masterCSB.csbData) {
+		if (masterCSB.csbData[s] && masterCSB.csbData[s]['alias'] == aliasCSB) {
 			throw new Error('A csb with the provided alias already exists');
 		}
 	}
-	masterCSB[seed] = aliasCSB;
-	utils.writeCSB(pin, 'master', masterCSB);
-	utils.ensureDseedExists(pin, aliasCSB);
-	utils.writeCSB(pin, aliasCSB, csb);
+	var pathCsb = utils.generateCsbId(seed);
+	masterCSB.csbData[seed] = {
+		'alias': aliasCSB,
+		'path' : pathCsb
+	};
+	fs.writeFileSync(utils.paths.masterCSB, crypto.encryptJson(masterCSB.csbData, masterCSB.dseed));
+	var dseed = crypto.deriveSeed(seed);
+	fs.writeFileSync(pathCsb, crypto.encryptJson(csb, dseed));
 };
 
 exports.doKeySet = function (pin, aliasCSB, keyName, value) {
-	var parentCsb = utils.readCSB(pin, aliasCSB);
-	if(keyName == 'csb'){
-		var seed = crypto.generateSeed();
-		for(var s in parentCsb){
-			if(parentCsb[s] == keyName){
-				throw new Error('A csb with the provided alias already exists');
-			}
-		}
-		var aliasChildCsb = Object.keys(value)[0];
-		utils.ensureDseedExists(pin, aliasChildCsb);
-		utils.writeCSB(pin, aliasChildCsb, value[aliasChildCsb]);
-		parentCsb[seed] = aliasChildCsb;
-
-	}else{
-		parentCsb[keyName] = value;
-	}
-	utils.writeCSB(pin, aliasCSB, parentCsb);
 
 };
 
