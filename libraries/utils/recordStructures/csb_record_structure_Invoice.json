@@ -1,0 +1,17 @@
+{
+    "categoryName": "Invoices",
+    "fields": [
+               {
+               "fieldName": "Title",
+               "dataType": "text"
+               },
+               {
+               "fieldName": "Amount",
+               "dataType": "text"
+               },
+               {
+               "fieldName": "Print",
+               "dataType": "document"
+               }
+               ]
+}

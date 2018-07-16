@@ -1,12 +1,28 @@
-var crypto = require('../../../pskcrypto/cryptography');
-var fs = require('fs');
-var path = require('path');
+require("../../../../engine/core");
+$$.requireModule("callflow");
+const crypto = require("../../../pskcrypto/cryptography");
+const fs = require("fs");
+const path = require("path");
+
+exports.checkPinIsValid = function (pin) {
+	exports.ensureMasterCSBExists(pin);
+	try {
+		exports.readMasterCsb(pin);
+	}catch(e){
+		// console.log(e.message);
+		return false;
+	}
+	return true;
+};
+
 var defaultPin = "12345678";
 
 exports.paths = {
-	'auxFolder': './.privateSky/',
-	'masterCSB': './.privateSky/master',
-	'dseed': './.privateSky/dseed'
+	"auxFolder": "./.privateSky/",
+	"masterCSB": "./.privateSky/master",
+	"dseed": "./.privateSky/dseed",
+	"recordStructures": path.resolve("../libraries/utils/recordStructures")
+
 };
 
 function encode(buffer) {
@@ -45,12 +61,8 @@ exports.readMasterCsb = function(pin){
 	pin = pin || defaultPin;
 	var dseed = crypto.decryptDseed(pin, exports.paths.dseed);
 	var encryptedCSB = fs.readFileSync(exports.paths.masterCSB);
-	try {
-		var csbData = crypto.decryptJson(encryptedCSB, dseed);
-	}catch(e){
-		console.log("Pin is invalid");
-		process.exit(1);
-	}
+	var csbData = crypto.decryptJson(encryptedCSB, dseed);
+
 	return {
 		'dseed'  : dseed,
 		'csbData': csbData
@@ -68,4 +80,3 @@ exports.generateCsbId = function (seed, isMaster) {
 	var digest    = crypto.hashBlob(csbId);
 	return encode(digest);
 };
-

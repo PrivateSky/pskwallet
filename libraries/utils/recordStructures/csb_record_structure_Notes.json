@@ -1,0 +1,13 @@
+{
+    "categoryName": "Notes",
+    "fields": [
+               {
+               "fieldName": "Title",
+               "dataType": "text"
+               },
+               {
+               "fieldName": "Notes",
+               "dataType": "text"
+               }
+               ]
+}
