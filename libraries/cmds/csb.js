@@ -11,6 +11,7 @@ rl = readline.createInterface({
 	output: process.stdout
 });
 
+
 enterPin = function(callback, args, noTries){
 	if(noTries == 0){
 		rl.close();
@@ -18,16 +19,16 @@ enterPin = function(callback, args, noTries){
 	}else {
 		rl.question("Insert pin:", (answer) => {
 			if (utils.checkPinIsValid(answer)) {
-			if(!Array.isArray(args)){
-				args = [args];
+				if(!Array.isArray(args)){
+					args = [args];
+				}
+				args.unshift(answer);
+				callback(...args);
+			} else {
+				console.log("Pin is invalid");
+				enterPin(callback, args, noTries-1)
 			}
-			args.unshift(answer);
-			callback(...args);
-		} else {
-			console.log("Pin is invalid");
-			enterPin(callback, args, noTries-1)
-		}
-	})
+		})
 	}
 };
 enterField = function(pin,aliasCsb, recordType, fields, record, currentField, callback){
@@ -38,9 +39,9 @@ enterField = function(pin,aliasCsb, recordType, fields, record, currentField, ca
 		var field = fields[currentField];
 		rl.question("Insert " + field["fieldName"] + ":", (answer) => {
 			record[field["fieldName"]] = answer;
-		enterField(pin, aliasCsb, recordType, fields, record, currentField + 1, callback);
+			enterField(pin, aliasCsb, recordType, fields, record, currentField + 1, callback);
 
-	});
+		});
 	}
 };
 
@@ -165,12 +166,8 @@ doKeyGet = function (aliasCsb, recordType, keyName) {
 };
 
 
-addCommand("set", "pin", doSetPin, "<newPin>"); //seteaza la csb-ul master
-addCommand("create", "csb", doAddCSB, "<csbAlias>"); //creaza un nou CSB si il adaugi in csb-ul master
-addCommand("key", "set", doKeySet, "<csbAlias> <recordType>  <keyName>"); //seteaza o cheie intr-un csb
-addCommand("key", "get", doKeyGet, "<csbAlias> <recordType> <keyName> "); //citeste o cheie intr-un csb
+addCommand("set", "pin", doSetPin, "<newPin>  \t\t\t |set the pin"); //seteaza la csb-ul master
+addCommand("create", "csb", doAddCSB, "<csbAlias> \t\t\t |create new CSB"); //creaza un nou CSB si il adaugi in csb-ul master
+addCommand("key", "set", doKeySet, "<csbAlias> <recordType>  <keyName> \t\t\t |set the key <keyName> of type <recordTYpe> of the <csbAlias>. If <keyName> is not specified, a <recordTYpe> record will be inserted " ); //seteaza o cheie intr-un csb
+addCommand("key", "get", doKeyGet, "<csbAlias> <recordType> <keyName>  \t\t\t |get the key <keyName> of type <recordTYpe> of the <csbAlias>. If <keyName> is not specified, a <recordTYpe> record will be returned "); //citeste o cheie intr-un csb
 
-// doAddCSB("newCsb");
-// doSetPin("123");
-// doKeySet("newCsb","CreditCard");
-// doKeyGet("newCsb", "CreditCard", "Title");
