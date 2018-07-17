@@ -1,0 +1,18 @@
+{
+  "categoryName": "Csb",
+  "categoryImageName": "csb_record_structure_Csb",
+  "fields": [
+    {
+      "fieldName": "Alias",
+      "dataType": "text"
+    },
+    {
+      "fieldName": "Path",
+      "dataType": "text"
+    },
+    {
+      "fieldName": "Seed",
+      "dataType": "text"
+    }
+  ]
+}

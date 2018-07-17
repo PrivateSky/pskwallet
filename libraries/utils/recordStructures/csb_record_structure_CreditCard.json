@@ -1,5 +1,6 @@
 {
     "categoryName": "Credit Cards",
+    "categoryImageName": "csb_record_structure_CreditCard",
     "fields": [
                {
                "fieldName": "Title",

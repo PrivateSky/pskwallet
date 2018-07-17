@@ -1,17 +1,18 @@
 {
-    "categoryName": "Invoices",
-    "fields": [
-               {
-               "fieldName": "Title",
-               "dataType": "text"
-               },
-               {
-               "fieldName": "Amount",
-               "dataType": "text"
-               },
-               {
-               "fieldName": "Print",
-               "dataType": "document"
-               }
-               ]
+  "categoryName": "Invoices",
+  "categoryImageName": "csb_record_structure_Invoice",
+  "fields": [
+    {
+      "fieldName": "Title",
+      "dataType": "text"
+    },
+    {
+      "fieldName": "Amount",
+      "dataType": "text"
+    },
+    {
+      "fieldName": "Print",
+      "dataType": "document"
+    }
+  ]
 }
