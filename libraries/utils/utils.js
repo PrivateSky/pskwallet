@@ -51,6 +51,8 @@ exports.ensureMasterCsbExists = function(pin) {
 	}
 	if(!fs.existsSync(exports.paths.dseed)){
 		var seed = crypto.generateSeed();
+		console.log("The following string represents the seed.Please save it.");
+		console.log(seed.toString("hex"));
 		var dseed = crypto.deriveSeed(seed);
 		crypto.encryptDSeed(dseed, pin, exports.paths.dseed);
 		var masterCsb = exports.defaultCSB();
@@ -59,9 +61,13 @@ exports.ensureMasterCsbExists = function(pin) {
 	}
 };
 
-exports.readMasterCsb = function(pin){
+exports.readMasterCsb = function(pin, seed){
 	pin = pin || defaultPin;
-	var dseed = crypto.decryptDseed(pin, exports.paths.dseed);
+	if(seed){
+		var dseed = crypto.deriveSeed(seed);
+	}else {
+		var dseed = crypto.decryptDseed(pin, exports.paths.dseed);
+	}
 	var encryptedCSB = fs.readFileSync(exports.paths.masterCsb);
 	var csbData = crypto.decryptJson(encryptedCSB, dseed);
 
@@ -69,6 +75,10 @@ exports.readMasterCsb = function(pin){
 		"dseed"  : dseed,
 		"csbData": csbData
 	};
+};
+
+exports.resetPin = function (seed) {
+
 };
 
 exports.writeCsbToFile = function (csbPath, csbData, dseed) {
@@ -154,6 +164,18 @@ exports.checkAliasExists = function (masterCsb, aliasCsb) {
 	return false;
 };
 
-exports.readCsb = function (pathCsb) {
+exports.readEncryptedCsb = function (pathCsb) {
 		return fs.readFileSync(pathCsb);
+};
+
+
+exports.checkSeedIsValid = function (seed) {
+	var dseed = crypto.deriveSeed(seed);
+	var encryptedMaster = fs.readFileSync(exports.paths.masterCsb);
+	try{
+		crypto.decryptJson(encryptedMaster, dseed);
+	}catch(e){
+		return false;
+	}
+	return true;
 };

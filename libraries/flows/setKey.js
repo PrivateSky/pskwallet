@@ -32,7 +32,7 @@ $$.flow.describe("setKey", {
 			for (var c in masterCsb.csbData["records"]["Csb"]) {
 				if (masterCsb.csbData["records"]["Csb"][c]["Alias"] == aliasCsb) {
 					var csbInMaster  = masterCsb.csbData["records"]["Csb"][c];
-					var encryptedCsb = utils.readCsb(csbInMaster["Path"]);
+					var encryptedCsb = utils.readEncryptedCsb(csbInMaster["Path"]);
 					var dseed        = crypto.deriveSeed(Buffer.from(csbInMaster["Seed"], 'hex'));
 					var csb          = crypto.decryptJson(encryptedCsb, dseed);
 					if (!csb["records"]) {
