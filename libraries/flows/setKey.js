@@ -20,14 +20,11 @@ $$.flow.describe("setKey", {
 		// }else{
 		// 	field = fields;
 		// }
-		this.enterPin([aliasCsb, recordType, fields, 0], 3, this.enterFields);
-	},
-	enterPin: function (args, noTries, callback) {
-		utils.enterPin(args, noTries, callback);
+		utils.enterPin([aliasCsb, recordType, fields, 0], 3, null, this.enterFields);
 	},
 	enterFields: function (pin, aliasCsb, recordType, fields, currentField) {
 		var record = {};
-		utils.enterField(pin, aliasCsb, recordType, fields, record, currentField, this.addKey);
+		utils.enterField(pin, aliasCsb, recordType, fields, record, currentField, null, this.addKey);
 	},
 	addKey: function (pin, aliasCsb, recordType, record) {
 		var masterCsb = utils.readMasterCsb(pin);
@@ -37,7 +34,7 @@ $$.flow.describe("setKey", {
 					var csbInMaster  = masterCsb.csbData["records"]["Csb"][c];
 					var encryptedCsb = utils.readCsb(csbInMaster["Path"]);
 					var dseed        = crypto.deriveSeed(Buffer.from(csbInMaster["Seed"], 'hex'));
-					var csb = crypto.decryptJson(encryptedCsb, dseed);
+					var csb          = crypto.decryptJson(encryptedCsb, dseed);
 					if (!csb["records"]) {
 						csb["records"] = {};
 					}

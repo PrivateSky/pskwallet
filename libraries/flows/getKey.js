@@ -4,10 +4,7 @@ const utils = require(path.resolve(__dirname + "/../utils/utils"));
 const crypto = require(path.resolve(__dirname + "/../../../pskcrypto/cryptography"));
 $$.flow.describe("getKey", {
 	start: function (aliasCsb, recordType) {
-		this.enterPin([aliasCsb, recordType], 3, this.getKey);
-	},
-	enterPin: function (args, noTries, callback) {
-		utils.enterPin(args, noTries, callback);
+		utils.enterPin([aliasCsb, recordType], 3, null, this.getKey);
 	},
 	getKey: function (pin, aliasCsb, recordType) {
 		var masterCsb = utils.readMasterCsb(pin);

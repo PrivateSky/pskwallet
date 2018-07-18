@@ -19,11 +19,10 @@ exports.checkPinIsValid = function (pin) {
 var defaultPin = "12345678";
 
 exports.paths = {
-	"auxFolder"			: path.join(process.cwd(), ".privateSky/"),
-	"masterCsb"			: path.join(process.cwd(), ".privateSky/master"),
-	"dseed"				: path.join(process.cwd(), ".privateSky/dseed"),
-	"recordStructures"  : path.join(__dirname, "../utils/recordStructures")
-
+	"auxFolder"			: path.join(process.cwd(), ".privateSky"),
+	"masterCsb"			: path.join(process.cwd(), ".privateSky", "master"),
+	"dseed"				: path.join(process.cwd(), ".privateSky", "dseed"),
+	"recordStructures"  : path.join(__dirname, path.normalize("../utils/recordStructures"))
 };
 
 function encode(buffer) {
@@ -43,11 +42,7 @@ exports.defaultCSB = function() {
 			"www.drive.google.com"
 		]
 	};
-
-
 };
-
-
 
 exports.ensureMasterCsbExists = function(pin) {
 	pin = pin || defaultPin;
@@ -92,16 +87,13 @@ exports.generateCsbId = function (seed, isMaster) {
 	return encode(digest);
 };
 
-function inputErrorHandler(err, readline, callback ) {
-	readline.close();
-	callback(err);
-}
-
-exports.enterPin = function(args, noTries, callback){
-	const rl = readline.createInterface({
-		input: process.stdin,
-		output: process.stdout
-	});
+exports.enterPin = function(args, noTries, rl, callback){
+	if(!rl) {
+		rl = readline.createInterface({
+			input: process.stdin,
+			output: process.stdout
+		});
+	}
 	if(noTries == 0){
 		rl.close();
 		// callback(err);
@@ -113,20 +105,23 @@ exports.enterPin = function(args, noTries, callback){
 					args = [args];
 				}
 				args.unshift(answer);
+				rl.close();
 				callback(...args);
 			} else {
 				console.log("Pin is invalid");
-				exports.enterPin(args, noTries-1, callback)
+				exports.enterPin(args, noTries-1, rl, callback);
 			}
 		})
 	}
 };
 
-exports.enterField = function(pin, aliasCsb, recordType, fields, record, currentField, callback){
-	const rl = readline.createInterface({
-		input: process.stdin,
-		output: process.stdout
-	});
+exports.enterField = function(pin, aliasCsb, recordType, fields, record, currentField, rl,  callback){
+	if(!rl) {
+		rl = readline.createInterface({
+			input: process.stdin,
+			output: process.stdout
+		});
+	}
 	if(currentField == fields.length){
 		rl.close();
 		callback(pin, aliasCsb, recordType, record);
@@ -137,8 +132,7 @@ exports.enterField = function(pin, aliasCsb, recordType, fields, record, current
 				callback(pin, aliasCsb, recordType, record);
 			}
 			record[field["fieldName"]] = answer;
-
-			exports.enterField(pin, aliasCsb, recordType, fields, record, currentField + 1, callback);
+			exports.enterField(pin, aliasCsb, recordType, fields, record, currentField + 1, rl, callback);
 
 		});
 	}

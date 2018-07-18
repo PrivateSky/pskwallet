@@ -4,13 +4,8 @@ const utils = require(path.resolve(__dirname + "/../utils/utils"));
 const crypto = require(path.resolve(__dirname + "/../../../pskcrypto/cryptography"));
 $$.flow.describe("addCsb", {
 	start: function (aliasCsb) {
-		this.enterPin(aliasCsb);
+		utils.enterPin(aliasCsb, 3, null, this.addCsb);
 	},
-
-	enterPin: function (aliasCsb) {
-		utils.enterPin(aliasCsb, 3, this.addCsb);
-	},
-
 	addCsb: function (pin, aliasCsb) {
 		utils.ensureMasterCsbExists();
 		var csbData   = utils.defaultCSB();
@@ -28,8 +23,9 @@ $$.flow.describe("addCsb", {
 		}
 		var record = {
 			"Alias": aliasCsb,
-			"Path": pathCsb,
-			"Seed": seed.toString("hex")
+			"Path" : pathCsb,
+			"Seed" : seed.toString("hex"),
+			"Dseed": crypto.deriveSeed(seed)
 		};
 		masterCsb.csbData["records"]["Csb"].push(record);
 		utils.writeCsbToFile(utils.paths.masterCsb, masterCsb.csbData, masterCsb.dseed);
