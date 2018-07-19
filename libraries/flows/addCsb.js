@@ -18,7 +18,7 @@ $$.flow.describe("addCsb", {
 			masterCsb.csbData["records"] = {};
 		}
 		if(!masterCsb.csbData["records"]["Csb"]){
-			masterCsb.csbData["records"]["Csb"] = [];
+			masterCsb.csbData["records"]["Csb"] = []
 		}
 		var record = {
 			"Alias": aliasCsb,

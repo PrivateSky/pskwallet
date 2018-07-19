@@ -11,22 +11,22 @@ $$.flow.describe("getKey", {
 		if (masterCsb.csbData["records"] && masterCsb.csbData["records"]["Csb"]) {
 			for (var c in masterCsb.csbData["records"]["Csb"]) {
 				if (masterCsb.csbData["records"]["Csb"][c]["Alias"] == aliasCsb) {
-					var csbInMaster  = masterCsb.csbData["records"]["Csb"][c];
+					var csbInMaster = masterCsb.csbData["records"]["Csb"][c];
 					var encryptedCsb = utils.readEncryptedCsb(csbInMaster["Path"]);
-					var dseed        = crypto.deriveSeed(Buffer.from(csbInMaster["Seed"], 'hex'));
-					var csb          = crypto.decryptJson(encryptedCsb, dseed);
-					for(var key in csb["records"][recordType]){
-						if(csb["records"][recordType][key]["Title"] == keyName){
+					var dseed = crypto.deriveSeed(Buffer.from(csbInMaster["Seed"], 'hex'));
+					var csb = crypto.decryptJson(encryptedCsb, dseed);
+					for (var key in csb["records"][recordType]) {
+						if (csb["records"][recordType][key]["Title"] == keyName) {
 							console.log(csb["records"][recordType][key]);
 							break;
 						}
 					}
-					break;
 				}
 			}
-			if(c == masterCsb.csbData["records"]["Csb"].length){
+			if (c == masterCsb.csbData["records"]["Csb"].length) {
 				throw new Error("A csb with the provided alias does not exist");
 			}
 		}
 	}
+
 });

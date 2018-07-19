@@ -1,5 +1,4 @@
 require("../../../../engine/core");
-$$.requireModule("callflow");
 const crypto = require("../../../pskcrypto/cryptography");
 const fs = require("fs");
 const path = require("path");
@@ -14,11 +13,9 @@ exports.paths = {
 };
 
 var checkPinIsValid = function (pin) {
-	// exports.createMasterCsb(pin);
 	try {
 		exports.readMasterCsb(pin);
 	}catch(e){
-		throw e;
 		return false;
 	}
 	return true;
@@ -91,8 +88,9 @@ exports.masterCsbExists = function () {
 	}
 };
 
-exports.createMasterCsb = function(pin) {
+exports.createMasterCsb = function(pin, pathMaster) {
 	pin = pin || defaultPin;
+	pathMaster = pathMaster || exports.paths.masterCsb;
 	fs.mkdirSync(exports.paths.auxFolder);
 	var seed = crypto.generateSeed();
 	console.log("The following string represents the seed.Please save it.");
@@ -101,8 +99,8 @@ exports.createMasterCsb = function(pin) {
 	crypto.encryptDSeed(dseed, pin, exports.paths.dseed);
 	var masterCsb = exports.defaultCSB();
 	// exports.paths["masterCsb"] = path.join(exports.paths.auxFolder, exports.generateCsbId(seed, true));
-	masterCsb["backups"].push(exports.paths.masterCsb);
-	fs.writeFileSync(exports.paths.masterCsb, crypto.encryptJson(masterCsb, dseed));
+	// masterCsb["backups"].push(exports.paths.masterCsb);
+	fs.writeFileSync(pathMaster, crypto.encryptJson(masterCsb, dseed));
 
 };
 
@@ -120,10 +118,6 @@ exports.readMasterCsb = function(pin, seed){
 		"dseed"  : dseed,
 		"csbData": csbData
 	};
-};
-
-exports.resetPin = function (seed) {
-
 };
 
 exports.writeCsbToFile = function (csbPath, csbData, dseed) {
