@@ -4,10 +4,9 @@ const utils = require(path.resolve(__dirname + "/../utils/utils"));
 const crypto = require(path.resolve(__dirname + "/../../../pskcrypto/cryptography"));
 $$.flow.describe("addCsb", {
 	start: function (aliasCsb) {
-		utils.enterPin(aliasCsb, 3, null, this.addCsb);
+		utils.requirePin(aliasCsb, this.addCsb);
 	},
 	addCsb: function (pin, aliasCsb) {
-		utils.ensureMasterCsbExists();
 		var csbData   = utils.defaultCSB();
 		var seed      = crypto.generateSeed();
 		var masterCsb = utils.readMasterCsb(pin);
@@ -19,7 +18,7 @@ $$.flow.describe("addCsb", {
 			masterCsb.csbData["records"] = {};
 		}
 		if(!masterCsb.csbData["records"]["Csb"]){
-			masterCsb.csbData["records"]["Csb"] = []
+			masterCsb.csbData["records"]["Csb"] = [];
 		}
 		var record = {
 			"Alias": aliasCsb,

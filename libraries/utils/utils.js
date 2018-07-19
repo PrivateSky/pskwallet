@@ -4,18 +4,6 @@ const crypto = require("../../../pskcrypto/cryptography");
 const fs = require("fs");
 const path = require("path");
 const readline = require("readline");
-
-exports.checkPinIsValid = function (pin) {
-	exports.ensureMasterCsbExists(pin);
-	try {
-		exports.readMasterCsb(pin);
-	}catch(e){
-		console.log(e.message);
-		return false;
-	}
-	return true;
-};
-
 var defaultPin = "12345678";
 
 exports.paths = {
@@ -24,6 +12,57 @@ exports.paths = {
 	"dseed"				: path.join(process.cwd(), ".privateSky", "dseed"),
 	"recordStructures"  : path.join(__dirname, path.normalize("../utils/recordStructures"))
 };
+
+var checkPinIsValid = function (pin) {
+	// exports.createMasterCsb(pin);
+	try {
+		exports.readMasterCsb(pin);
+	}catch(e){
+		throw e;
+		return false;
+	}
+	return true;
+};
+
+var enterPin = function(args, noTries, rl, callback){
+	if(!rl) {
+		rl = readline.createInterface({
+			input: process.stdin,
+			output: process.stdout
+		});
+	}
+	if(noTries == 0){
+		rl.close();
+	}else {
+		rl.question("Insert pin:", (answer) => {
+			if (checkPinIsValid(answer)) {
+				if(!Array.isArray(args)){
+					args = [args];
+				}
+				args.unshift(answer);
+				rl.close();
+				callback(...args);
+			} else {
+				console.log("Pin is invalid");
+				enterPin(args, noTries-1, rl, callback);
+			}
+		})
+	}
+};
+
+exports.requirePin = function (args, callback) {
+	if(exports.masterCsbExists()){
+		enterPin(args, 3, null, callback);
+	}else{
+		exports.createMasterCsb();
+		if(!Array.isArray(args)){
+			args = [args];
+		}
+		args.unshift(null);
+		callback(...args);
+	}
+};
+
 
 function encode(buffer) {
 	return buffer.toString('base64')
@@ -44,21 +83,27 @@ exports.defaultCSB = function() {
 	};
 };
 
-exports.ensureMasterCsbExists = function(pin) {
+exports.masterCsbExists = function () {
+	if(fs.existsSync(exports.paths.dseed)){
+		return true;
+	}else{
+		return false;
+	}
+};
+
+exports.createMasterCsb = function(pin) {
 	pin = pin || defaultPin;
-	if (!fs.existsSync(exports.paths.auxFolder)) {
-		fs.mkdirSync(exports.paths.auxFolder);
-	}
-	if(!fs.existsSync(exports.paths.dseed)){
-		var seed = crypto.generateSeed();
-		console.log("The following string represents the seed.Please save it.");
-		console.log(seed.toString("hex"));
-		var dseed = crypto.deriveSeed(seed);
-		crypto.encryptDSeed(dseed, pin, exports.paths.dseed);
-		var masterCsb = exports.defaultCSB();
-		masterCsb["backups"].push(exports.paths.masterCsb);
-		fs.writeFileSync(exports.paths.masterCsb, crypto.encryptJson(masterCsb, dseed));
-	}
+	fs.mkdirSync(exports.paths.auxFolder);
+	var seed = crypto.generateSeed();
+	console.log("The following string represents the seed.Please save it.");
+	console.log(seed.toString("hex"));
+	var dseed = crypto.deriveSeed(seed);
+	crypto.encryptDSeed(dseed, pin, exports.paths.dseed);
+	var masterCsb = exports.defaultCSB();
+	// exports.paths["masterCsb"] = path.join(exports.paths.auxFolder, exports.generateCsbId(seed, true));
+	masterCsb["backups"].push(exports.paths.masterCsb);
+	fs.writeFileSync(exports.paths.masterCsb, crypto.encryptJson(masterCsb, dseed));
+
 };
 
 exports.readMasterCsb = function(pin, seed){
@@ -86,7 +131,7 @@ exports.writeCsbToFile = function (csbPath, csbData, dseed) {
 };
 
 exports.generateCsbId = function (seed, isMaster) {
-	var parentFolderPath = __filename;
+	var parentFolderPath = __dirname;
 	if(isMaster){
 		parentFolderPath = exports.paths.auxFolder;
 	}
@@ -97,33 +142,6 @@ exports.generateCsbId = function (seed, isMaster) {
 	return encode(digest);
 };
 
-exports.enterPin = function(args, noTries, rl, callback){
-	if(!rl) {
-		rl = readline.createInterface({
-			input: process.stdin,
-			output: process.stdout
-		});
-	}
-	if(noTries == 0){
-		rl.close();
-		// callback(err);
-
-	}else {
-		rl.question("Insert pin:", (answer) => {
-			if (exports.checkPinIsValid(answer)) {
-				if(!Array.isArray(args)){
-					args = [args];
-				}
-				args.unshift(answer);
-				rl.close();
-				callback(...args);
-			} else {
-				console.log("Pin is invalid");
-				exports.enterPin(args, noTries-1, rl, callback);
-			}
-		})
-	}
-};
 
 exports.enterField = function(pin, aliasCsb, recordType, fields, record, currentField, rl,  callback){
 	if(!rl) {

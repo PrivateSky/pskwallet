@@ -4,7 +4,7 @@ const utils = require(path.resolve(__dirname + "/../utils/utils"));
 const crypto = require(path.resolve(__dirname + "/../../../pskcrypto/cryptography"));
 $$.flow.describe("setPin", {
 	start: function (newPin) {
-		utils.enterPin(newPin, 3, null, this.actualizePin);
+		utils.requirePin(newPin, this.actualizePin);
 	},
 	actualizePin: function (oldPin, newPin) {
 		var masterCsb = utils.readMasterCsb(oldPin);

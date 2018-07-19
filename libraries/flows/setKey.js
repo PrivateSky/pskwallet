@@ -20,7 +20,7 @@ $$.flow.describe("setKey", {
 		// }else{
 		// 	field = fields;
 		// }
-		utils.enterPin([aliasCsb, recordType, fields, 0], 3, null, this.enterFields);
+		utils.requirePin([aliasCsb, recordType, fields, 0], this.enterFields);
 	},
 	enterFields: function (pin, aliasCsb, recordType, fields, currentField) {
 		var record = {};
