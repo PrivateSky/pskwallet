@@ -1,19 +1,20 @@
 var path = require("path");
 require(path.resolve(__dirname + "/../../../../engine/core"));
 const utils = require(path.resolve(__dirname + "/../utils/utils"));
-const crypto = require(path.resolve(__dirname + "/../../../pskcrypto/cryptography"));
+const crypto = $$.requireModule("pskcrypto");
 var fs = require("fs");
-$$.requireModule('psk-http-client');
+const client = $$.requireModule('psk-http-client');
 $$.flow.describe("addBackup", {
 	start: function (url) {
-		utils.enterPin(url, 3, null, this.backupMaster);
+		utils.requirePin(url, this.backupMaster);
 	},
 	backupMaster: function (pin, url) {
 		var masterCsb = utils.readMasterCsb(pin);
 		var csbs = masterCsb.csbData["records"]["Csb"];
 		var encryptedMaster = fs.readFileSync(utils.paths.masterCsb);
+		console.log(typeof encryptedMaster);
 		var self = this;
-		$$.remote.doHttpPost(url+"/CSB/master", encryptedMaster, function (err) {
+		$$.remote.doHttpPost(url+"/CSB/master", encryptedMaster.toString("hex"), function (err) {
 			if(err){
 				throw err;
 			}else{
@@ -27,7 +28,7 @@ $$.flow.describe("addBackup", {
 			console.log("All csbs are backed up");
 		}else{
 			var encryptedCsb = fs.readFileSync(csbs[currentCsb]["Path"]);
-			$$.remote.doHttpPost(url + "/CSB/" + csbs[currentCsb]["Path"], encryptedCsb, function(err){
+			$$.remote.doHttpPost(url + "/CSB/" + csbs[currentCsb]["Path"], encryptedCsb.toString("hex"), function(err){
 				if(err){
 					throw err;
 				}else{

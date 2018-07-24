@@ -1,7 +1,7 @@
 var path = require("path");
 require(path.resolve(__dirname + "/../../../../engine/core"));
 const utils = require(path.resolve(__dirname + "/../utils/utils"));
-const crypto = require(path.resolve(__dirname + "/../../../pskcrypto/cryptography"));
+const crypto = $$.requireModule("pskcrypto");
 $$.flow.describe("addCsb", {
 	start: function (aliasCsb) {
 		utils.requirePin(aliasCsb, this.addCsb);
@@ -10,7 +10,7 @@ $$.flow.describe("addCsb", {
 		var csbData   = utils.defaultCSB();
 		var seed      = crypto.generateSeed();
 		var masterCsb = utils.readMasterCsb(pin);
-		var pathCsb   = utils.generateCsbId(seed);
+		var pathCsb   = utils.generateCsbId(crypto.deriveSeed(seed));
 		if(utils.checkAliasExists(masterCsb, aliasCsb)){
 			throw new Error("A csb with the provided alias already exists");
 		}
@@ -24,7 +24,7 @@ $$.flow.describe("addCsb", {
 			"Alias": aliasCsb,
 			"Path" : pathCsb,
 			"Seed" : seed.toString("hex"),
-			"Dseed": crypto.deriveSeed(seed)
+			"Dseed": crypto.deriveSeed(seed).toString("hex")
 		};
 		masterCsb.csbData["records"]["Csb"].push(record);
 		utils.writeCsbToFile(utils.paths.masterCsb, masterCsb.csbData, masterCsb.dseed);

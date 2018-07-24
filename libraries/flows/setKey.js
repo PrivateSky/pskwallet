@@ -1,7 +1,7 @@
 var path = require("path");
 require(path.resolve(__dirname + "/../../../../engine/core"));
 const utils = require(path.resolve(__dirname + "/../utils/utils"));
-const crypto = require(path.resolve(__dirname + "/../../../pskcrypto/cryptography"));
+const crypto = $$.requireModule("pskcrypto");
 $$.flow.describe("setKey", {
 	start: function (aliasCsb, recordType) {
 		this.readStructure(aliasCsb, recordType);

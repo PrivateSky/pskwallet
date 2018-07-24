@@ -1,9 +1,9 @@
 require("../../../../engine/core");
-const crypto = require("../../../pskcrypto/cryptography");
+const crypto = $$.requireModule("pskcrypto");
 const fs = require("fs");
 const path = require("path");
 const readline = require("readline");
-var defaultPin = "12345678";
+exports.defaultPin = "12345678";
 
 exports.paths = {
 	"auxFolder"			: path.join(process.cwd(), ".privateSky"),
@@ -59,7 +59,21 @@ exports.requirePin = function (args, callback) {
 		callback(...args);
 	}
 };
-
+exports.enterSeed = function (callback) {
+	const rl = readline.createInterface({
+		input:  process.stdin,
+		output: process.stdout
+	});
+	rl.question("Enter seed:", (answer) => {
+		var seed = Buffer.from(answer, "hex");
+		if(checkSeedIsValid(seed)){
+			rl.close();
+			callback(seed);
+		}else{
+			throw new Error("Seed is invalid");
+		}
+	})
+}
 
 function encode(buffer) {
 	return buffer.toString('base64')
@@ -89,14 +103,14 @@ exports.masterCsbExists = function () {
 };
 
 exports.createMasterCsb = function(pin, pathMaster) {
-	pin = pin || defaultPin;
+	pin = pin || exports.defaultPin;
 	pathMaster = pathMaster || exports.paths.masterCsb;
 	fs.mkdirSync(exports.paths.auxFolder);
 	var seed = crypto.generateSeed();
 	console.log("The following string represents the seed.Please save it.");
 	console.log(seed.toString("hex"));
 	var dseed = crypto.deriveSeed(seed);
-	crypto.encryptDSeed(dseed, pin, exports.paths.dseed);
+	crypto.saveDSeed(dseed, pin, exports.paths.dseed);
 	var masterCsb = exports.defaultCSB();
 	// exports.paths["masterCsb"] = path.join(exports.paths.auxFolder, exports.generateCsbId(seed, true));
 	// masterCsb["backups"].push(exports.paths.masterCsb);
@@ -105,11 +119,11 @@ exports.createMasterCsb = function(pin, pathMaster) {
 };
 
 exports.readMasterCsb = function(pin, seed){
-	pin = pin || defaultPin;
+	pin = pin || exports.defaultPin;
 	if(seed){
 		var dseed = crypto.deriveSeed(seed);
 	}else {
-		var dseed = crypto.decryptDseed(pin, exports.paths.dseed);
+		var dseed = crypto.loadDseed(pin, exports.paths.dseed);
 	}
 	var encryptedCSB = fs.readFileSync(exports.paths.masterCsb);
 	var csbData = crypto.decryptJson(encryptedCSB, dseed);
@@ -124,13 +138,12 @@ exports.writeCsbToFile = function (csbPath, csbData, dseed) {
 	fs.writeFileSync(csbPath, crypto.encryptJson(csbData, dseed))
 };
 
-exports.generateCsbId = function (seed, isMaster) {
+exports.generateCsbId = function (dseed, isMaster) {
 	var parentFolderPath = __dirname;
 	if(isMaster){
 		parentFolderPath = exports.paths.auxFolder;
 	}
 	parentFolderPath = path.resolve(parentFolderPath);
-	var dseed 	  = crypto.deriveSeed(seed);
 	var csbId     = Buffer.concat([Buffer.from(parentFolderPath), dseed]);
 	var digest    = crypto.pskHash(csbId);
 	return encode(digest);
@@ -181,7 +194,7 @@ exports.readEncryptedCsb = function (pathCsb) {
 };
 
 
-exports.checkSeedIsValid = function (seed) {
+var checkSeedIsValid = function (seed) {
 	var dseed = crypto.deriveSeed(seed);
 	var encryptedMaster = fs.readFileSync(exports.paths.masterCsb);
 	try{
@@ -191,3 +204,4 @@ exports.checkSeedIsValid = function (seed) {
 	}
 	return true;
 };
+
