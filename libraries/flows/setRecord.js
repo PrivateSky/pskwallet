@@ -2,31 +2,29 @@ var path = require("path");
 require(path.resolve(__dirname + "/../../../../engine/core"));
 const utils = require(path.resolve(__dirname + "/../utils/utils"));
 const crypto = $$.requireModule("pskcrypto");
-$$.flow.describe("setKey", {
-	start: function (aliasCsb, recordType) {
-		this.readStructure(aliasCsb, recordType);
+$$.flow.describe("setRecord", {
+	start: function (aliasCsb, recordType, key) {
+		this.readStructure(aliasCsb, recordType, key);
 	},
-	readStructure: function (aliasCsb, recordType) {
+	readStructure: function (aliasCsb, recordType, key) {
 		var recordStructure = utils.getRecordStructure(recordType);
 		var fields = recordStructure["fields"];
-		// var field = [];
-		// if(keyName){
-		// 	for(var f in fields){
-		// 		if(fields[f]["fieldName"] == keyName){
-		// 			field.push(fields[f]);
-		// 			break;
-		// 		}
-		// 	}
-		// }else{
-		// 	field = fields;
-		// }
-		utils.requirePin([aliasCsb, recordType, fields, 0], this.enterFields);
+		if(key) {
+			utils.requirePin([aliasCsb, recordType, key, fields, 1], this.enterFields);
+		}else{
+			utils.requirePin([aliasCsb, recordType, key, fields, 0], this.enterFields);
+		}
 	},
-	enterFields: function (pin, aliasCsb, recordType, fields, currentField) {
-		var record = {};
-		utils.enterField(pin, aliasCsb, recordType, fields, record, currentField, null, this.addKey);
+	enterFields: function (pin, aliasCsb, recordType, key, fields, currentField) {
+		if(key){
+			var record = {"Title": key};
+		}else{
+			var record = {};
+		}
+
+		utils.enterField(pin, aliasCsb, recordType, key, fields, record, currentField, null, this.addRecord);
 	},
-	addKey: function (pin, aliasCsb, recordType, record) {
+	addRecord: function (pin, aliasCsb, recordType, key, record) {
 		var masterCsb = utils.readMasterCsb(pin);
 		if (masterCsb.csbData["records"] && masterCsb.csbData["records"]["Csb"]) {
 			for (var c in masterCsb.csbData["records"]["Csb"]) {
@@ -42,9 +40,23 @@ $$.flow.describe("setKey", {
 						csb["records"][recordType] = [];
 					}
 					console.log(record);
-					csb["records"][recordType].push(record);
+					if(key){
+						for(var rec in csb["records"][recordType]){
+							if(csb["records"][recordType][rec] == key){
+								for(var field in csb["records"][recordType][rec]){
+									if(csb["records"][recordType][rec][field] != record[field]){
+										csb["records"][recordType][rec][field] = record[field];
+									}
+								}
+								return;
+							}
+						}
+						console.log("A record having the provided key could not be found");
+					}else {
+						csb["records"][recordType].push(record);
+					}
 					utils.writeCsbToFile(csbInMaster["Path"], csb, dseed);
-					break;
+
 				}
 			}
 			if(c == masterCsb.csbData["records"]["Csb"].length){

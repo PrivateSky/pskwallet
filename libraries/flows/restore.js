@@ -17,9 +17,8 @@ $$.flow.describe("restore", {
 		}
 	},
 	readMasterCsb: function (seed) {
-		console.log("Aici sunt");
 		var masterCsb = utils.readMasterCsb(null, seed);
-		var csbs = masterCsb.csbData["records"]["Csb"];
+		var csbs 	  = masterCsb.csbData["records"]["Csb"];
 		console.log(masterCsb.csbData["backups"]);
 		this.restoreCsbs(masterCsb.csbData["backups"][0], csbs, 0);
 	},

@@ -136,7 +136,7 @@ exports.writeCsbToFile = function (csbPath, csbData, dseed) {
 	fs.writeFileSync(csbPath, crypto.encryptJson(csbData, dseed))
 };
 
-exports.enterField = function(pin, aliasCsb, recordType, fields, record, currentField, rl,  callback){
+exports.enterField = function(pin, aliasCsb, recordType,key, fields, record, currentField, rl, callback){
 	if(!rl) {
 		rl = readline.createInterface({
 			input: process.stdin,
@@ -145,12 +145,12 @@ exports.enterField = function(pin, aliasCsb, recordType, fields, record, current
 	}
 	if(currentField == fields.length){
 		rl.close();
-		callback(pin, aliasCsb, recordType, record);
+		callback(pin, aliasCsb, recordType, key, record);
 	}else {
 		var field = fields[currentField];
 		rl.question("Insert " + field["fieldName"] + ":", (answer) => {
 			record[field["fieldName"]] = answer;
-			exports.enterField(pin, aliasCsb, recordType, fields, record, currentField + 1, rl, callback);
+			exports.enterField(pin, aliasCsb, recordType,key, fields, record, currentField + 1, rl, callback);
 
 		});
 	}
