@@ -8,9 +8,9 @@ $$.flow.describe("addCsb", {
 	},
 	addCsb: function (pin, aliasCsb) {
 		var csbData   = utils.defaultCSB();
-		var seed      = crypto.generateSeed();
+		var seed      = crypto.generateSeed(utils.defaultBackup);
 		var masterCsb = utils.readMasterCsb(pin);
-		var pathCsb   = utils.generateCsbId(crypto.deriveSeed(seed));
+		var pathCsb   = crypto.generateSafeUid(crypto.deriveSeed(seed));
 		if(utils.checkAliasExists(masterCsb, aliasCsb)){
 			throw new Error("A csb with the provided alias already exists");
 		}

@@ -15,12 +15,13 @@ $$.flow.describe("getKey", {
 					var encryptedCsb = utils.readEncryptedCsb(csbInMaster["Path"]);
 					var dseed = crypto.deriveSeed(Buffer.from(csbInMaster["Seed"], 'hex'));
 					var csb = crypto.decryptJson(encryptedCsb, dseed);
-					for (var key in csb["records"][recordType]) {
-						if (csb["records"][recordType][key]["Title"] == keyName) {
-							console.log(csb["records"][recordType][key]);
-							break;
-						}
-					}
+					console.log(csb["records"][recordType]);
+					// for (var key in csb["records"][recordType]) {
+					// 	if (csb["records"][recordType][key]["Title"] == keyName) {
+					// 		console.log(csb["records"][recordType][key]);
+					// 		break;
+					// 	}
+					// }
 				}
 			}
 			if (c == masterCsb.csbData["records"]["Csb"].length) {

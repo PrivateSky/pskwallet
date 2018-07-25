@@ -41,6 +41,7 @@ $$.flow.describe("setKey", {
 					if(!csb["records"][recordType]){
 						csb["records"][recordType] = [];
 					}
+					console.log(record);
 					csb["records"][recordType].push(record);
 					utils.writeCsbToFile(csbInMaster["Path"], csb, dseed);
 					break;

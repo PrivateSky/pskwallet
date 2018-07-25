@@ -10,9 +10,11 @@ $$.flow.describe("addBackup", {
 	},
 	backupMaster: function (pin, url) {
 		var masterCsb = utils.readMasterCsb(pin);
+		masterCsb.csbData["backups"].push(url);
+		console.log(masterCsb.csbData);
 		var csbs = masterCsb.csbData["records"]["Csb"];
-		var encryptedMaster = fs.readFileSync(utils.paths.masterCsb);
-		console.log(typeof encryptedMaster);
+		var encryptedMaster = crypto.encryptJson(masterCsb.csbData, masterCsb.dseed);
+		utils.writeCsbToFile(utils.paths.masterCsb, masterCsb.csbData, masterCsb.dseed);
 		var self = this;
 		$$.remote.doHttpPost(url+"/CSB/master", encryptedMaster.toString("hex"), function (err) {
 			if(err){

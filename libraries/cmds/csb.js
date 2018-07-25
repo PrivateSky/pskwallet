@@ -1,5 +1,3 @@
-var path = require('path');
-
 $$.requireLibrary("flows");
 
 doSetPin = function (newPin) {

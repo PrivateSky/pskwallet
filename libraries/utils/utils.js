@@ -3,6 +3,8 @@ const crypto = $$.requireModule("pskcrypto");
 const fs = require("fs");
 const path = require("path");
 const readline = require("readline");
+exports.defaultBackup = "http://localhost:8080";
+
 exports.defaultPin = "12345678";
 
 exports.paths = {
@@ -65,32 +67,28 @@ exports.enterSeed = function (callback) {
 		output: process.stdout
 	});
 	rl.question("Enter seed:", (answer) => {
-		var seed = Buffer.from(answer, "hex");
-		if(checkSeedIsValid(seed)){
+		var seed = Buffer.from(answer, "base64");
+		console.log(seed.toString());
+		if(!fs.existsSync(exports.paths.auxFolder)){
+			fs.mkdirSync(exports.paths.auxFolder);
 			rl.close();
-			callback(seed);
-		}else{
-			throw new Error("Seed is invalid");
+			callback(seed)
+		}else {
+			if (checkSeedIsValid(seed)) {
+				rl.close();
+				callback(seed);
+			} else {
+				throw new Error("Seed is invalid");
+			}
 		}
 	})
-}
-
-function encode(buffer) {
-	return buffer.toString('base64')
-		.replace(/\+/g, '')
-		.replace(/\//g, '')
-		.replace(/=+$/, '');
 }
 
 exports.defaultCSB = function() {
 	return {
 		"version": 1,
 		"protocolVersion": 1,
-		"backups": [
-			"www.privatesky.com",
-			"www.dropbox.com",
-			"www.drive.google.com"
-		]
+		"backups": []
 	};
 };
 
@@ -106,9 +104,9 @@ exports.createMasterCsb = function(pin, pathMaster) {
 	pin = pin || exports.defaultPin;
 	pathMaster = pathMaster || exports.paths.masterCsb;
 	fs.mkdirSync(exports.paths.auxFolder);
-	var seed = crypto.generateSeed();
+	var seed = crypto.generateSeed(exports.defaultBackup);
 	console.log("The following string represents the seed.Please save it.");
-	console.log(seed.toString("hex"));
+	console.log(seed.toString("base64"));
 	var dseed = crypto.deriveSeed(seed);
 	crypto.saveDSeed(dseed, pin, exports.paths.dseed);
 	var masterCsb = exports.defaultCSB();
@@ -138,18 +136,6 @@ exports.writeCsbToFile = function (csbPath, csbData, dseed) {
 	fs.writeFileSync(csbPath, crypto.encryptJson(csbData, dseed))
 };
 
-exports.generateCsbId = function (dseed, isMaster) {
-	var parentFolderPath = __dirname;
-	if(isMaster){
-		parentFolderPath = exports.paths.auxFolder;
-	}
-	parentFolderPath = path.resolve(parentFolderPath);
-	var csbId     = Buffer.concat([Buffer.from(parentFolderPath), dseed]);
-	var digest    = crypto.pskHash(csbId);
-	return encode(digest);
-};
-
-
 exports.enterField = function(pin, aliasCsb, recordType, fields, record, currentField, rl,  callback){
 	if(!rl) {
 		rl = readline.createInterface({
@@ -163,9 +149,6 @@ exports.enterField = function(pin, aliasCsb, recordType, fields, record, current
 	}else {
 		var field = fields[currentField];
 		rl.question("Insert " + field["fieldName"] + ":", (answer) => {
-			if(field["fieldName"] == "Title"){
-				callback(pin, aliasCsb, recordType, record);
-			}
 			record[field["fieldName"]] = answer;
 			exports.enterField(pin, aliasCsb, recordType, fields, record, currentField + 1, rl, callback);
 
