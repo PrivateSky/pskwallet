@@ -39,7 +39,6 @@ $$.flow.describe("setRecord", {
 					if(!csb["records"][recordType]){
 						csb["records"][recordType] = [];
 					}
-					console.log(record);
 					if(key){
 						for(var rec in csb["records"][recordType]){
 							if(csb["records"][recordType][rec] == key){

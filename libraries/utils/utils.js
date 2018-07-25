@@ -176,6 +176,10 @@ exports.readEncryptedCsb = function (pathCsb) {
 		return fs.readFileSync(pathCsb);
 };
 
+exports.readCsb = function (pathCsb, dseed) {
+	var encryptedCsb = exports.readEncryptedCsb(pathCsb);
+	return crypto.decryptJson(encryptedCsb, dseed);
+};
 
 var checkSeedIsValid = function (seed) {
 	var dseed = crypto.deriveSeed(seed);
