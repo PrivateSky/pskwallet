@@ -9,6 +9,7 @@ $$.flow.describe("setPin", {
 	actualizePin: function (oldPin, newPin) {
 		var masterCsb = utils.readMasterCsb(oldPin);
 		crypto.saveDSeed(masterCsb.dseed, newPin, utils.paths.dseed);
-		utils.writeCsbToFile(utils.paths.masterCsb, masterCsb.csbData, masterCsb.dseed);
+		utils.writeCsbToFile(masterCsb.path, masterCsb.csbData, masterCsb.dseed);
+		console.log("The pin has been changed");
 	}
 });

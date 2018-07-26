@@ -8,17 +8,17 @@ $$.flow.describe("addChild", {
 	absorbCsb: function (pin, aliasParentCsb, aliasChildCsb) {
 		var masterCsb = utils.readMasterCsb(pin);
 		if(!masterCsb.csbData["records"]) {
-			throw new Error("There aren't any csbs in the current folder");
+			console.log("There aren't any csbs in the current folder");
 		}
 
 		if(!masterCsb.csbData["records"]["Csb"]){
-			throw new Error("There aren't any csbs in the current folder");
+			console.log("There aren't any csbs in the current folder");
 		}
 		if(!utils.checkAliasExists(masterCsb, aliasParentCsb)){
-			throw new Error("Parent csb does not exist");
+			console.log("Parent csb does not exist");
 		}
 		if(!utils.checkAliasExists(masterCsb, aliasChildCsb)){
-			throw new Error("Child csb does not exist");
+			console.log("Child csb does not exist");
 		}
 		var csbsInMaster = masterCsb.csbData["records"]["Csb"];
 		for(var c in csbsInMaster) {

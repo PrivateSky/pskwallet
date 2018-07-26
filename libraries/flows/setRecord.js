@@ -47,6 +47,7 @@ $$.flow.describe("setRecord", {
 										csb["records"][recordType][rec][field] = record[field];
 									}
 								}
+								console.log("A", recordType, "record has been added in", aliasCsb);
 								return;
 							}
 						}
@@ -59,7 +60,7 @@ $$.flow.describe("setRecord", {
 				}
 			}
 			if(c == masterCsb.csbData["records"]["Csb"].length){
-				throw new Error("A csb with the provided alias does not exist");
+				console.log("A csb with the provided alias does not exist");
 			}
 		}
 	}

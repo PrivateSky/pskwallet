@@ -12,7 +12,8 @@ $$.flow.describe("addCsb", {
 		var masterCsb = utils.readMasterCsb(pin);
 		var pathCsb   = crypto.generateSafeUid(crypto.deriveSeed(seed));
 		if(utils.checkAliasExists(masterCsb, aliasCsb)){
-			throw new Error("A csb with the provided alias already exists");
+			console.log("A csb with the provided alias already exists");
+			return;
 		}
 		if(!masterCsb.csbData["records"]) {
 			masterCsb.csbData["records"] = {};
@@ -27,8 +28,9 @@ $$.flow.describe("addCsb", {
 			"Dseed": crypto.deriveSeed(seed).toString("hex")
 		};
 		masterCsb.csbData["records"]["Csb"].push(record);
-		utils.writeCsbToFile(utils.paths.masterCsb, masterCsb.csbData, masterCsb.dseed);
+		utils.writeCsbToFile(masterCsb.path, masterCsb.csbData, masterCsb.dseed);
 		var dseed = crypto.deriveSeed(seed);
 		utils.writeCsbToFile(pathCsb, csbData, dseed);
+		console.log("Csb", aliasCsb, "has been successfully created");
 	}
 });

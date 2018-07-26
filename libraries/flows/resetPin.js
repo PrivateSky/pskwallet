@@ -12,15 +12,15 @@ $$.flow.describe("resetPin", {
 			input:  process.stdin,
 			output: process.stdout
 		});
-		rl.question("Enter pin:", (answer) => {
+		rl.question("Insert new pin:", (answer) => {
 			rl.close();
 			this.updateData(seed, answer);
 		});
 	},
 	updateData: function (seed, pin) {
 		var masterCsb = utils.readMasterCsb(null, seed);
-		utils.writeCsbToFile(utils.paths.masterCsb, masterCsb.csbData, masterCsb.dseed);
+		utils.writeCsbToFile(masterCsb.path, masterCsb.csbData, masterCsb.dseed);
 		crypto.saveDSeed(masterCsb.dseed, pin, utils.paths.dseed);
-		console.log("Pin was successfully changed");
+		console.log("Pin has been changed");
 	}
 });

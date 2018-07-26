@@ -9,10 +9,15 @@ exports.defaultPin = "12345678";
 
 exports.paths = {
 	"auxFolder"			: path.join(process.cwd(), ".privateSky"),
-	"masterCsb"			: path.join(process.cwd(), ".privateSky", "master"),
 	"dseed"				: path.join(process.cwd(), ".privateSky", "dseed"),
 	"recordStructures"  : path.join(__dirname, path.normalize("../utils/recordStructures"))
 };
+
+var obfuscatedStdout = new require("stream").Writable({
+	write: function () {
+		process.stdout.write("*");
+	}
+});
 
 var checkPinIsValid = function (pin) {
 	try {
@@ -23,15 +28,28 @@ var checkPinIsValid = function (pin) {
 	return true;
 };
 
+var checkSeedIsValid = function (seed) {
+	var dseed = crypto.deriveSeed(seed);
+	var encryptedMaster = fs.readFileSync(exports.getMasterPath(dseed));
+	try{
+		crypto.decryptJson(encryptedMaster, dseed);
+	}catch(e){
+		return false;
+	}
+	return true;
+};
+
 var enterPin = function(args, noTries, rl, callback){
 	if(!rl) {
 		rl = readline.createInterface({
 			input: process.stdin,
-			output: process.stdout
+			output: obfuscatedStdout
 		});
 	}
 	if(noTries == 0){
 		rl.close();
+		console.log("You have inserted an invalid pin 3 times");
+		console.log("Preparing to exit");
 	}else {
 		rl.question("Insert pin:", (answer) => {
 			if (checkPinIsValid(answer)) {
@@ -43,6 +61,7 @@ var enterPin = function(args, noTries, rl, callback){
 				callback(...args);
 			} else {
 				console.log("Pin is invalid");
+				console.log("Try again");
 				enterPin(args, noTries-1, rl, callback);
 			}
 		})
@@ -68,7 +87,6 @@ exports.enterSeed = function (callback) {
 	});
 	rl.question("Enter seed:", (answer) => {
 		var seed = Buffer.from(answer, "base64");
-		console.log(seed.toString());
 		if(!fs.existsSync(exports.paths.auxFolder)){
 			fs.mkdirSync(exports.paths.auxFolder);
 			rl.close();
@@ -78,11 +96,12 @@ exports.enterSeed = function (callback) {
 				rl.close();
 				callback(seed);
 			} else {
-				throw new Error("Seed is invalid");
+				console.log("Seed is invalid. Goodbye!");
+				process.exit();
 			}
 		}
 	})
-}
+};
 
 exports.defaultCSB = function() {
 	return {
@@ -101,18 +120,21 @@ exports.masterCsbExists = function () {
 };
 
 exports.createMasterCsb = function(pin, pathMaster) {
+	console.log("Creating master csb");
 	pin = pin || exports.defaultPin;
-	pathMaster = pathMaster || exports.paths.masterCsb;
 	fs.mkdirSync(exports.paths.auxFolder);
 	var seed = crypto.generateSeed(exports.defaultBackup);
 	console.log("The following string represents the seed.Please save it.");
 	console.log(seed.toString("base64"));
 	var dseed = crypto.deriveSeed(seed);
+	pathMaster = pathMaster || exports.getMasterPath(dseed);
+	console.log("masterPath", pathMaster);
 	crypto.saveDSeed(dseed, pin, exports.paths.dseed);
 	var masterCsb = exports.defaultCSB();
 	// exports.paths["masterCsb"] = path.join(exports.paths.auxFolder, exports.generateCsbId(seed, true));
 	// masterCsb["backups"].push(exports.paths.masterCsb);
 	fs.writeFileSync(pathMaster, crypto.encryptJson(masterCsb, dseed));
+	console.log("Master csb has been created");
 
 };
 
@@ -123,12 +145,14 @@ exports.readMasterCsb = function(pin, seed){
 	}else {
 		var dseed = crypto.loadDseed(pin, exports.paths.dseed);
 	}
-	var encryptedCSB = fs.readFileSync(exports.paths.masterCsb);
+	var encryptedCSB = fs.readFileSync(exports.getMasterPath(dseed));
 	var csbData = crypto.decryptJson(encryptedCSB, dseed);
 
 	return {
 		"dseed"  : dseed,
-		"csbData": csbData
+		"csbData": csbData,
+		"path"	 : exports.getMasterPath(dseed),
+		"uid"	 : exports.getMasterUid(dseed)
 	};
 };
 
@@ -181,14 +205,10 @@ exports.readCsb = function (pathCsb, dseed) {
 	return crypto.decryptJson(encryptedCsb, dseed);
 };
 
-var checkSeedIsValid = function (seed) {
-	var dseed = crypto.deriveSeed(seed);
-	var encryptedMaster = fs.readFileSync(exports.paths.masterCsb);
-	try{
-		crypto.decryptJson(encryptedMaster, dseed);
-	}catch(e){
-		return false;
-	}
-	return true;
+exports.getMasterPath = function(dseed){
+	return path.join(exports.paths.auxFolder, crypto.generateSafeUid(dseed, exports.paths.auxFolder));
 };
 
+exports.getMasterUid = function (dseed){
+	return crypto.generateSafeUid(dseed, exports.paths.auxFolder)
+};

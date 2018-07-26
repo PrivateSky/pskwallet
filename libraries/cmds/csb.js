@@ -43,16 +43,16 @@ doGetUrl = function (url) {
 doAddChild = function(aliasParentCsb, aliasChildCsb){
 	$$.flow.create("flows.addChild").start(aliasParentCsb, aliasChildCsb);
 };
-addCommand("set", "pin", doSetPin, "<newPin>  \t\t\t |set the pin"); //seteaza la csb-ul master
-addCommand("create", "csb", doAddCSB, "<csbAlias> \t\t\t |create new CSB"); //creaza un nou CSB si il adaugi in csb-ul master
-addCommand("print", "csb", doPrintCsb, "<aliasCsb>");
-addCommand("key", "set", doKeySet, "<csbAlias> <recordType>   \t\t\t |set the key <keyName> of type <recordTYpe> of the <csbAlias>. If <keyName> is not specified, a <recordTYpe> record will be inserted " ); //seteaza o cheie intr-un csb
-addCommand("key", "get", doKeyGet, "<csbAlias> <recordType> <keyName>  \t\t\t |get the key <keyName> of type <recordTYpe> of the <csbAlias>. If <keyName> is not specified, a <recordTYpe> record will be returned "); //citeste o cheie intr-un csb
+addCommand("set", "pin", doSetPin, "<newPin>\t\t\t\t |set the pin"); //seteaza la csb-ul master
+addCommand("create", "csb", doAddCSB, "<csbAlias> \t\t\t\t |create new CSB"); //creaza un nou CSB si il adaugi in csb-ul master
+addCommand("print", "csb", doPrintCsb, "<aliasCsb>\t |print the csb");
+addCommand("key", "set", doKeySet, "<csbAlias> <recordType> <key>\t\t |set the key " ); //seteaza o cheie intr-un csb
+addCommand("key", "get", doKeyGet, "<csbAlias> <recordType> <key>\t\t |get the key " ); //citeste o cheie intr-un csb
 addCommand("add", "backup", doAddBackup,"<url>");
 addCommand("reset", "pin", doResetPin, "<seed>");
 addCommand("restore", "csb", doRestore);
 addCommand("set", "url", doSetUrl, "<url>");
-addCommand("set", "url", doSetUrl, "<url>");
+addCommand("get", "url", doGetUrl, "<url>");
 addCommand("add", "child", doAddChild, "<aliasParentCsb> <aliasChildCsb>");
 
 

@@ -9,14 +9,14 @@ $$.flow.describe("printCsb", {
 	printCsb: function (pin, aliasCsb) {
 		var masterCsb = utils.readMasterCsb(pin);
 		if(!masterCsb.csbData["records"]) {
-			throw new Error("There aren't any csbs in the current folder");
+			console.log("There aren't any csbs in the current folder");
 		}
 		
 		if(!masterCsb.csbData["records"]["Csb"]){
-			throw new Error("There aren't any csbs in the current folder");
+			console.log("There aren't any csbs in the current folder");
 		}
 		if(!utils.checkAliasExists(masterCsb, aliasCsb)){
-			throw new Error("A csb with the provided alias does not exist");
+			console.log("A csb with the provided alias does not exist");
 		}
 
 		for(var c in masterCsb.csbData["records"]["Csb"]){

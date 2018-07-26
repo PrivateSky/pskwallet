@@ -6,17 +6,14 @@ var fs = require("fs");
 $$.requireModule('psk-http-client');
 
 $$.flow.describe("restore", {
-	public: {
-		url: "string"
-	},
 	start: function () {
 		if(utils.masterCsbExists()) {
-			utils.enterSeed(this.readMasterCsb);
+			utils.enterSeed(this.readMaster);
 		}else{
 			utils.enterSeed(this.restoreMaster);
 		}
 	},
-	readMasterCsb: function (seed) {
+	readMaster: function (seed) {
 		var masterCsb = utils.readMasterCsb(null, seed);
 		var csbs 	  = masterCsb.csbData["records"]["Csb"];
 		console.log(masterCsb.csbData["backups"]);
@@ -25,15 +22,15 @@ $$.flow.describe("restore", {
 	restoreMaster: function (seed) {
 		var obj = JSON.parse(seed.toString());
 		var url = obj.backup;
-		console.log(this.url);
+		console.log(url);
 		var self = this;
-		$$.remote.doHttpGet(this.url + "/CSB/master", function (err, res) {
+		$$.remote.doHttpGet(url + "/CSB/" + utils.getMasterUid(crypto.deriveSeed(seed)), function (err, res) {
 			if(err){
 				throw err;
 			}else{
 				var dseed = crypto.deriveSeed(seed);
 				var encryptedMaster = Buffer.from(res, 'hex');
-				fs.writeFileSync(utils.paths.masterCsb, encryptedMaster);
+				fs.writeFileSync(utils.getMasterPath(dseed), encryptedMaster);
 				crypto.saveDSeed(dseed, utils.defaultPin, utils.paths.dseed);
 				var masterCsb = crypto.decryptJson(encryptedMaster, dseed);
 				// fs.writeFileSync(utils.paths.recordStructures + "/test_csb_master.json", JSON.stringify(masterCsb,null, "\t"));
