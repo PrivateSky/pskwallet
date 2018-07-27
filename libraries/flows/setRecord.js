@@ -10,9 +10,9 @@ $$.flow.describe("setRecord", {
 		var recordStructure = utils.getRecordStructure(recordType);
 		var fields = recordStructure["fields"];
 		if(key) {
-			utils.requirePin([aliasCsb, recordType, key, fields, 1], this.enterFields);
+			utils.requirePin([aliasCsb, recordType, key, fields, 1], null, this.enterFields);
 		}else{
-			utils.requirePin([aliasCsb, recordType, key, fields, 0], this.enterFields);
+			utils.requirePin([aliasCsb, recordType, key, fields, 0], null, this.enterFields);
 		}
 	},
 	enterFields: function (pin, aliasCsb, recordType, key, fields, currentField) {
@@ -22,7 +22,7 @@ $$.flow.describe("setRecord", {
 			var record = {};
 		}
 
-		utils.enterField(pin, aliasCsb, recordType, key, fields, record, currentField, null, this.addRecord);
+		utils.enterField(pin, aliasCsb, recordType, key, fields, record, currentField, this.addRecord);
 	},
 	addRecord: function (pin, aliasCsb, recordType, key, record) {
 		var masterCsb = utils.readMasterCsb(pin);

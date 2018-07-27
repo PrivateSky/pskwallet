@@ -1,7 +1,7 @@
 $$.requireLibrary("flows");
 
-doSetPin = function (newPin) {
-	$$.flow.create("flows.setPin").start(newPin);
+doSetPin = function () {
+	$$.flow.create("flows.setPin").start();
 };
 
 doAddCSB = function (aliasCSB) {
@@ -43,13 +43,13 @@ doGetUrl = function (url) {
 doAddChild = function(aliasParentCsb, aliasChildCsb){
 	$$.flow.create("flows.addChild").start(aliasParentCsb, aliasChildCsb);
 };
-addCommand("set", "pin", doSetPin, "<newPin>\t\t\t\t |set the pin"); //seteaza la csb-ul master
+addCommand("set", "pin", doSetPin, "\t\t\t\t |set the pin"); //seteaza la csb-ul master
 addCommand("create", "csb", doAddCSB, "<csbAlias> \t\t\t\t |create new CSB"); //creaza un nou CSB si il adaugi in csb-ul master
 addCommand("print", "csb", doPrintCsb, "<aliasCsb>\t |print the csb");
-addCommand("key", "set", doKeySet, "<csbAlias> <recordType> <key>\t\t |set the key " ); //seteaza o cheie intr-un csb
-addCommand("key", "get", doKeyGet, "<csbAlias> <recordType> <key>\t\t |get the key " ); //citeste o cheie intr-un csb
+addCommand("set", "key", doKeySet, "<csbAlias> <recordType> <key>\t\t |set the key " ); //seteaza o cheie intr-un csb
+addCommand("get", "key", doKeyGet, "<csbAlias> <recordType> <key>\t\t |get the key " ); //citeste o cheie intr-un csb
 addCommand("add", "backup", doAddBackup,"<url>");
-addCommand("reset", "pin", doResetPin, "<seed>");
+addCommand("reset", "pin", doResetPin);
 addCommand("restore", "csb", doRestore);
 addCommand("set", "url", doSetUrl, "<url>");
 addCommand("get", "url", doGetUrl, "<url>");

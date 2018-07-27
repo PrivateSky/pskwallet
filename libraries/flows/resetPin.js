@@ -2,19 +2,19 @@ var path = require("path");
 require(path.resolve(__dirname + "/../../../../engine/core"));
 const utils = require(path.resolve(__dirname + "/../utils/utils"));
 const crypto = $$.requireModule("pskcrypto");
-const readline = require("readline");
+const passReader = require(path.resolve(__dirname + "/../utils/passwordReader"));
 $$.flow.describe("resetPin", {
 	start: function () {
 		utils.enterSeed(this.enterPin);
 	},
 	enterPin: function (seed) {
-		const rl = readline.createInterface({
-			input:  process.stdin,
-			output: process.stdout
-		});
-		rl.question("Insert new pin:", (answer) => {
-			rl.close();
-			this.updateData(seed, answer);
+		passReader.getPassword("Enter a new pin:", function(err, answer){
+			if(err){
+				console.log("You introduced an invalid character. Please try again.")
+				this.enterPin(seed);
+			}else {
+				this.updateData(seed, answer);
+			}
 		});
 	},
 	updateData: function (seed, pin) {

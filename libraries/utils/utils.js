@@ -3,6 +3,7 @@ const crypto = $$.requireModule("pskcrypto");
 const fs = require("fs");
 const path = require("path");
 const readline = require("readline");
+const passReader = require("./passwordReader");
 exports.defaultBackup = "http://localhost:8080";
 
 exports.defaultPin = "12345678";
@@ -12,12 +13,6 @@ exports.paths = {
 	"dseed"				: path.join(process.cwd(), ".privateSky", "dseed"),
 	"recordStructures"  : path.join(__dirname, path.normalize("../utils/recordStructures"))
 };
-
-var obfuscatedStdout = new require("stream").Writable({
-	write: function () {
-		process.stdout.write("*");
-	}
-});
 
 var checkPinIsValid = function (pin) {
 	try {
@@ -39,38 +34,36 @@ var checkSeedIsValid = function (seed) {
 	return true;
 };
 
-var enterPin = function(args, noTries, rl, callback){
-	if(!rl) {
-		rl = readline.createInterface({
-			input: process.stdin,
-			output: obfuscatedStdout
-		});
+var enterPin = function(args, prompt, noTries, callback){
+	if(!prompt){
+		prompt = "Insert pin:";
 	}
 	if(noTries == 0){
-		rl.close();
 		console.log("You have inserted an invalid pin 3 times");
 		console.log("Preparing to exit");
 	}else {
-		rl.question("Insert pin:", (answer) => {
-			if (checkPinIsValid(answer)) {
-				if(!Array.isArray(args)){
-					args = [args];
+		passReader.getPassword(prompt, function (err, pin) {
+			if(err) {
+			}else{
+				if (checkPinIsValid(pin)) {
+					if(!Array.isArray(args)){
+						args = [args];
+					}
+					args.unshift(pin);
+					callback(...args);
+				} else {
+					console.log("Pin is invalid");
+					console.log("Try again");
+					enterPin(args, prompt, noTries-1, callback);
 				}
-				args.unshift(answer);
-				rl.close();
-				callback(...args);
-			} else {
-				console.log("Pin is invalid");
-				console.log("Try again");
-				enterPin(args, noTries-1, rl, callback);
 			}
-		})
+		});
 	}
 };
 
-exports.requirePin = function (args, callback) {
+exports.requirePin = function (args, prompt, callback) {
 	if(exports.masterCsbExists()){
-		enterPin(args, 3, null, callback);
+		enterPin(args, prompt, 3, callback);
 	}else{
 		exports.createMasterCsb();
 		if(!Array.isArray(args)){
@@ -81,26 +74,22 @@ exports.requirePin = function (args, callback) {
 	}
 };
 exports.enterSeed = function (callback) {
-	const rl = readline.createInterface({
-		input:  process.stdin,
-		output: process.stdout
-	});
-	rl.question("Enter seed:", (answer) => {
-		var seed = Buffer.from(answer, "base64");
-		if(!fs.existsSync(exports.paths.auxFolder)){
-			fs.mkdirSync(exports.paths.auxFolder);
-			rl.close();
-			callback(seed)
-		}else {
-			if (checkSeedIsValid(seed)) {
-				rl.close();
-				callback(seed);
+	passReader.getPassword("Enter seed:", function (err, answer) {
+		if(!err) {
+			var seed = Buffer.from(answer, "base64");
+			if (!fs.existsSync(exports.paths.auxFolder)) {
+				fs.mkdirSync(exports.paths.auxFolder);
+				callback(seed)
 			} else {
-				console.log("Seed is invalid. Goodbye!");
-				process.exit();
+				if (checkSeedIsValid(seed)) {
+					callback(seed);
+				} else {
+					console.log("Seed is invalid. Goodbye!");
+					process.exit();
+				}
 			}
 		}
-	})
+	});
 };
 
 exports.defaultCSB = function() {
@@ -160,22 +149,18 @@ exports.writeCsbToFile = function (csbPath, csbData, dseed) {
 	fs.writeFileSync(csbPath, crypto.encryptJson(csbData, dseed))
 };
 
-exports.enterField = function(pin, aliasCsb, recordType,key, fields, record, currentField, rl, callback){
-	if(!rl) {
-		rl = readline.createInterface({
-			input: process.stdin,
-			output: process.stdout
-		});
-	}
+exports.enterField = function(pin, aliasCsb, recordType,key, fields, record, currentField, callback){
 	if(currentField == fields.length){
-		rl.close();
 		callback(pin, aliasCsb, recordType, key, record);
 	}else {
 		var field = fields[currentField];
-		rl.question("Insert " + field["fieldName"] + ":", (answer) => {
-			record[field["fieldName"]] = answer;
-			exports.enterField(pin, aliasCsb, recordType,key, fields, record, currentField + 1, rl, callback);
-
+		passReader.getPassword("Insert " + field["fieldName"] + ":", (err, answer) => {
+			if(err){
+				console.log("An invalid character was introduced", "Abandoning operation");
+			}else {
+				record[field["fieldName"]] = answer;
+				exports.enterField(pin, aliasCsb, recordType, key, fields, record, currentField + 1,callback);
+			}
 		});
 	}
 };

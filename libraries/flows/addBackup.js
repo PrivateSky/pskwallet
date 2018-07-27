@@ -6,7 +6,7 @@ var fs = require("fs");
 const client = $$.requireModule('psk-http-client');
 $$.flow.describe("addBackup", {
 	start: function (url) {
-		utils.requirePin(url, this.backupMaster);
+		utils.requirePin(url, null, this.backupMaster);
 	},
 	backupMaster: function (pin, url) {
 		var masterCsb = utils.readMasterCsb(pin);
