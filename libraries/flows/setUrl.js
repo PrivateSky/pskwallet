@@ -14,7 +14,7 @@ $$.flow.describe("setUrl", {
 				console.log("No url inserted");
 				break;
 			case 1:
-				this.addCsb(splitUrl[0]);
+				console.log("Nothing to do");
 				break;
 			case 2:
 			case 3:

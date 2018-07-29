@@ -44,6 +44,9 @@ var enterPin = function(args, prompt, noTries, callback){
 	}else {
 		passReader.getPassword(prompt, function (err, pin) {
 			if(err) {
+				console.log("Pin is invalid");
+				console.log("Try again");
+				enterPin(args, prompt, noTries-1, callback);
 			}else{
 				if (checkPinIsValid(pin)) {
 					if(!Array.isArray(args)){
@@ -73,16 +76,21 @@ exports.requirePin = function (args, prompt, callback) {
 		callback(...args);
 	}
 };
-exports.enterSeed = function (callback) {
+exports.enterSeed = function (args, callback) {
 	passReader.getPassword("Enter seed:", function (err, answer) {
 		if(!err) {
+			if(!Array.isArray(args)){
+				args = [args];
+			}
 			var seed = Buffer.from(answer, "base64");
 			if (!fs.existsSync(exports.paths.auxFolder)) {
 				fs.mkdirSync(exports.paths.auxFolder);
-				callback(seed)
+				args.unshift(seed);
+				callback(...args);
 			} else {
 				if (checkSeedIsValid(seed)) {
-					callback(seed);
+					args.unshift(seed);
+					callback(...args);
 				} else {
 					console.log("Seed is invalid. Goodbye!");
 					process.exit();
@@ -186,8 +194,13 @@ exports.readEncryptedCsb = function (pathCsb) {
 };
 
 exports.readCsb = function (pathCsb, dseed) {
-	var encryptedCsb = exports.readEncryptedCsb(pathCsb);
-	return crypto.decryptJson(encryptedCsb, dseed);
+	if(fs.existsSync(pathCsb)) {
+		var encryptedCsb = exports.readEncryptedCsb(pathCsb);
+		return crypto.decryptJson(encryptedCsb, dseed);
+	}else{
+		return;
+	}
+
 };
 
 exports.getMasterPath = function(dseed){
@@ -196,4 +209,24 @@ exports.getMasterPath = function(dseed){
 
 exports.getMasterUid = function (dseed){
 	return crypto.generateSafeUid(dseed, exports.paths.auxFolder)
+};
+
+exports.getCsb = function (csbData, aliasCsb) {
+	var csbs = csbData["records"]["Csb"];
+	if(!csbs || csbs.length == 0) {
+		console.log("No csbs exist");
+	}else{
+		while(csbs.length > 0){
+			var csb = csbs.shift();
+			if(csb["Alias"] == aliasCsb){
+				return csb;
+			}else{
+				var childCsb = exports.readCsb(csb["Path"], Buffer.from(csb["Dseed"], "hex"));
+				if(childCsb && childCsb["records"] && childCsb["records"]["Csb"]){
+					csbs = csbs.concat(childCsb["records"]["Csb"]);
+				}
+			}
+		}
+		console.log("No csb with the provided alias exists");
+	}
 };

@@ -28,8 +28,8 @@ doResetPin = function(seed){
 	$$.flow.create("flows.resetPin").start(seed);
 };
 
-doRestore = function () {
-	$$.flow.create("flows.restore").start();
+doRestore = function (aliasCsb) {
+	$$.flow.create("flows.restore").start(aliasCsb);
 };
 
 doSetUrl = function (url) {
@@ -50,7 +50,7 @@ addCommand("set", "key", doKeySet, "<csbAlias> <recordType> <key>\t\t |set the k
 addCommand("get", "key", doKeyGet, "<csbAlias> <recordType> <key>\t\t |get the key " ); //citeste o cheie intr-un csb
 addCommand("add", "backup", doAddBackup,"<url>");
 addCommand("reset", "pin", doResetPin);
-addCommand("restore", "csb", doRestore);
+addCommand("restore", "csb", doRestore, "<aliasCsb>");
 addCommand("set", "url", doSetUrl, "<url>");
 addCommand("get", "url", doGetUrl, "<url>");
 addCommand("add", "child", doAddChild, "<aliasParentCsb> <aliasChildCsb>");

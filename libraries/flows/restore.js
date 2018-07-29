@@ -6,20 +6,20 @@ var fs = require("fs");
 $$.requireModule('psk-http-client');
 
 $$.flow.describe("restore", {
-	start: function () {
+	start: function (aliasCsb) {
 		if(utils.masterCsbExists()) {
-			utils.enterSeed(this.readMaster);
+			utils.enterSeed(aliasCsb, this.readMaster);
 		}else{
-			utils.enterSeed(this.restoreMaster);
+			utils.enterSeed(aliasCsb, this.restoreMaster);
 		}
 	},
-	readMaster: function (seed) {
+	readMaster: function (seed, aliasCsb) {
 		var masterCsb = utils.readMasterCsb(null, seed);
-		var csbs 	  = masterCsb.csbData["records"]["Csb"];
+		var csbs 	  = this.__getCsbsToRestore(masterCsb.csbData, aliasCsb);
 		console.log(masterCsb.csbData["backups"]);
 		this.restoreCsbs(masterCsb.csbData["backups"][0], csbs, 0);
 	},
-	restoreMaster: function (seed) {
+	restoreMaster: function (seed, aliasCsb) {
 		var obj = JSON.parse(seed.toString());
 		var url = obj.backup;
 		console.log(url);
@@ -33,8 +33,9 @@ $$.flow.describe("restore", {
 				fs.writeFileSync(utils.getMasterPath(dseed), encryptedMaster);
 				crypto.saveDSeed(dseed, utils.defaultPin, utils.paths.dseed);
 				var masterCsb = crypto.decryptJson(encryptedMaster, dseed);
+				// console.log(masterCsb)
 				// fs.writeFileSync(utils.paths.recordStructures + "/test_csb_master.json", JSON.stringify(masterCsb,null, "\t"));
-				var csbs = masterCsb["records"]["Csb"];
+				var csbs = self.__getCsbsToRestore(masterCsb, aliasCsb);
 				self.restoreCsbs(url, csbs, 0);
 			}
 		});
@@ -42,8 +43,12 @@ $$.flow.describe("restore", {
 	restoreCsbs: function(url, csbs, currentCsb){
 		var self = this;
 		if(currentCsb == csbs.length){
-			console.log("All csbs have been restored");
-		}else{
+			if(csbs.length == 1){
+				console.log(csbs[0]["Alias"], "has been restored");
+			}else {
+				console.log("All csbs have been restored");
+			}
+			}else{
 			$$.remote.doHttpGet(url + "/CSB/" + csbs[currentCsb]["Path"], function(err, res){
 				if(err){
 					throw err;
@@ -53,6 +58,13 @@ $$.flow.describe("restore", {
 					self.restoreCsbs(url, csbs, currentCsb + 1);
 				}
 			})
+		}
+	},
+	__getCsbsToRestore: function (masterCsbData, aliasCsb) {
+		if(!aliasCsb){
+			return masterCsbData["records"]["Csb"];
+		}else{
+			return [utils.getCsb(masterCsbData, aliasCsb)];
 		}
 	}
 
