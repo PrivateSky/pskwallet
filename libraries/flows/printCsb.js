@@ -15,7 +15,7 @@ $$.flow.describe("printCsb", {
 		if(!masterCsb.csbData["records"]["Csb"]){
 			console.log("There aren't any csbs in the current folder");
 		}
-		if(!utils.checkAliasExists(masterCsb, aliasCsb)){
+		if(utils.indexOfRecord(masterCsb.csbData, "Csb", aliasCsb) < 0){
 			console.log("A csb with the provided alias does not exist");
 		}
 

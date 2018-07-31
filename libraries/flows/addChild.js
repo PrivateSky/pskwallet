@@ -14,35 +14,30 @@ $$.flow.describe("addChild", {
 		if(!masterCsb.csbData["records"]["Csb"]){
 			console.log("There aren't any csbs in the current folder");
 		}
-		if(!utils.checkAliasExists(masterCsb, aliasParentCsb)){
-			console.log("Parent csb does not exist");
+		var indexParentCsb = utils.indexOfRecord(masterCsb.csbData, "Csb", aliasParentCsb);
+		if( indexParentCsb < 0){
+			console.log(aliasParentCsb, "does not exist");
+			return;
 		}
-		if(!utils.checkAliasExists(masterCsb, aliasChildCsb)){
-			console.log("Child csb does not exist");
+		var indexChildCsb = utils.indexOfRecord(masterCsb.csbData, "Csb", aliasChildCsb);
+		if(indexChildCsb < 0){
+			console.log(aliasChildCsb, "does not exist");
+			return;
 		}
 		var csbsInMaster = masterCsb.csbData["records"]["Csb"];
-		for(var c in csbsInMaster) {
-			if (csbsInMaster[c]["Alias"] == aliasParentCsb) {
-				var parentCsb = utils.readCsb(csbsInMaster[c]["Path"], Buffer.from(csbsInMaster[c]["Dseed"], "hex"));
-				var indexParent = c;
-				break;
-			}
-		}
-		for(var c in csbsInMaster){
-			if(csbsInMaster[c]["Alias"] == aliasChildCsb){
-				if(!parentCsb["records"]){
-					parentCsb["records"] = {};
-				}
-				if(!parentCsb["records"]["Csb"]){
-					parentCsb["records"]["Csb"] = [];
-				}
-				parentCsb["records"]["Csb"].push(csbsInMaster[c]);
-				utils.writeCsbToFile(csbsInMaster[indexParent]["Path"], parentCsb,  Buffer.from(csbsInMaster[indexParent]["Dseed"], "hex"));
-				masterCsb.csbData["records"]["Csb"].splice(c, 1);
-				utils.writeCsbToFile(utils.paths.masterCsb, masterCsb.csbData, masterCsb.dseed);
-			}
-		}
 
+		var parentCsb = utils.readCsb(csbsInMaster[indexParentCsb]["Path"], Buffer.from(csbsInMaster[c]["Dseed"], "hex"));
+
+		if(!parentCsb["records"]){
+			parentCsb["records"] = {};
+		}
+		if(!parentCsb["records"]["Csb"]){
+			parentCsb["records"]["Csb"] = [];
+		}
+		parentCsb["records"]["Csb"].push(csbsInMaster[indexChildCsb]);
+		utils.writeCsbToFile(csbsInMaster[indexParentCsb]["Path"], parentCsb,  Buffer.from(csbsInMaster[indexParentCsb]["Dseed"], "hex"));
+		masterCsb.csbData["records"]["Csb"].splice(indexChildCsb, 1);
+		utils.writeCsbToFile(utils.getMasterPath(masterCsb.dseed), masterCsb.csbData, masterCsb.dseed);
+		console.log(aliasChildCsb, "has been added as child in", aliasParentCsb);
 	}
-
 });

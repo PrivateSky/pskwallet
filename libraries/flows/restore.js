@@ -64,7 +64,7 @@ $$.flow.describe("restore", {
 		if(!aliasCsb){
 			return masterCsbData["records"]["Csb"];
 		}else{
-			return [utils.getCsb(masterCsbData, aliasCsb)];
+			return [utils.findCsb(masterCsbData, aliasCsb)];
 		}
 	}
 

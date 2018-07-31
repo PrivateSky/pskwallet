@@ -157,36 +157,35 @@ exports.writeCsbToFile = function (csbPath, csbData, dseed) {
 	fs.writeFileSync(csbPath, crypto.encryptJson(csbData, dseed))
 };
 
-exports.enterField = function(pin, aliasCsb, recordType,key, fields, record, currentField, callback){
+exports.enterRecord = function(pin, aliasCsb, recordType, fields, record, currentField, callback){
 	if(currentField == fields.length){
-		callback(pin, aliasCsb, recordType, key, record);
+		callback(pin, aliasCsb, recordType, record);
 	}else {
 		var field = fields[currentField];
 		passReader.getPassword("Insert " + field["fieldName"] + ":", (err, answer) => {
 			if(err){
-				console.log("An invalid character was introduced", "Abandoning operation");
+				console.log("An invalid character was introduced. Abandoning operation");
 			}else {
 				record[field["fieldName"]] = answer;
-				exports.enterField(pin, aliasCsb, recordType, key, fields, record, currentField + 1,callback);
+				exports.enterRecord(pin, aliasCsb, recordType, fields, record, currentField + 1,callback);
 			}
 		});
 	}
 };
 
-exports.getRecordStructure = function (recordType) {
-	return JSON.parse(fs.readFileSync(path.join(exports.paths.recordStructures,"csb_record_structure_" + recordType +".json")));
+exports.enterField = function(pin, aliasCsb, recordType, key, field, valueInserted,  callback){
+	passReader.getPassword("Insert " + field + ":", (err, answer) => {
+		if(err){
+			console.log("An invalid character was introduced.");
+		}else{
+			valueInserted = answer;
+			callback(pin, aliasCsb, recordType, key, field, valueInserted);
+		}
+	});
 };
 
-exports.checkAliasExists = function (masterCsb, aliasCsb) {
-	var recordsInMaster = masterCsb.csbData["records"];
-	if(recordsInMaster && recordsInMaster["Csb"]){
-		for(var c in recordsInMaster["Csb"]) {
-			if (recordsInMaster["Csb"][c]["Alias"] == aliasCsb) {
-				return true;
-			}
-		}
-	}
-	return false;
+exports.getRecordStructure = function (recordType) {
+	return JSON.parse(fs.readFileSync(path.join(exports.paths.recordStructures,"csb_record_structure_" + recordType +".json")));
 };
 
 exports.readEncryptedCsb = function (pathCsb) {
@@ -211,14 +210,14 @@ exports.getMasterUid = function (dseed){
 	return crypto.generateSafeUid(dseed, exports.paths.auxFolder)
 };
 
-exports.getCsb = function (csbData, aliasCsb) {
+exports.findCsb = function (csbData, aliasCsb) {
 	var csbs = csbData["records"]["Csb"];
 	if(!csbs || csbs.length == 0) {
 		console.log("No csbs exist");
 	}else{
 		while(csbs.length > 0){
 			var csb = csbs.shift();
-			if(csb["Alias"] == aliasCsb){
+			if(csb["Title"] == aliasCsb){
 				return csb;
 			}else{
 				var childCsb = exports.readCsb(csb["Path"], Buffer.from(csb["Dseed"], "hex"));
@@ -228,5 +227,41 @@ exports.getCsb = function (csbData, aliasCsb) {
 			}
 		}
 		console.log("No csb with the provided alias exists");
+	}
+};
+
+exports.indexOfRecord = function(csbData, recordType, recordKey) {
+	if(csbData && csbData["records"] && csbData["records"][recordType]){
+		var recordsArray = csbData["records"][recordType];
+		for(var c in recordsArray){
+			if(recordsArray[c]["Title"] == recordKey){
+				return c;
+			}
+		}
+	}
+	return -1;
+};
+exports.indexOfKey = function(arr, property, key){
+	for(var i in arr){
+		if(arr[i][property] == key){
+			return i;
+		}
+	}
+	return -1;
+};
+
+exports.traverseUrl = function (pin, csbData, url, lastCsb) {
+	var splitUrl = url.split("/");
+	var record = splitUrl[0];
+	var index = exports.indexOfRecord(csbData,"Csb", record);
+	if(index < 0){
+		splitUrl.unshift(lastCsb)
+		return splitUrl;
+	}else {
+		if (csbData["records"]) {
+			var childCsbData = exports.readCsb(csbData["records"]["Csb"][index]["Path"], Buffer.from(csbData["records"]["Csb"][index]["Dseed"], "hex"));
+			lastCsb = splitUrl.shift();
+			return  exports.traverseUrl(pin, childCsbData, splitUrl.join("/"), lastCsb);
+		}
 	}
 };

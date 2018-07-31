@@ -11,7 +11,7 @@ $$.flow.describe("addCsb", {
 		var seed      = crypto.generateSeed(utils.defaultBackup);
 		var masterCsb = utils.readMasterCsb(pin);
 		var pathCsb   = crypto.generateSafeUid(crypto.deriveSeed(seed));
-		if(utils.checkAliasExists(masterCsb, aliasCsb)){
+		if(utils.indexOfRecord(masterCsb.csbData, "Csb", aliasCsb) >= 0){
 			console.log("A csb with the provided alias already exists");
 			return;
 		}
@@ -22,7 +22,7 @@ $$.flow.describe("addCsb", {
 			masterCsb.csbData["records"]["Csb"] = []
 		}
 		var record = {
-			"Alias": aliasCsb,
+			"Title": aliasCsb,
 			"Path" : pathCsb,
 			"Seed" : seed.toString("hex"),
 			"Dseed": crypto.deriveSeed(seed).toString("hex")

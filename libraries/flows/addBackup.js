@@ -33,7 +33,7 @@ $$.flow.describe("addBackup", {
 			var encryptedCsb = fs.readFileSync(csbs[currentCsb]["Path"]);
 			$$.remote.doHttpPost(url + "/CSB/" + csbs[currentCsb]["Path"], encryptedCsb.toString("hex"), function(err){
 				if(err){
-					console.log("Failed to post csb", csbs[currentCsb]["Alias"],"on server");
+					console.log("Failed to post csb", csbs[currentCsb]["Title"],"on server");
 					process.exit();
 				}else{
 					self.backupCsbs(url, csbs, currentCsb + 1);
