@@ -26,7 +26,7 @@ $$.flow.describe("addChild", {
 		}
 		var csbsInMaster = masterCsb.csbData["records"]["Csb"];
 
-		var parentCsb = utils.readCsb(csbsInMaster[indexParentCsb]["Path"], Buffer.from(csbsInMaster[c]["Dseed"], "hex"));
+		var parentCsb = utils.readCsb(csbsInMaster[indexParentCsb]["Path"], Buffer.from(csbsInMaster[indexParentCsb]["Dseed"], "hex"));
 
 		if(!parentCsb["records"]){
 			parentCsb["records"] = {};

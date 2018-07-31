@@ -54,6 +54,10 @@ $$.flow.describe("restore", {
 					throw err;
 				}else{
 					var encryptedCsb = Buffer.from(res, "hex");
+					var csb = crypto.decryptJson(encryptedCsb, Buffer.from(csbs[currentCsb]["Dseed"], "hex"));
+					if(csb["records"] && csb["records"]["Csb"]){
+						csbs = csbs.concat(csb["records"]["Csb"]);
+					}
 					fs.writeFileSync(csbs[currentCsb]["Path"], encryptedCsb);
 					self.restoreCsbs(url, csbs, currentCsb + 1);
 				}

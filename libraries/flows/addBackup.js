@@ -31,6 +31,10 @@ $$.flow.describe("addBackup", {
 			console.log("All csbs are backed up");
 		}else{
 			var encryptedCsb = fs.readFileSync(csbs[currentCsb]["Path"]);
+			var csb = crypto.decryptJson(encryptedCsb, Buffer.from(csbs[currentCsb]["Dseed"], "hex"));
+			if(csb["records"] && csb["records"]["Csb"]){
+				csbs = csbs.concat(csb["records"]["Csb"]);
+			}
 			$$.remote.doHttpPost(url + "/CSB/" + csbs[currentCsb]["Path"], encryptedCsb.toString("hex"), function(err){
 				if(err){
 					console.log("Failed to post csb", csbs[currentCsb]["Title"],"on server");

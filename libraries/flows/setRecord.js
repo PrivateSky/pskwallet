@@ -10,12 +10,17 @@ $$.flow.describe("setRecord", {
 	readStructure: function (pin, aliasCsb, recordType, key, field) {
 		var recordStructure = utils.getRecordStructure(recordType);
 		var fields = recordStructure["fields"];
-		if(key && field){
-			var indexField = utils.indexOfKey(fields, "fieldName", field);
-			if(indexField < 0){
-				console.log("The record type", recordType, "does not have a field", field);
-			}else {
-				this.enterField(pin, aliasCsb, recordType, key, field);
+		if(key){
+			if(!field){
+
+			}
+			else {
+				var indexField = utils.indexOfKey(fields, "fieldName", field);
+				if (indexField < 0) {
+					console.log("The record type", recordType, "does not have a field", field);
+				} else {
+					this.enterField(pin, aliasCsb, recordType, key, field);
+				}
 			}
 		}else if(!key && !field) {
 			this.enterRecord(pin, aliasCsb, recordType, fields, 0);
@@ -48,7 +53,7 @@ $$.flow.describe("setRecord", {
 					csb["records"][recordType][indexKey][field] = valueInserted;
 
 				}else{
-					console.log("No record having the key", key, "exists in", aliasCsb);
+					console.log("No record having the title", key, "exists in", aliasCsb);
 				}
 			}
 			utils.writeCsbToFile(csbInMaster["Path"], csb, dseed);

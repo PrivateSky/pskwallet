@@ -166,8 +166,23 @@ exports.enterRecord = function(pin, aliasCsb, recordType, fields, record, curren
 			if(err){
 				console.log("An invalid character was introduced. Abandoning operation");
 			}else {
-				record[field["fieldName"]] = answer;
-				exports.enterRecord(pin, aliasCsb, recordType, fields, record, currentField + 1,callback);
+				if (currentField == 0) {
+					var masterCsb = exports.readMasterCsb(pin);
+					var csb = exports.findCsb(masterCsb.csbData, aliasCsb);
+					var csbData = exports.readCsb(csb["Path"], Buffer.from(csb["Dseed"], "hex"));
+					var index = exports.indexOfRecord(csbData, recordType, answer);
+					if (index >= 0) {
+						console.log("A record of type", recordType, "having the title", answer, "already exists.", "Insert another title");
+						exports.enterRecord(pin, aliasCsb, recordType, fields, record, 0, callback);
+
+					} else {
+						record[field["fieldName"]] = answer;
+						exports.enterRecord(pin, aliasCsb, recordType, fields, record, currentField + 1, callback);
+					}
+				}else{
+					record[field["fieldName"]] = answer;
+					exports.enterRecord(pin, aliasCsb, recordType, fields, record, currentField + 1, callback);
+				}
 			}
 		});
 	}
