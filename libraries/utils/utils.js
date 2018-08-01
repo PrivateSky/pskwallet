@@ -157,15 +157,19 @@ exports.writeCsbToFile = function (csbPath, csbData, dseed) {
 	fs.writeFileSync(csbPath, crypto.encryptJson(csbData, dseed))
 };
 
-exports.enterRecord = function(pin, aliasCsb, recordType, fields, record, currentField, callback){
+exports.enterRecord = function(pin, aliasCsb, recordType, key, fields, record, currentField, rl, callback){
+	if(!rl){
+		rl = readline.createInterface({
+			input: process.stdin,
+			output: process.stdout
+		});
+	}
 	if(currentField == fields.length){
-		callback(pin, aliasCsb, recordType, record);
+		rl.close();
+		callback(pin, aliasCsb, recordType, key, null, record);
 	}else {
 		var field = fields[currentField];
-		passReader.getPassword("Insert " + field["fieldName"] + ":", (err, answer) => {
-			if(err){
-				console.log("An invalid character was introduced. Abandoning operation");
-			}else {
+		rl.question("Insert " + field["fieldName"] + ":", (answer) => {
 				if (currentField == 0) {
 					var masterCsb = exports.readMasterCsb(pin);
 					var csb = exports.findCsb(masterCsb.csbData, aliasCsb);
@@ -173,29 +177,56 @@ exports.enterRecord = function(pin, aliasCsb, recordType, fields, record, curren
 					var index = exports.indexOfRecord(csbData, recordType, answer);
 					if (index >= 0) {
 						console.log("A record of type", recordType, "having the title", answer, "already exists.", "Insert another title");
-						exports.enterRecord(pin, aliasCsb, recordType, fields, record, 0, callback);
+						exports.enterRecord(pin, aliasCsb, recordType, key, fields, record, 0, rl, callback);
 
 					} else {
 						record[field["fieldName"]] = answer;
-						exports.enterRecord(pin, aliasCsb, recordType, fields, record, currentField + 1, callback);
+						exports.enterRecord(pin, aliasCsb, recordType, key, fields, record, currentField + 1, rl, callback);
 					}
 				}else{
 					record[field["fieldName"]] = answer;
-					exports.enterRecord(pin, aliasCsb, recordType, fields, record, currentField + 1, callback);
+					exports.enterRecord(pin, aliasCsb, recordType, key, fields, record, currentField + 1, rl, callback);
 				}
-			}
 		});
 	}
 };
 
-exports.enterField = function(pin, aliasCsb, recordType, key, field, valueInserted,  callback){
-	passReader.getPassword("Insert " + field + ":", (err, answer) => {
-		if(err){
-			console.log("An invalid character was introduced.");
+exports.confirmAnswer = function (args, callback) {
+	var rl = args[args.length-2];
+	if(!rl){
+		rl = readline.createInterface({
+			input: process.stdin,
+			output: process.stdout
+		});
+		var necArgs = args.slice(0, 5);
+		if(Array.isArray(necArgs[necArgs.length - 1])){
+			necArgs = necArgs.slice(0,4);
+			console.log("The record with the provided key has the following value:");
 		}else{
-			valueInserted = answer;
-			callback(pin, aliasCsb, recordType, key, field, valueInserted);
+			console.log("The field provided has the following value:");
 		}
+		$$.flow.create("flows.getRecord").getRecord(...necArgs);
+	}
+	rl.question("Do you want to modify the specified entry? [y/n]", (answer) => {
+		if(answer == "y"){
+			callback(...args);
+		}else if(answer == "n"){
+
+		}
+	})
+};
+
+exports.enterField = function(pin, aliasCsb, recordType, key, field, valueInserted, rl, callback){
+	if(!rl){
+		rl = readline.createInterface({
+			input: process.stdin,
+			output: process.stdout
+		});
+	}
+	rl.question("Insert " + field + ":", (answer) => {
+		valueInserted = answer;
+		rl.close();
+		callback(pin, aliasCsb, recordType, key, field, valueInserted);
 	});
 };
 
@@ -270,7 +301,7 @@ exports.traverseUrl = function (pin, csbData, url, lastCsb) {
 	var record = splitUrl[0];
 	var index = exports.indexOfRecord(csbData,"Csb", record);
 	if(index < 0){
-		splitUrl.unshift(lastCsb)
+		splitUrl.unshift(lastCsb);
 		return splitUrl;
 	}else {
 		if (csbData["records"]) {

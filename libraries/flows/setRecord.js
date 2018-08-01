@@ -4,7 +4,6 @@ const utils = require(path.resolve(__dirname + "/../utils/utils"));
 const crypto = $$.requireModule("pskcrypto");
 $$.flow.describe("setRecord", {
 	start: function (aliasCsb, recordType, key, field) {
-		// this.readStructure(aliasCsb, recordType, key, field);
 		utils.requirePin([aliasCsb, recordType, key, field], null, this.readStructure)
 	},
 	readStructure: function (pin, aliasCsb, recordType, key, field) {
@@ -12,7 +11,7 @@ $$.flow.describe("setRecord", {
 		var fields = recordStructure["fields"];
 		if(key){
 			if(!field){
-
+				this.enterRecord(pin, aliasCsb, recordType, key, fields, 0)
 			}
 			else {
 				var indexField = utils.indexOfKey(fields, "fieldName", field);
@@ -27,11 +26,11 @@ $$.flow.describe("setRecord", {
 		}
 	},
 	enterField: function (pin, aliasCsb, recordType, key, field) {
-		utils.enterField(pin, aliasCsb, recordType, key, field, null, this.addField);
+		utils.enterField(pin, aliasCsb, recordType, key, field, null, this.addRecord);
 	},
-	enterRecord: function (pin, aliasCsb, recordType, fields, currentField) {
+	enterRecord: function (pin, aliasCsb, recordType, key, fields, currentField) {
 		var record = {};
-		utils.enterRecord(pin, aliasCsb, recordType, fields, record, currentField, this.addRecord);
+		utils.enterRecord(pin, aliasCsb, recordType, key, fields, record, currentField, null, this.addRecord);
 	},
 	addField: function (pin, aliasCsb, recordType, key, field, valueInserted) {
 		var masterCsb = utils.readMasterCsb(pin);
@@ -61,7 +60,7 @@ $$.flow.describe("setRecord", {
 			console.log("A csb with the provided alias does not exist");
 		}
 	},
-	addRecord: function (pin, aliasCsb, recordType, record) {
+	addRecord: function (pin, aliasCsb, recordType, key, field, record) {
 		var masterCsb = utils.readMasterCsb(pin);
 		var indexCsb = utils.indexOfRecord(masterCsb.csbData, "Csb", aliasCsb);
 		if(indexCsb >= 0){
@@ -75,7 +74,6 @@ $$.flow.describe("setRecord", {
 			if(!csb["records"][recordType]){
 				csb["records"][recordType] = [];
 			}
-
 			csb["records"][recordType].push(record);
 			utils.writeCsbToFile(csbInMaster["Path"], csb, dseed);
 		}else{

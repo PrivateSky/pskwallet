@@ -10,9 +10,7 @@ $$.flow.describe("addBackup", {
 	},
 	backupMaster: function (pin, url) {
 		var masterCsb = utils.readMasterCsb(pin);
-		console.log(masterCsb);
 		masterCsb.csbData["backups"].push(url);
-		console.log(masterCsb.csbData);
 		var csbs = masterCsb.csbData["records"]["Csb"];
 		var encryptedMaster = crypto.encryptJson(masterCsb.csbData, masterCsb.dseed);
 		utils.writeCsbToFile(masterCsb.path, masterCsb.csbData, masterCsb.dseed);

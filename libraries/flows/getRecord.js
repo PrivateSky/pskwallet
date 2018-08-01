@@ -16,10 +16,12 @@ $$.flow.describe("getRecord", {
 			var dseed        = crypto.deriveSeed(Buffer.from(csbInMaster["Seed"], 'hex'));
 			var csb          = crypto.decryptJson(encryptedCsb, dseed);
 			var indexKey = utils.indexOfKey(csb["records"][recordType], "Title", key);
-			if(indexKey >= 0){
-				if(csb["records"][recordType][indexKey][field]) {
+			if(indexKey >= 0) {
+				if (!field) {
+					console.log(csb["records"][recordType][indexKey]);
+				} else if (csb["records"][recordType][indexKey][field]) {
 					console.log(csb["records"][recordType][indexKey][field]);
-				}else{
+				} else {
 					console.log("The record type", recordType, "does not have a field", field);
 				}
 			}else{
