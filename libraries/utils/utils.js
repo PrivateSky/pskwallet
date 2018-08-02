@@ -9,8 +9,8 @@ exports.defaultBackup = "http://localhost:8080";
 exports.defaultPin = "12345678";
 
 exports.paths = {
-	"auxFolder"			: path.join(process.cwd(), ".privateSky"),
-	"dseed"				: path.join(process.cwd(), ".privateSky", "dseed"),
+	"auxFolder"          : path.join(process.cwd(), ".privateSky"),
+	"dseed"             : path.join(process.cwd(), ".privateSky", "dseed"),
 	"recordStructures"  : path.join(__dirname, path.normalize("../utils/recordStructures"))
 };
 
@@ -147,9 +147,9 @@ exports.readMasterCsb = function(pin, seed){
 
 	return {
 		"dseed"  : dseed,
-		"csbData": csbData,
-		"path"	 : exports.getMasterPath(dseed),
-		"uid"	 : exports.getMasterUid(dseed)
+		"data": csbData,
+		"path"  : exports.getMasterPath(dseed),
+		"uid"   : exports.getMasterUid(dseed)
 	};
 };
 
@@ -157,7 +157,7 @@ exports.writeCsbToFile = function (csbPath, csbData, dseed) {
 	fs.writeFileSync(csbPath, crypto.encryptJson(csbData, dseed))
 };
 
-exports.enterRecord = function(pin, aliasCsb, recordType, key, fields, record, currentField, rl, callback){
+exports.enterRecord = function(pin, csb, recordType, key, fields, record, currentField, rl, callback){
 	if(!rl){
 		rl = readline.createInterface({
 			input: process.stdin,
@@ -166,54 +166,29 @@ exports.enterRecord = function(pin, aliasCsb, recordType, key, fields, record, c
 	}
 	if(currentField == fields.length){
 		rl.close();
-		callback(pin, aliasCsb, recordType, key, null, record);
+		callback(pin, csb, recordType, key, null, record);
 	}else {
 		var field = fields[currentField];
 		rl.question("Insert " + field["fieldName"] + ":", (answer) => {
-				if (currentField == 0) {
-					var masterCsb = exports.readMasterCsb(pin);
-					var csb = exports.findCsb(masterCsb.csbData, aliasCsb);
-					var csbData = exports.readCsb(csb["Path"], Buffer.from(csb["Dseed"], "hex"));
-					var index = exports.indexOfRecord(csbData, recordType, answer);
-					if (index >= 0) {
-						console.log("A record of type", recordType, "having the title", answer, "already exists.", "Insert another title");
-						exports.enterRecord(pin, aliasCsb, recordType, key, fields, record, 0, rl, callback);
+			if (currentField == 0) {
+				var masterCsb = exports.readMasterCsb(pin);
+				var csb = exports.findCsb(masterCsb.data, csb);
+				var csbData = exports.readCsb(csb["Path"], Buffer.from(csb["Dseed"], "hex"));
+				var index = exports.indexOfRecord(csbData, recordType, answer);
+				if (index >= 0) {
+					console.log("A record of type", recordType, "having the title", answer, "already exists.", "Insert another title");
+					exports.enterRecord(pin, csb, recordType, key, fields, record, 0, rl, callback);
 
-					} else {
-						record[field["fieldName"]] = answer;
-						exports.enterRecord(pin, aliasCsb, recordType, key, fields, record, currentField + 1, rl, callback);
-					}
-				}else{
+				} else {
 					record[field["fieldName"]] = answer;
-					exports.enterRecord(pin, aliasCsb, recordType, key, fields, record, currentField + 1, rl, callback);
+					exports.enterRecord(pin, csb, recordType, key, fields, record, currentField + 1, rl, callback);
 				}
+			}else{
+				record[field["fieldName"]] = answer;
+				exports.enterRecord(pin, csb, recordType, key, fields, record, currentField + 1, rl, callback);
+			}
 		});
 	}
-};
-
-exports.confirmAnswer = function (args, callback) {
-	var rl = args[args.length-2];
-	if(!rl){
-		rl = readline.createInterface({
-			input: process.stdin,
-			output: process.stdout
-		});
-		var necArgs = args.slice(0, 5);
-		if(Array.isArray(necArgs[necArgs.length - 1])){
-			necArgs = necArgs.slice(0,4);
-			console.log("The record with the provided key has the following value:");
-		}else{
-			console.log("The field provided has the following value:");
-		}
-		$$.flow.create("flows.getRecord").getRecord(...necArgs);
-	}
-	rl.question("Do you want to modify the specified entry? [y/n]", (answer) => {
-		if(answer == "y"){
-			callback(...args);
-		}else if(answer == "n"){
-
-		}
-	})
 };
 
 exports.enterField = function(pin, aliasCsb, recordType, key, field, valueInserted, rl, callback){
@@ -230,12 +205,34 @@ exports.enterField = function(pin, aliasCsb, recordType, key, field, valueInsert
 	});
 };
 
+
+exports.confirmOperation = function (args, prompt, callback) {
+	var rl = args[args.length - 1];
+	if (!rl) {
+		rl = readline.createInterface({
+			input: process.stdin,
+			output: process.stdout
+		});
+	}
+	rl.question(prompt + "[y/n]", (answer) => {
+		if (answer == "y") {
+			rl.close();
+			callback(...args);
+		} else if (answer != "n") {
+			console.log("Invalid option");
+			exports.confirmOperation(args, prompt, callback);
+		}
+	})
+	rl.close();
+};
+
+
 exports.getRecordStructure = function (recordType) {
 	return JSON.parse(fs.readFileSync(path.join(exports.paths.recordStructures,"csb_record_structure_" + recordType +".json")));
 };
 
 exports.readEncryptedCsb = function (pathCsb) {
-		return fs.readFileSync(pathCsb);
+	return fs.readFileSync(pathCsb);
 };
 
 exports.readCsb = function (pathCsb, dseed) {
@@ -272,7 +269,7 @@ exports.findCsb = function (csbData, aliasCsb) {
 				}
 			}
 		}
-		console.log("No csb with the provided alias exists");
+		return undefined;
 	}
 };
 
@@ -296,6 +293,23 @@ exports.indexOfKey = function(arr, property, key){
 	return -1;
 };
 
+exports.getCsb = function (pin, aliasCsb) {
+	var masterCsb = exports.readMasterCsb(pin);
+	var indexCsb = exports.indexOfRecord(masterCsb.data, "Csb", aliasCsb);
+	if(indexCsb >= 0) {
+		var csbInMaster = masterCsb.data["records"]["Csb"][indexCsb];
+		var encryptedCsb = exports.readEncryptedCsb(csbInMaster["Path"]);
+		var dseed = crypto.deriveSeed(Buffer.from(csbInMaster["Seed"], 'hex'));
+		var csbData = crypto.decryptJson(encryptedCsb, dseed);
+		return {
+			"data": csbData,
+			"dseed": dseed,
+			"path": csbInMaster["Path"]
+		};
+	}
+	return undefined;
+};
+
 exports.traverseUrl = function (pin, csbData, url, lastCsb) {
 	var splitUrl = url.split("/");
 	var record = splitUrl[0];
@@ -311,3 +325,4 @@ exports.traverseUrl = function (pin, csbData, url, lastCsb) {
 		}
 	}
 };
+

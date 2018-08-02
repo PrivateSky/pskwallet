@@ -8,10 +8,10 @@ $$.flow.describe("getRecord", {
 	},
 	getRecord: function (pin, aliasCsb, recordType, key, field) {
 		var masterCsb = utils.readMasterCsb(pin);
-		var indexCsb = utils.indexOfRecord(masterCsb.csbData, "Csb", aliasCsb);
+		var indexCsb = utils.indexOfRecord(masterCsb.data, "Csb", aliasCsb);
 		if(indexCsb >= 0)
 		{
-			var csbInMaster  = masterCsb.csbData["records"]["Csb"][indexCsb];
+			var csbInMaster  = masterCsb.data["records"]["Csb"][indexCsb];
 			var encryptedCsb = utils.readEncryptedCsb(csbInMaster["Path"]);
 			var dseed        = crypto.deriveSeed(Buffer.from(csbInMaster["Seed"], 'hex'));
 			var csb          = crypto.decryptJson(encryptedCsb, dseed);

@@ -14,8 +14,8 @@ $$.flow.describe("listCsbs", {
 	},
 	getMaster: function (pin) {
 		var masterCsb = utils.readMasterCsb(pin);
-		if(masterCsb.csbData["records"] && masterCsb.csbData["records"]["Csb"] && masterCsb.csbData["records"]["Csb"].length){
-			var csbs = masterCsb.csbData["records"]["Csb"];
+		if(masterCsb.data["records"] && masterCsb.data["records"]["Csb"] && masterCsb.data["records"]["Csb"].length){
+			var csbs = masterCsb.data["records"]["Csb"];
 			this.listCsbs(csbs, 0);
 		}else{
 			console.log("No csb exists");

@@ -8,20 +8,20 @@ $$.flow.describe("printCsb", {
 	},
 	printCsb: function (pin, aliasCsb) {
 		var masterCsb = utils.readMasterCsb(pin);
-		if(!masterCsb.csbData["records"]) {
+		if(!masterCsb.data["records"]) {
 			console.log("There aren't any csbs in the current folder");
 		}
 		
-		if(!masterCsb.csbData["records"]["Csb"]){
+		if(!masterCsb.data["records"]["Csb"]){
 			console.log("There aren't any csbs in the current folder");
 		}
-		if(utils.indexOfRecord(masterCsb.csbData, "Csb", aliasCsb) < 0){
+		if(utils.indexOfRecord(masterCsb.data, "Csb", aliasCsb) < 0){
 			console.log("A csb with the provided alias does not exist");
 		}
 
-		for(var c in masterCsb.csbData["records"]["Csb"]){
-			if(masterCsb.csbData["records"]["Csb"][c]["Alias"] == aliasCsb){
-				var csb = utils.readCsb(masterCsb.csbData["records"]["Csb"][c]["Path"], Buffer.from(masterCsb.csbData["records"]["Csb"][c]["Dseed"], "hex"));
+		for(var c in masterCsb.data["records"]["Csb"]){
+			if(masterCsb.data["records"]["Csb"][c]["Alias"] == aliasCsb){
+				var csb = utils.readCsb(masterCsb.data["records"]["Csb"][c]["Path"], Buffer.from(masterCsb.data["records"]["Csb"][c]["Dseed"], "hex"));
 				console.log(csb);
 				break;
 			}

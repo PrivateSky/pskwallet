@@ -9,76 +9,63 @@ $$.flow.describe("setRecord", {
 	readStructure: function (pin, aliasCsb, recordType, key, field) {
 		var recordStructure = utils.getRecordStructure(recordType);
 		var fields = recordStructure["fields"];
+		var csb = utils.getCsb(pin, aliasCsb);
+		if(!csb){
+			console.log("No csb with the alias", aliasCsb ,"exists");
+			return;
+		}
 		if(key){
-			if(!field){
-				this.enterRecord(pin, aliasCsb, recordType, key, fields, 0)
-			}
-			else {
-				var indexField = utils.indexOfKey(fields, "fieldName", field);
-				if (indexField < 0) {
-					console.log("The record type", recordType, "does not have a field", field);
-				} else {
-					this.enterField(pin, aliasCsb, recordType, key, field);
+			var indexRecord = utils.indexOfRecord(csb.data, recordType, key);
+			if(indexRecord >= 0){
+				var prompt = "Do you want to continue?";
+				if(!field){
+					console.log("You are about to overwrite the following record:");
+					$$.flow.create("flows.getRecord").getRecord(pin, aliasCsb, recordType, key);
+					utils.confirmOperation([pin, csb, recordType, key, fields, 0, null], prompt, this.enterRecord);
+				}
+				else {
+					var indexField = utils.indexOfKey(fields, "fieldName", field);
+					if (indexField < 0) {
+						console.log("The record type", recordType, "does not have a field", field);
+					} else {
+						console.log("You are about to overwrite the following field:");
+						$$.flow.create("flows.getRecord").getRecord(pin, aliasCsb, recordType, key, field);
+						utils.confirmOperation([pin, csb, recordType, key, field, null], prompt, this.enterField);
+					}
 				}
 			}
+			console.log("No record of type", recordType, "having the key", key, "could be found in", aliasCsb);
 		}else if(!key && !field) {
-			this.enterRecord(pin, aliasCsb, recordType, fields, 0);
+			this.enterRecord(pin, csb, recordType, key, fields, 0);
 		}
 	},
 	enterField: function (pin, aliasCsb, recordType, key, field) {
-		utils.enterField(pin, aliasCsb, recordType, key, field, null, this.addRecord);
+		utils.enterField(pin, aliasCsb, recordType, key, field, null, null, this.addRecord);
 	},
-	enterRecord: function (pin, aliasCsb, recordType, key, fields, currentField) {
+	enterRecord: function (pin, csb, recordType, key, fields, currentField) {
 		var record = {};
-		utils.enterRecord(pin, aliasCsb, recordType, key, fields, record, currentField, null, this.addRecord);
+		utils.enterRecord(pin, csb, recordType, key, fields, record, currentField, null, this.addRecord);
 	},
-	addField: function (pin, aliasCsb, recordType, key, field, valueInserted) {
-		var masterCsb = utils.readMasterCsb(pin);
-		var indexCsb = utils.indexOfRecord(masterCsb.csbData, "Csb", aliasCsb);
-		if(indexCsb >= 0){
-			var csbInMaster  = masterCsb.csbData["records"]["Csb"][indexCsb];
-			var encryptedCsb = utils.readEncryptedCsb(csbInMaster["Path"]);
-			var dseed        = crypto.deriveSeed(Buffer.from(csbInMaster["Seed"], 'hex'));
-			var csb          = crypto.decryptJson(encryptedCsb, dseed);
-			if (!csb["records"]) {
-				csb["records"] = {};
-			}
-			if(!csb["records"][recordType]) {
-				csb["records"][recordType] = [];
-			}
-			else{
-				var indexKey = utils.indexOfKey(csb["records"][recordType], "Title", key);
-				if(indexKey >= 0){
-					csb["records"][recordType][indexKey][field] = valueInserted;
-
+	addRecord: function (pin, csb, recordType, key, field, record) {
+		if (!csb.data["records"]) {
+			csb.data["records"] = {};
+		}
+		if (!csb.data["records"][recordType]) {
+			csb.data["records"][recordType] = [];
+			csb.data["records"][recordType].push(record);
+		} else {
+			if (key) {
+				var indexKey = utils.indexOfRecord(csb.data, recordType, key);
+				if(field){
+					csb.data["records"][recordType][indexKey][field] = record;
 				}else{
-					console.log("No record having the title", key, "exists in", aliasCsb);
+					csb.data["records"][recordType][indexKey] = record;
 				}
+			} else {
+				csb.data["records"][recordType].push(record);
 			}
-			utils.writeCsbToFile(csbInMaster["Path"], csb, dseed);
-		}else{
-			console.log("A csb with the provided alias does not exist");
 		}
-	},
-	addRecord: function (pin, aliasCsb, recordType, key, field, record) {
-		var masterCsb = utils.readMasterCsb(pin);
-		var indexCsb = utils.indexOfRecord(masterCsb.csbData, "Csb", aliasCsb);
-		if(indexCsb >= 0){
-			var csbInMaster  = masterCsb.csbData["records"]["Csb"][indexCsb];
-			var encryptedCsb = utils.readEncryptedCsb(csbInMaster["Path"]);
-			var dseed        = crypto.deriveSeed(Buffer.from(csbInMaster["Seed"], 'hex'));
-			var csb          = crypto.decryptJson(encryptedCsb, dseed);
-			if (!csb["records"]) {
-				csb["records"] = {};
-			}
-			if(!csb["records"][recordType]){
-				csb["records"][recordType] = [];
-			}
-			csb["records"][recordType].push(record);
-			utils.writeCsbToFile(csbInMaster["Path"], csb, dseed);
-		}else{
-			console.log("A csb with the provided alias does not exist");
-		}
+		utils.writeCsbToFile(csb.path, csb.data, csb.dseed);
 	}
 
 });

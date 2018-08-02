@@ -9,7 +9,7 @@ $$.flow.describe("setUrl", {
 	},
 	processUrl: function (pin, url) {
 		var masterCsb = utils.readMasterCsb(pin);
-		var args = utils.traverseUrl(pin, masterCsb.csbData, url);
+		var args = utils.traverseUrl(pin, masterCsb.data, url);
 		args.unshift(pin);
 		$$.flow.create("flows.setRecord").readStructure(...args);
 	}
