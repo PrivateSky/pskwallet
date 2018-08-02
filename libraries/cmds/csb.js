@@ -17,7 +17,7 @@ doSetKey = function (aliasCsb, recordType, key, field) {
 };
 
 doGetKey = function (aliasCsb, recordType, key, field) {
-	$$.flow.create("flows.getRecord").start(aliasCsb, recordType, key, field);
+	$$.flow.create("flows.getKey").start(aliasCsb, recordType, key, field);
 };
 
 doAddBackup = function (url) {

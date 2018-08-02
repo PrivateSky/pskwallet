@@ -31,6 +31,6 @@ $$.flow.describe("addCsb", {
 		utils.writeCsbToFile(masterCsb.path, masterCsb.data, masterCsb.dseed);
 		var dseed = crypto.deriveSeed(seed);
 		utils.writeCsbToFile(pathCsb, csbData, dseed);
-		console.log("Csb", aliasCsb, "has been successfully created");
+		console.log(aliasCsb, "has been successfully created");
 	}
 });

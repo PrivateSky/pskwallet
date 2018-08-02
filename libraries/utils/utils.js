@@ -170,23 +170,8 @@ exports.enterRecord = function(pin, csb, recordType, key, fields, record, curren
 	}else {
 		var field = fields[currentField];
 		rl.question("Insert " + field["fieldName"] + ":", (answer) => {
-			if (currentField == 0) {
-				var masterCsb = exports.readMasterCsb(pin);
-				var csb = exports.findCsb(masterCsb.data, csb);
-				var csbData = exports.readCsb(csb["Path"], Buffer.from(csb["Dseed"], "hex"));
-				var index = exports.indexOfRecord(csbData, recordType, answer);
-				if (index >= 0) {
-					console.log("A record of type", recordType, "having the title", answer, "already exists.", "Insert another title");
-					exports.enterRecord(pin, csb, recordType, key, fields, record, 0, rl, callback);
-
-				} else {
-					record[field["fieldName"]] = answer;
-					exports.enterRecord(pin, csb, recordType, key, fields, record, currentField + 1, rl, callback);
-				}
-			}else{
-				record[field["fieldName"]] = answer;
-				exports.enterRecord(pin, csb, recordType, key, fields, record, currentField + 1, rl, callback);
-			}
+			record[field["fieldName"]] = answer;
+			exports.enterRecord(pin, csb, recordType, key, fields, record, currentField + 1, rl, callback);
 		});
 	}
 };
@@ -273,6 +258,22 @@ exports.findCsb = function (csbData, aliasCsb) {
 	}
 };
 
+exports.getCsb = function (pin, aliasCsb) {
+	var masterCsb = exports.readMasterCsb(pin);
+	var csbInMaster = exports.findCsb(masterCsb.data, aliasCsb);
+	if(csbInMaster){
+		var encryptedCsb = exports.readEncryptedCsb(csbInMaster["Path"]);
+		var dseed = crypto.deriveSeed(Buffer.from(csbInMaster["Seed"], 'hex'));
+		var csbData = crypto.decryptJson(encryptedCsb, dseed);
+		return {
+			"data": csbData,
+			"dseed": dseed,
+			"path": csbInMaster["Path"]
+		};
+	}
+	return undefined;
+};
+
 exports.indexOfRecord = function(csbData, recordType, recordKey) {
 	if(csbData && csbData["records"] && csbData["records"][recordType]){
 		var recordsArray = csbData["records"][recordType];
@@ -293,22 +294,6 @@ exports.indexOfKey = function(arr, property, key){
 	return -1;
 };
 
-exports.getCsb = function (pin, aliasCsb) {
-	var masterCsb = exports.readMasterCsb(pin);
-	var indexCsb = exports.indexOfRecord(masterCsb.data, "Csb", aliasCsb);
-	if(indexCsb >= 0) {
-		var csbInMaster = masterCsb.data["records"]["Csb"][indexCsb];
-		var encryptedCsb = exports.readEncryptedCsb(csbInMaster["Path"]);
-		var dseed = crypto.deriveSeed(Buffer.from(csbInMaster["Seed"], 'hex'));
-		var csbData = crypto.decryptJson(encryptedCsb, dseed);
-		return {
-			"data": csbData,
-			"dseed": dseed,
-			"path": csbInMaster["Path"]
-		};
-	}
-	return undefined;
-};
 
 exports.traverseUrl = function (pin, csbData, url, lastCsb) {
 	var splitUrl = url.split("/");

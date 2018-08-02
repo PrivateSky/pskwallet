@@ -24,7 +24,7 @@ $$.flow.describe("listCsbs", {
 	listCsbs: function (csbs, currentCsb) {
 		if(currentCsb < csbs.length) {
 			var csb = csbs[currentCsb];
-			console.log(csb["Title"], "->", csb["Path"]);
+			console.log(csb["Title"]);
 			var csbData = utils.readCsb(csb["Path"], Buffer.from(csb["Dseed"], "hex"));
 			if (csbData["records"] && csbData["records"]["Csb"]) {
 				csbs = csbs.concat(csbData["records"]["Csb"]);

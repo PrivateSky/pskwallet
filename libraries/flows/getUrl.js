@@ -8,9 +8,8 @@ $$.flow.describe("getUrl", {
 		utils.requirePin(url, null, this.processUrl);
 	},
 	processUrl: function (pin, url) {
-		var masterCsb = utils.readMasterCsb(pin);
-		var args = utils.traverseUrl(pin, masterCsb.data, url);
+		var args = url.split("/");
 		args.unshift(pin);
-		$$.flow.create("flows.getRecord").getRecord(...args);
+		$$.flow.create("flows.getKey").getKey(...args);
 	}
 });

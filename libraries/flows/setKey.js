@@ -1,7 +1,6 @@
 var path = require("path");
 require(path.resolve(__dirname + "/../../../../engine/core"));
 const utils = require(path.resolve(__dirname + "/../utils/utils"));
-const crypto = $$.requireModule("pskcrypto");
 $$.flow.describe("setRecord", {
 	start: function (aliasCsb, recordType, key, field) {
 		utils.requirePin([aliasCsb, recordType, key, field], null, this.readStructure)
@@ -20,7 +19,7 @@ $$.flow.describe("setRecord", {
 				var prompt = "Do you want to continue?";
 				if(!field){
 					console.log("You are about to overwrite the following record:");
-					$$.flow.create("flows.getRecord").getRecord(pin, aliasCsb, recordType, key);
+					$$.flow.create("flows.getKey").getKey(pin, aliasCsb, recordType, key);
 					utils.confirmOperation([pin, csb, recordType, key, fields, 0, null], prompt, this.enterRecord);
 				}
 				else {
@@ -29,7 +28,7 @@ $$.flow.describe("setRecord", {
 						console.log("The record type", recordType, "does not have a field", field);
 					} else {
 						console.log("You are about to overwrite the following field:");
-						$$.flow.create("flows.getRecord").getRecord(pin, aliasCsb, recordType, key, field);
+						$$.flow.create("flows.getKey").getKey(pin, aliasCsb, recordType, key, field);
 						utils.confirmOperation([pin, csb, recordType, key, field, null], prompt, this.enterField);
 					}
 				}
