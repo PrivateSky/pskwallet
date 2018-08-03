@@ -28,7 +28,7 @@ $$.flow.describe("addBackup", {
 		if(currentCsb == csbs.length){
 			console.log("All csbs are backed up");
 		}else{
-			var encryptedCsb = fs.readFileSync(csbs[currentCsb]["Path"]);
+			var encryptedCsb = utils.readEncryptedCsb(csbs[currentCsb]["Path"]);
 			var csb = crypto.decryptJson(encryptedCsb, Buffer.from(csbs[currentCsb]["Dseed"], "hex"));
 			if(csb["records"] && csb["records"]["Csb"]){
 				csbs = csbs.concat(csb["records"]["Csb"]);

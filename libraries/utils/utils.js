@@ -200,10 +200,10 @@ exports.confirmOperation = function (args, prompt, callback) {
 		});
 	}
 	rl.question(prompt + "[y/n]", (answer) => {
-		if (answer == "y") {
+		if (answer === "y") {
 			rl.close();
 			callback(...args);
-		} else if (answer != "n") {
+		} else if (answer !== "n") {
 			console.log("Invalid option");
 			exports.confirmOperation(args, prompt, callback);
 		}else{
@@ -223,6 +223,9 @@ exports.readEncryptedCsb = function (pathCsb) {
 };
 
 exports.readCsb = function (pathCsb, dseed) {
+	if(typeof dseed === "string"){
+		console.log("Avem un string");
+	}
 	if(fs.existsSync(pathCsb)) {
 		var encryptedCsb = exports.readEncryptedCsb(pathCsb);
 		return crypto.decryptJson(encryptedCsb, dseed);
@@ -242,12 +245,12 @@ exports.getMasterUid = function (dseed){
 
 exports.findCsb = function (csbData, aliasCsb) {
 	var csbs = csbData["records"]["Csb"];
-	if(!csbs || csbs.length == 0) {
+	if(!csbs || csbs.length === 0) {
 		console.log("No csbs exist");
 	}else{
 		while(csbs.length > 0){
 			var csb = csbs.shift();
-			if(csb["Title"] == aliasCsb){
+			if(csb["Title"] === aliasCsb){
 				return csb;
 			}else{
 				var childCsb = exports.readCsb(csb["Path"], Buffer.from(csb["Dseed"], "hex"));
@@ -280,7 +283,7 @@ exports.indexOfRecord = function(csbData, recordType, recordKey) {
 	if(csbData && csbData["records"] && csbData["records"][recordType]){
 		var recordsArray = csbData["records"][recordType];
 		for(var c in recordsArray){
-			if(recordsArray[c]["Title"] == recordKey){
+			if(recordsArray[c]["Title"] === recordKey){
 				return c;
 			}
 		}
@@ -289,7 +292,7 @@ exports.indexOfRecord = function(csbData, recordType, recordKey) {
 };
 exports.indexOfKey = function(arr, property, key){
 	for(var i in arr){
-		if(arr[i][property] == key){
+		if(arr[i][property] === key){
 			return i;
 		}
 	}

@@ -44,8 +44,12 @@ doAddChild = function(aliasParentCsb, aliasChildCsb){
 	$$.flow.create("flows.addChild").start(aliasParentCsb, aliasChildCsb);
 };
 
-doListCsbs = function () {
-	$$.flow.create("flows.listCsbs").start();
+doListCsbs = function (aliasCsb) {
+	$$.flow.create("flows.listCsbs").start(aliasCsb);
+};
+
+doMoveCsb = function (aliasCsb, aliasCsbSource, aliasCsbDest) {
+	$$.flow.create("flows.moveCsb").start(aliasCsb, aliasCsbSource, aliasCsbDest);
 };
 addCommand("set", "pin", doSetPin, "\t\t\t\t |set the pin"); //seteaza la csb-ul master
 addCommand("create", "csb", doAddCSB, "<csbAlias> \t\t\t\t |create new CSB"); //creaza un nou CSB si il adaugi in csb-ul master
@@ -58,8 +62,8 @@ addCommand("restore", "csb", doRestore, "<aliasCsb>");
 addCommand("set", "url", doSetUrl, "<url>");
 addCommand("get", "url", doGetUrl, "<url>");
 addCommand("add", "child", doAddChild, "<aliasParentCsb> <aliasChildCsb>");
-addCommand("list", "csbs", doListCsbs);
-
+addCommand("list", "csbs", doListCsbs, "<aliasCsb>");
+addCommand("move", "csb", doMoveCsb, "<csbAlias> <sourceCsbAlias> <destCsbAlias>");
 
 // doAddCSB("newCsb");
 // doAddCSB("nouCsb");

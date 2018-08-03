@@ -5,17 +5,22 @@ const crypto = $$.requireModule("pskcrypto");
 var fs = require("fs");
 
 $$.flow.describe("listCsbs", {
-	start: function () {
+	start: function (aliasCsb) {
 		if(!utils.masterCsbExists()){
 			console.log("No csb exists");
 		}else{
-			utils.requirePin(null, null, this.getMaster);
+			utils.requirePin(aliasCsb, null, this.getCsb);
 		}
 	},
-	getMaster: function (pin) {
-		var masterCsb = utils.readMasterCsb(pin);
-		if(masterCsb.data["records"] && masterCsb.data["records"]["Csb"] && masterCsb.data["records"]["Csb"].length){
-			var csbs = masterCsb.data["records"]["Csb"];
+	getCsb: function (pin, aliasCsb) {
+		var csb;
+		if(!aliasCsb){
+			csb = utils.readMasterCsb(pin);
+		}else{
+			csb = utils.getCsb(pin, aliasCsb);
+		}
+		if(csb.data["records"] && csb.data["records"]["Csb"] && csb.data["records"]["Csb"].length){
+			var csbs = csb.data["records"]["Csb"];
 			this.listCsbs(csbs, 0);
 		}else{
 			console.log("No csb exists");
