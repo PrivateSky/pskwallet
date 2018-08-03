@@ -206,9 +206,11 @@ exports.confirmOperation = function (args, prompt, callback) {
 		} else if (answer != "n") {
 			console.log("Invalid option");
 			exports.confirmOperation(args, prompt, callback);
+		}else{
+			rl.close();
 		}
-	})
-	rl.close();
+	});
+
 };
 
 

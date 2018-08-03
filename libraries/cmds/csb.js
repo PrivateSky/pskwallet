@@ -13,7 +13,7 @@ doPrintCsb = function (aliasCsb) {
 };
 
 doSetKey = function (aliasCsb, recordType, key, field) {
-	$$.flow.create("flows.setRecord").start(aliasCsb, recordType, key, field);
+	$$.flow.create("flows.setKey").start(aliasCsb, recordType, key, field);
 };
 
 doGetKey = function (aliasCsb, recordType, key, field) {

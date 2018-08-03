@@ -10,7 +10,7 @@ $$.flow.describe("setUrl", {
 	processUrl: function (pin, url) {
 		var args = url.split("/");
 		args.unshift(pin);
-		$$.flow.create("flows.setRecord").readStructure(...args);
+		$$.flow.create("flows.setKey").readStructure(...args);
 	}
 
 });

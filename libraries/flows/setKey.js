@@ -1,7 +1,7 @@
 var path = require("path");
 require(path.resolve(__dirname + "/../../../../engine/core"));
 const utils = require(path.resolve(__dirname + "/../utils/utils"));
-$$.flow.describe("setRecord", {
+$$.flow.describe("setKey", {
 	start: function (aliasCsb, recordType, key, field) {
 		utils.requirePin([aliasCsb, recordType, key, field], null, this.readStructure)
 	},
@@ -32,8 +32,10 @@ $$.flow.describe("setRecord", {
 						utils.confirmOperation([pin, csb, recordType, key, field, null], prompt, this.enterField);
 					}
 				}
+			}else {
+				console.log("No record of type", recordType, "having the key", key, "could be found in", aliasCsb);
+				return;
 			}
-			console.log("No record of type", recordType, "having the key", key, "could be found in", aliasCsb);
 		}else if(!key && !field) {
 			this.enterRecord(pin, csb, recordType, key, fields, 0);
 		}
