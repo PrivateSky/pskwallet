@@ -51,6 +51,12 @@ doListCsbs = function (aliasCsb) {
 doMoveCsb = function (aliasCsb, aliasCsbSource, aliasCsbDest) {
 	$$.flow.create("flows.moveCsb").start(aliasCsb, aliasCsbSource, aliasCsbDest);
 };
+
+doDeleteCsb = function (aliasCsb) {
+	$$.flow.create("flows.deleteCsb").start(aliasCsb);
+};
+
+
 addCommand("set", "pin", doSetPin, "\t\t\t\t |set the pin"); //seteaza la csb-ul master
 addCommand("create", "csb", doAddCSB, "<csbAlias> \t\t\t\t |create new CSB"); //creaza un nou CSB si il adaugi in csb-ul master
 addCommand("print", "csb", doPrintCsb, "<aliasCsb>\t |print the csb");
@@ -64,7 +70,7 @@ addCommand("get", "url", doGetUrl, "<url>");
 addCommand("add", "child", doAddChild, "<aliasParentCsb> <aliasChildCsb>");
 addCommand("list", "csbs", doListCsbs, "<aliasCsb>");
 addCommand("move", "csb", doMoveCsb, "<csbAlias> <sourceCsbAlias> <destCsbAlias>");
-
+addCommand("delete", "csb", doDeleteCsb, "<aliasCsb>");
 // doAddCSB("newCsb");
 // doAddCSB("nouCsb");
 // doSetPin("123");

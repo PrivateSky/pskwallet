@@ -279,6 +279,22 @@ exports.getCsb = function (pin, aliasCsb) {
 	return undefined;
 };
 
+exports.deleteCsb = function (csb) {
+	console.log("Deleting csb", csb.path);
+	if(fs.existsSync(csb.path)){
+		fs.unlinkSync(csb.path)
+	}
+};
+
+exports.deleteMasterCsb = function (masterCsb) {
+	console.log("Deleting master");
+	fs.unlinkSync(masterCsb.path);
+	console.log("Deleting dseed");
+	fs.unlinkSync(exports.paths.dseed);
+	console.log("Deleting .privateSky folder");
+	fs.rmdirSync(exports.paths.auxFolder);
+};
+
 exports.indexOfRecord = function(csbData, recordType, recordKey) {
 	if(csbData && csbData["records"] && csbData["records"][recordType]){
 		var recordsArray = csbData["records"][recordType];
@@ -299,20 +315,4 @@ exports.indexOfKey = function(arr, property, key){
 	return -1;
 };
 
-
-exports.traverseUrl = function (pin, csbData, url, lastCsb) {
-	var splitUrl = url.split("/");
-	var record = splitUrl[0];
-	var index = exports.indexOfRecord(csbData,"Csb", record);
-	if(index < 0){
-		splitUrl.unshift(lastCsb);
-		return splitUrl;
-	}else {
-		if (csbData["records"]) {
-			var childCsbData = exports.readCsb(csbData["records"]["Csb"][index]["Path"], Buffer.from(csbData["records"]["Csb"][index]["Dseed"], "hex"));
-			lastCsb = splitUrl.shift();
-			return  exports.traverseUrl(pin, childCsbData, splitUrl.join("/"), lastCsb);
-		}
-	}
-};
 
