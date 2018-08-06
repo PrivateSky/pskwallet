@@ -44,23 +44,23 @@ $$.flow.describe("moveCsb", {
 			console.log(csbDest, "does not exist");
 			return;
 		}
-		var indexCsb = utils.indexOfRecord(csbSource.data, "Csb", aliasCsb);
+		var indexCsb = utils.indexOfRecord(csbSource.Data, "Csb", aliasCsb);
 		if(indexCsb < 0){
 			console.log(aliasCsbSource, "does not contain the csb", aliasCsb);
 			return;
 		}
-		var csb = csbSource.data["records"]["Csb"][indexCsb];
-		csbSource.data["records"]["Csb"].splice(indexCsb, 1);
-		if(!csbDest.data["records"]){
-			csbDest.data["records"] = {};
+		var csb = csbSource.Data["records"]["Csb"][indexCsb];
+		csbSource.Data["records"]["Csb"].splice(indexCsb, 1);
+		if(!csbDest.Data["records"]){
+			csbDest.Data["records"] = {};
 		}
-		if(!csbDest.data["records"]["Csb"]){
-			csbDest.data["records"]["Csb"] = [];
+		if(!csbDest.Data["records"]["Csb"]){
+			csbDest.Data["records"]["Csb"] = [];
 		}
-		csbDest.data["records"]["Csb"].push(csb);
+		csbDest.Data["records"]["Csb"].push(csb);
 
-		utils.writeCsbToFile(csbSource.path, csbSource.data, csbSource.dseed);
-		utils.writeCsbToFile(csbDest.path, csbDest.data, csbDest.dseed);
+		utils.writeCsbToFile(csbSource.Path, csbSource.Data, csbSource.Dseed);
+		utils.writeCsbToFile(csbDest.Path, csbDest.Data, csbDest.Dseed);
 
 		console.log(aliasCsb, "was moved from", aliasCsbSource, "to", aliasCsbDest);
 	}

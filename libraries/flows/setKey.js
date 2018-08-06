@@ -14,7 +14,7 @@ $$.flow.describe("setKey", {
 			return;
 		}
 		if(key){
-			var indexRecord = utils.indexOfRecord(csb.data, recordType, key);
+			var indexRecord = utils.indexOfRecord(csb.Data, recordType, key);
 			if(indexRecord >= 0){
 				var prompt = "Do you want to continue?";
 				if(!field){
@@ -48,25 +48,25 @@ $$.flow.describe("setKey", {
 		utils.enterRecord(pin, csb, recordType, key, fields, record, currentField, null, this.addRecord);
 	},
 	addRecord: function (pin, csb, recordType, key, field, record) {
-		if (!csb.data["records"]) {
-			csb.data["records"] = {};
+		if (!csb.Data["records"]) {
+			csb.Data["records"] = {};
 		}
-		if (!csb.data["records"][recordType]) {
-			csb.data["records"][recordType] = [];
-			csb.data["records"][recordType].push(record);
+		if (!csb.Data["records"][recordType]) {
+			csb.Data["records"][recordType] = [];
+			csb.Data["records"][recordType].push(record);
 		} else {
 			if (key) {
-				var indexKey = utils.indexOfRecord(csb.data, recordType, key);
+				var indexKey = utils.indexOfRecord(csb.Data, recordType, key);
 				if(field){
-					csb.data["records"][recordType][indexKey][field] = record;
+					csb.Data["records"][recordType][indexKey][field] = record;
 				}else{
-					csb.data["records"][recordType][indexKey] = record;
+					csb.Data["records"][recordType][indexKey] = record;
 				}
 			} else {
-				csb.data["records"][recordType].push(record);
+				csb.Data["records"][recordType].push(record);
 			}
 		}
-		utils.writeCsbToFile(csb.path, csb.data, csb.dseed);
+		utils.writeCsbToFile(csb.Path, csb.Data, csb.Dseed);
 	}
 
 });

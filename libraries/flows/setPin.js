@@ -19,8 +19,8 @@ $$.flow.describe("setPin", {
 		});
 	},
 	actualizePin: function (oldPin, newPin) {
-		var dseed = crypto.loadDseed(oldPin, utils.paths.dseed);
-		crypto.saveDSeed(dseed, newPin, utils.paths.dseed);
+		var dseed = crypto.loadDseed(oldPin, utils.Paths.Dseed);
+		crypto.saveDSeed(dseed, newPin, utils.Paths.Dseed);
 		console.log("The pin has been changed");
 	}
 });

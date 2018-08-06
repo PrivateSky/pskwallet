@@ -12,12 +12,12 @@ $$.flow.describe("getKey", {
 			console.log("No csb with the alias", aliasCsb, "exists");
 			return;
 		}
-		var indexKey = utils.indexOfKey(csb.data["records"][recordType], "Title", key);
+		var indexKey = utils.indexOfKey(csb.Data["records"][recordType], "Title", key);
 		if (indexKey >= 0) {
 			if (!field) {
-				console.log(csb.data["records"][recordType][indexKey]);
+				console.log(csb.Data["records"][recordType][indexKey]);
 			} else if (csb["records"][recordType][indexKey][field]) {
-				console.log(csb.data["records"][recordType][indexKey][field]);
+				console.log(csb.Data["records"][recordType][indexKey][field]);
 			} else {
 				console.log("The record type", recordType, "does not have a field", field);
 			}

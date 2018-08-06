@@ -10,10 +10,10 @@ $$.flow.describe("addBackup", {
 	},
 	backupMaster: function (pin, url) {
 		var masterCsb = utils.readMasterCsb(pin);
-		masterCsb.data["backups"].push(url);
-		var csbs = masterCsb.data["records"]["Csb"];
-		var encryptedMaster = crypto.encryptJson(masterCsb.data, masterCsb.dseed);
-		utils.writeCsbToFile(masterCsb.path, masterCsb.data, masterCsb.dseed);
+		masterCsb.Data["backups"].push(url);
+		var csbs = masterCsb.Data["records"]["Csb"];
+		var encryptedMaster = crypto.encryptJson(masterCsb.Data, masterCsb.Dseed);
+		utils.writeCsbToFile(masterCsb.Path, masterCsb.Data, masterCsb.Dseed);
 		var self = this;
 		$$.remote.doHttpPost(url+"/CSB/"+masterCsb.uid, encryptedMaster.toString("hex"), function (err) {
 			if(err){

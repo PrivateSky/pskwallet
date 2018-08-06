@@ -11,15 +11,15 @@ $$.flow.describe("addCsb", {
 		var seed      = crypto.generateSeed(utils.defaultBackup);
 		var masterCsb = utils.readMasterCsb(pin);
 		var pathCsb   = crypto.generateSafeUid(crypto.deriveSeed(seed));
-		if(utils.indexOfRecord(masterCsb.data, "Csb", aliasCsb) >= 0){
+		if(utils.indexOfRecord(masterCsb.Data, "Csb", aliasCsb) >= 0){
 			console.log("A csb with the provided alias already exists");
 			return;
 		}
-		if(!masterCsb.data["records"]) {
-			masterCsb.data["records"] = {};
+		if(!masterCsb.Data["records"]) {
+			masterCsb.Data["records"] = {};
 		}
-		if(!masterCsb.data["records"]["Csb"]){
-			masterCsb.data["records"]["Csb"] = []
+		if(!masterCsb.Data["records"]["Csb"]){
+			masterCsb.Data["records"]["Csb"] = []
 		}
 		var record = {
 			"Title": aliasCsb,
@@ -28,9 +28,9 @@ $$.flow.describe("addCsb", {
 			"Dseed": crypto.deriveSeed(seed).toString("hex")
 		};
 		console.log(record);
-		masterCsb.data["records"]["Csb"].push(record);
-		console.log(masterCsb.path);
-		utils.writeCsbToFile(masterCsb.path, masterCsb.data, masterCsb.dseed);
+		masterCsb.Data["records"]["Csb"].push(record);
+		console.log(masterCsb.Path);
+		utils.writeCsbToFile(masterCsb.Path, masterCsb.Data, masterCsb.Dseed);
 		var dseed = crypto.deriveSeed(seed);
 		utils.writeCsbToFile(pathCsb, csbData, dseed);
 		console.log(aliasCsb, "has been successfully created");

@@ -15,9 +15,9 @@ $$.flow.describe("restore", {
 	},
 	readMaster: function (seed, aliasCsb) {
 		var masterCsb = utils.readMasterCsb(null, seed);
-		var csbs 	  = this.__getCsbsToRestore(masterCsb.data, aliasCsb);
-		console.log(masterCsb.data["backups"]);
-		this.restoreCsbs(masterCsb.data["backups"][0], csbs, 0);
+		var csbs 	  = this.__getCsbsToRestore(masterCsb.Data, aliasCsb);
+		console.log(masterCsb.Data["backups"]);
+		this.restoreCsbs(masterCsb.Data["backups"][0], csbs, 0);
 	},
 	restoreMaster: function (seed, aliasCsb) {
 		var obj = JSON.parse(seed.toString());
@@ -31,10 +31,10 @@ $$.flow.describe("restore", {
 				var dseed = crypto.deriveSeed(seed);
 				var encryptedMaster = Buffer.from(res, 'hex');
 				fs.writeFileSync(utils.getMasterPath(dseed), encryptedMaster);
-				crypto.saveDSeed(dseed, utils.defaultPin, utils.paths.dseed);
+				crypto.saveDSeed(dseed, utils.defaultPin, utils.Paths.Dseed);
 				var masterCsb = crypto.decryptJson(encryptedMaster, dseed);
 				// console.log(masterCsb)
-				// fs.writeFileSync(utils.paths.recordStructures + "/test_csb_master.json", JSON.stringify(masterCsb,null, "\t"));
+				// fs.writeFileSync(utils.Paths.recordStructures + "/test_csb_master.json", JSON.stringify(masterCsb,null, "\t"));
 				var csbs = self.__getCsbsToRestore(masterCsb, aliasCsb);
 				self.restoreCsbs(url, csbs, 0);
 			}

@@ -19,8 +19,8 @@ $$.flow.describe("listCsbs", {
 		}else{
 			csb = utils.getCsb(pin, aliasCsb);
 		}
-		if(csb.data["records"] && csb.data["records"]["Csb"] && csb.data["records"]["Csb"].length){
-			var csbs = csb.data["records"]["Csb"];
+		if(csb.Data["records"] && csb.Data["records"]["Csb"] && csb.Data["records"]["Csb"].length){
+			var csbs = csb.Data["records"]["Csb"];
 			this.listCsbs(csbs, 0);
 		}else{
 			console.log("No csb exists");

@@ -8,9 +8,9 @@ exports.defaultBackup = "http://localhost:8080";
 
 exports.defaultPin = "12345678";
 
-exports.paths = {
+exports.Paths = {
 	"auxFolder"          : path.join(process.cwd(), ".privateSky"),
-	"dseed"             : path.join(process.cwd(), ".privateSky", "dseed"),
+	"Dseed"             : path.join(process.cwd(), ".privateSky", "Dseed"),
 	"recordStructures"  : path.join(__dirname, path.normalize("../utils/recordStructures"))
 };
 
@@ -83,8 +83,8 @@ exports.enterSeed = function (args, callback) {
 				args = [args];
 			}
 			var seed = Buffer.from(answer, "base64");
-			if (!fs.existsSync(exports.paths.auxFolder)) {
-				fs.mkdirSync(exports.paths.auxFolder);
+			if (!fs.existsSync(exports.Paths.auxFolder)) {
+				fs.mkdirSync(exports.Paths.auxFolder);
 				args.unshift(seed);
 				callback(...args);
 			} else {
@@ -109,7 +109,7 @@ exports.defaultCSB = function() {
 };
 
 exports.masterCsbExists = function () {
-	if(fs.existsSync(exports.paths.dseed)){
+	if(fs.existsSync(exports.Paths.Dseed)){
 		return true;
 	}else{
 		return false;
@@ -119,17 +119,17 @@ exports.masterCsbExists = function () {
 exports.createMasterCsb = function(pin, pathMaster) {
 	console.log("Creating master csb");
 	pin = pin || exports.defaultPin;
-	fs.mkdirSync(exports.paths.auxFolder);
+	fs.mkdirSync(exports.Paths.auxFolder);
 	var seed = crypto.generateSeed(exports.defaultBackup);
 	console.log("The following string represents the seed.Please save it.");
 	console.log(seed.toString("base64"));
 	var dseed = crypto.deriveSeed(seed);
 	pathMaster = pathMaster || exports.getMasterPath(dseed);
 	console.log("masterPath", pathMaster);
-	crypto.saveDSeed(dseed, pin, exports.paths.dseed);
+	crypto.saveDSeed(dseed, pin, exports.Paths.Dseed);
 	var masterCsb = exports.defaultCSB();
-	// exports.paths["masterCsb"] = path.join(exports.paths.auxFolder, exports.generateCsbId(seed, true));
-	// masterCsb["backups"].push(exports.paths.masterCsb);
+	// exports.Paths["masterCsb"] = path.join(exports.Paths.auxFolder, exports.generateCsbId(seed, true));
+	// masterCsb["backups"].push(exports.Paths.masterCsb);
 	fs.writeFileSync(pathMaster, crypto.encryptJson(masterCsb, dseed));
 	console.log("Master csb has been created");
 
@@ -140,16 +140,16 @@ exports.readMasterCsb = function(pin, seed){
 	if(seed){
 		var dseed = crypto.deriveSeed(seed);
 	}else {
-		var dseed = crypto.loadDseed(pin, exports.paths.dseed);
+		var dseed = crypto.loadDseed(pin, exports.Paths.Dseed);
 	}
 	var encryptedCSB = fs.readFileSync(exports.getMasterPath(dseed));
 	var csbData = crypto.decryptJson(encryptedCSB, dseed);
 
 	return {
-		"dseed"  : dseed,
-		"data": csbData,
-		"path"  : exports.getMasterPath(dseed),
-		"uid"   : exports.getMasterUid(dseed)
+		"Dseed"  : dseed,
+		"Data": csbData,
+		"Path"  : exports.getMasterPath(dseed),
+		"Uid"   : exports.getMasterUid(dseed)
 	};
 };
 
@@ -215,7 +215,7 @@ exports.confirmOperation = function (args, prompt, callback) {
 
 
 exports.getRecordStructure = function (recordType) {
-	return JSON.parse(fs.readFileSync(path.join(exports.paths.recordStructures,"csb_record_structure_" + recordType +".json")));
+	return JSON.parse(fs.readFileSync(path.join(exports.Paths.recordStructures,"csb_record_structure_" + recordType +".json")));
 };
 
 exports.readEncryptedCsb = function (pathCsb) {
@@ -236,11 +236,11 @@ exports.readCsb = function (pathCsb, dseed) {
 };
 
 exports.getMasterPath = function(dseed){
-	return path.join(exports.paths.auxFolder, crypto.generateSafeUid(dseed, exports.paths.auxFolder));
+	return path.join(exports.Paths.auxFolder, crypto.generateSafeUid(dseed, exports.Paths.auxFolder));
 };
 
 exports.getMasterUid = function (dseed){
-	return crypto.generateSafeUid(dseed, exports.paths.auxFolder)
+	return crypto.generateSafeUid(dseed, exports.Paths.auxFolder)
 };
 
 exports.findCsb = function (csbData, aliasCsb) {
@@ -265,34 +265,34 @@ exports.findCsb = function (csbData, aliasCsb) {
 
 exports.getCsb = function (pin, aliasCsb) {
 	var masterCsb = exports.readMasterCsb(pin);
-	var csbInMaster = exports.findCsb(masterCsb.data, aliasCsb);
+	var csbInMaster = exports.findCsb(masterCsb.Data, aliasCsb);
 	if(csbInMaster){
 		var encryptedCsb = exports.readEncryptedCsb(csbInMaster["Path"]);
 		var dseed = crypto.deriveSeed(Buffer.from(csbInMaster["Seed"], 'hex'));
 		var csbData = crypto.decryptJson(encryptedCsb, dseed);
 		return {
-			"data": csbData,
-			"dseed": dseed,
-			"path": csbInMaster["Path"]
+			"Data": csbData,
+			"Dseed": dseed,
+			"Path": csbInMaster["Path"]
 		};
 	}
 	return undefined;
 };
 
 exports.deleteCsb = function (csb) {
-	console.log("Deleting csb", csb.path);
-	if(fs.existsSync(csb.path)){
-		fs.unlinkSync(csb.path)
+	console.log("Deleting csb", csb.Path);
+	if(fs.existsSync(csb.Path)){
+		fs.unlinkSync(csb.Path)
 	}
 };
 
 exports.deleteMasterCsb = function (masterCsb) {
 	console.log("Deleting master");
-	fs.unlinkSync(masterCsb.path);
+	fs.unlinkSync(masterCsb.Path);
 	console.log("Deleting dseed");
-	fs.unlinkSync(exports.paths.dseed);
+	fs.unlinkSync(exports.Paths.Dseed);
 	console.log("Deleting .privateSky folder");
-	fs.rmdirSync(exports.paths.auxFolder);
+	fs.rmdirSync(exports.Paths.auxFolder);
 };
 
 exports.indexOfRecord = function(csbData, recordType, recordKey) {

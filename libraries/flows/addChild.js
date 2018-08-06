@@ -7,24 +7,24 @@ $$.flow.describe("addChild", {
 	},
 	absorbCsb: function (pin, aliasParentCsb, aliasChildCsb) {
 		var masterCsb = utils.readMasterCsb(pin);
-		if(!masterCsb.data["records"]) {
+		if(!masterCsb.Data["records"]) {
 			console.log("There aren't any csbs in the current folder");
 		}
 
-		if(!masterCsb.data["records"]["Csb"]){
+		if(!masterCsb.Data["records"]["Csb"]){
 			console.log("There aren't any csbs in the current folder");
 		}
-		var indexParentCsb = utils.indexOfRecord(masterCsb.data, "Csb", aliasParentCsb);
+		var indexParentCsb = utils.indexOfRecord(masterCsb.Data, "Csb", aliasParentCsb);
 		if( indexParentCsb < 0){
 			console.log(aliasParentCsb, "does not exist");
 			return;
 		}
-		var indexChildCsb = utils.indexOfRecord(masterCsb.data, "Csb", aliasChildCsb);
+		var indexChildCsb = utils.indexOfRecord(masterCsb.Data, "Csb", aliasChildCsb);
 		if(indexChildCsb < 0){
 			console.log(aliasChildCsb, "does not exist");
 			return;
 		}
-		var csbsInMaster = masterCsb.data["records"]["Csb"];
+		var csbsInMaster = masterCsb.Data["records"]["Csb"];
 
 		var parentCsb = utils.readCsb(csbsInMaster[indexParentCsb]["Path"], Buffer.from(csbsInMaster[indexParentCsb]["Dseed"], "hex"));
 
@@ -36,8 +36,8 @@ $$.flow.describe("addChild", {
 		}
 		parentCsb["records"]["Csb"].push(csbsInMaster[indexChildCsb]);
 		utils.writeCsbToFile(csbsInMaster[indexParentCsb]["Path"], parentCsb,  Buffer.from(csbsInMaster[indexParentCsb]["Dseed"], "hex"));
-		masterCsb.data["records"]["Csb"].splice(indexChildCsb, 1);
-		utils.writeCsbToFile(utils.getMasterPath(masterCsb.dseed), masterCsb.data, masterCsb.dseed);
+		masterCsb.Data["records"]["Csb"].splice(indexChildCsb, 1);
+		utils.writeCsbToFile(utils.getMasterPath(masterCsb.Dseed), masterCsb.Data, masterCsb.Dseed);
 		console.log(aliasChildCsb, "has been added as child in", aliasParentCsb);
 	}
 });

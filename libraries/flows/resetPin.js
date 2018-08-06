@@ -19,8 +19,8 @@ $$.flow.describe("resetPin", {
 	},
 	updateData: function (seed, pin) {
 		var masterCsb = utils.readMasterCsb(null, seed);
-		utils.writeCsbToFile(masterCsb.path, masterCsb.data, masterCsb.dseed);
-		crypto.saveDSeed(masterCsb.dseed, pin, utils.paths.dseed);
+		utils.writeCsbToFile(masterCsb.Path, masterCsb.Data, masterCsb.Dseed);
+		crypto.saveDSeed(masterCsb.Dseed, pin, utils.Paths.Dseed);
 		console.log("Pin has been changed");
 	}
 });

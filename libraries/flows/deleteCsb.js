@@ -20,38 +20,38 @@ $$.flow.describe("deleteCsb", {
 		}
 		prompt +="Do you want to continue?";
 
-		utils.confirmOperation([csb, null], prompt, this.deleteCsb);
+		utils.confirmOperation([pin, csb, null], prompt, this.deleteCsb);
 	},
-	deleteCsb: function (csb) {
+	deleteCsb: function (pin, csb) {
 
-		if(!csb.data || !csb.data["records"] || !csb.data["records"]["Csb"] || csb.data["records"]["Csb"].length === 0){
-			utils.deleteCsb(csb.path);
+		if(!csb.Data || !csb.Data["records"] || !csb.Data["records"]["Csb"] || csb.Data["records"]["Csb"].length === 0){
+			utils.deleteCsb(csb);
 			return;
 		}
-		console.log(csb.data["records"]["Csb"]);
-		while(csb.data["records"]["Csb"].length > 0){
-			var csbRecord = csb.data["records"]["Csb"].shift();
+		console.log(csb.Data["records"]["Csb"]);
+		while(csb.Data["records"]["Csb"].length > 0){
+			var csbRecord = csb.Data["records"]["Csb"].shift();
 			let childCsb = {
-				"data": utils.readCsb(csbRecord["Path"], Buffer.from(csbRecord["Dseed"], "hex")),
-				"path": csbRecord["Path"],
-				"dseed": Buffer.from(csbRecord["Dseed"], "hex")
+				"Data": utils.readCsb(csbRecord["Path"], Buffer.from(csbRecord["Dseed"], "hex")),
+				"Path": csbRecord["Path"],
+				"Dseed": Buffer.from(csbRecord["Dseed"], "hex")
 			};
-			if(csb.data["records"]["Csb"].length === 0) {
-				if (this.__isMaster(csb)) {
+			if(csb.Data["records"]["Csb"].length === 0) {
+				if (this.__isMaster(pin, csb)) {
 					utils.deleteMasterCsb(csb);
 				} else {
-					utils.deleteCsb(csb.path);
+					console.log("Is not master");
+					utils.deleteCsb(csb);
 				}
 			}
-			this.deleteCsb(childCsb);
+			this.deleteCsb(pin, childCsb);
 		}
 	},
-	__isMaster: function (csb) {
-		try{
-			utils.getMasterPath(csb.dseed);
-		}catch(e){
-			return false;
+	__isMaster: function (pin,csb) {
+		var master = utils.readMasterCsb(pin);
+		if(csb.Path === master.Path){
+			return true;
 		}
-		return true;
+		return false;
 	}
 });
