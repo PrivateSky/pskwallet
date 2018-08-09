@@ -5,15 +5,19 @@ const crypto = $$.requireModule("pskcrypto");
 const passReader = require(path.resolve(__dirname + "/../utils/passwordReader"));
 $$.flow.describe("resetPin", {
 	start: function () {
-		utils.enterSeed(this.enterPin);
+		var self = this;
+		utils.enterSeed(function (err, seed) {
+			self.enterPin(seed);
+		});
 	},
 	enterPin: function (seed) {
+		var self = this;
 		passReader.getPassword("Enter a new pin:", function(err, answer){
 			if(err){
 				console.log("You introduced an invalid character. Please try again.")
-				this.enterPin(seed);
+				self.enterPin(seed);
 			}else {
-				this.updateData(seed, answer);
+				self.updateData(seed, answer);
 			}
 		});
 	},

@@ -6,7 +6,10 @@ var fs = require("fs");
 const client = $$.requireModule('psk-http-client');
 $$.flow.describe("addBackup", {
 	start: function (url) {
-		utils.requirePin(url, null, this.backupMaster);
+		var self = this;
+		utils.requirePin(null, function (err, pin) {
+			self.backupMaster(pin, url);
+		});
 	},
 	backupMaster: function (pin, url) {
 		var masterCsb = utils.readMasterCsb(pin);
@@ -15,7 +18,7 @@ $$.flow.describe("addBackup", {
 		var encryptedMaster = crypto.encryptJson(masterCsb.Data, masterCsb.Dseed);
 		utils.writeCsbToFile(masterCsb.Path, masterCsb.Data, masterCsb.Dseed);
 		var self = this;
-		$$.remote.doHttpPost(url+"/CSB/"+masterCsb.uid, encryptedMaster.toString("hex"), function (err) {
+		$$.remote.doHttpPost(url+"/CSB/"+masterCsb.Uid, encryptedMaster.toString("hex"), function (err) {
 			if(err){
 				console.log("Failed to post master Csb on server");
 			}else{

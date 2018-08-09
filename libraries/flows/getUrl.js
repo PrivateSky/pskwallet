@@ -5,7 +5,10 @@ const crypto = $$.requireModule("pskcrypto");
 
 $$.flow.describe("getUrl", {
 	start: function (url) {// url = alias1/alias2/.../aliasn/recordType/key/field
-		utils.requirePin(url, null, this.processUrl);
+		var self = this;
+		utils.requirePin(null, function (err, pin) {
+			self.processUrl(pin, url);
+		});
 	},
 	processUrl: function (pin, url) {
 		var args = url.split("/");

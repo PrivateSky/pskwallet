@@ -18,8 +18,10 @@ $$.flow.describe("moveCsb", {
 			console.log("Source and destination are the same");
 			return;
 		}
-
-		utils.requirePin([aliasCsb, aliasCsbSource, aliasCsbDest], null, this.moveCsb)
+		var self = this;
+		utils.requirePin(null, function (err, pin) {
+			self.moveCsb(pin, aliasCsb, aliasCsbSource, aliasCsbDest);
+		})
 	},
 	moveCsb: function (pin, aliasCsb, aliasCsbSource, aliasCsbDest) {
 		var csbSource,

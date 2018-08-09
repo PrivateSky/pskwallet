@@ -34,10 +34,8 @@ var checkSeedIsValid = function (seed) {
 	return true;
 };
 
-var enterPin = function(args, prompt, noTries, callback){
-	if(!prompt){
-		prompt = "Insert pin:";
-	}
+var enterPin = function(prompt, noTries, callback){
+	prompt = prompt || "Insert pin:";
 	if(noTries == 0){
 		console.log("You have inserted an invalid pin 3 times");
 		console.log("Preparing to exit");
@@ -46,54 +44,40 @@ var enterPin = function(args, prompt, noTries, callback){
 			if(err) {
 				console.log("Pin is invalid");
 				console.log("Try again");
-				enterPin(args, prompt, noTries-1, callback);
+				enterPin(prompt, noTries-1, callback);
 			}else{
 				if (checkPinIsValid(pin)) {
-					if(!Array.isArray(args)){
-						args = [args];
-					}
-					args.unshift(pin);
-					callback(...args);
+					callback(null, pin);
 				} else {
 					console.log("Pin is invalid");
 					console.log("Try again");
-					enterPin(args, prompt, noTries-1, callback);
+					enterPin(prompt, noTries-1, callback);
 				}
 			}
 		});
 	}
 };
 
-exports.requirePin = function (args, prompt, callback) {
+exports.requirePin = function (prompt, callback) {
 	if(exports.masterCsbExists()){
-		enterPin(args, prompt, 3, callback);
+		enterPin(prompt, 3, callback);
 	}else{
 		exports.createMasterCsb();
-		if(!Array.isArray(args)){
-			args = [args];
-		}
-		args.unshift(null);
-		callback(...args);
+		callback();
 	}
 };
-exports.enterSeed = function (args, callback) {
+exports.enterSeed = function (callback) {
 	passReader.getPassword("Enter seed:", function (err, answer) {
 		if(!err) {
-			if(!Array.isArray(args)){
-				args = [args];
-			}
 			var seed = Buffer.from(answer, "base64");
 			if (!fs.existsSync(exports.Paths.auxFolder)) {
 				fs.mkdirSync(exports.Paths.auxFolder);
-				args.unshift(seed);
-				callback(...args);
+				callback(null, seed);
 			} else {
 				if (checkSeedIsValid(seed)) {
-					args.unshift(seed);
-					callback(...args);
+					callback(null, seed);
 				} else {
-					console.log("Seed is invalid. Goodbye!");
-					process.exit();
+					callback(new Error("Invalid seed"), null);
 				}
 			}
 		}
@@ -157,55 +141,49 @@ exports.writeCsbToFile = function (csbPath, csbData, dseed) {
 	fs.writeFileSync(csbPath, crypto.encryptJson(csbData, dseed))
 };
 
-exports.enterRecord = function(pin, csb, recordType, key, fields, record, currentField, rl, callback){
-	if(!rl){
-		rl = readline.createInterface({
-			input: process.stdin,
-			output: process.stdout
-		});
-	}
+exports.enterRecord = function(fields, currentField, record, rl, callback){
+	record = record || {};
+	rl = rl || readline.createInterface({
+		input: process.stdin,
+		output: process.stdout
+	});
 	if(currentField == fields.length){
 		rl.close();
-		callback(pin, csb, recordType, key, null, record);
+		callback(null, record);
 	}else {
 		var field = fields[currentField];
 		rl.question("Insert " + field["fieldName"] + ":", (answer) => {
 			record[field["fieldName"]] = answer;
-			exports.enterRecord(pin, csb, recordType, key, fields, record, currentField + 1, rl, callback);
+			exports.enterRecord(fields, currentField + 1, record, rl, callback);
 		});
 	}
 };
 
-exports.enterField = function(pin, aliasCsb, recordType, key, field, valueInserted, rl, callback){
-	if(!rl){
-		rl = readline.createInterface({
-			input: process.stdin,
-			output: process.stdout
-		});
-	}
+exports.enterField = function(field, rl, callback){
+	 rl = rl || readline.createInterface({
+		input: process.stdin,
+		output: process.stdout
+	});
+
 	rl.question("Insert " + field + ":", (answer) => {
-		valueInserted = answer;
 		rl.close();
-		callback(pin, aliasCsb, recordType, key, field, valueInserted);
+		callback(null, answer);
 	});
 };
 
 
-exports.confirmOperation = function (args, prompt, callback) {
-	var rl = args[args.length - 1];
-	if (!rl) {
-		rl = readline.createInterface({
-			input: process.stdin,
-			output: process.stdout
-		});
-	}
+exports.confirmOperation = function (prompt, rl, callback) {
+	rl = rl || readline.createInterface({
+		input: process.stdin,
+		output: process.stdout
+	});
 	rl.question(prompt + "[y/n]", (answer) => {
 		if (answer === "y") {
-			rl.close();
-			callback(...args);
+			// rl.close();
+			callback(null, rl);
 		} else if (answer !== "n") {
 			console.log("Invalid option");
-			exports.confirmOperation(args, prompt, callback);
+			exports.confirmOperation(prompt, rl, callback);
 		}else{
 			rl.close();
 		}
@@ -223,16 +201,12 @@ exports.readEncryptedCsb = function (pathCsb) {
 };
 
 exports.readCsb = function (pathCsb, dseed) {
-	if(typeof dseed === "string"){
-		console.log("Avem un string");
-	}
 	if(fs.existsSync(pathCsb)) {
 		var encryptedCsb = exports.readEncryptedCsb(pathCsb);
 		return crypto.decryptJson(encryptedCsb, dseed);
 	}else{
 		return;
 	}
-
 };
 
 exports.getMasterPath = function(dseed){
@@ -244,27 +218,30 @@ exports.getMasterUid = function (dseed){
 };
 
 exports.findCsb = function (csbData, aliasCsb) {
-	var csbs = csbData["records"]["Csb"];
-	if(!csbs || csbs.length === 0) {
-		console.log("No csbs exist");
-	}else{
-		while(csbs.length > 0){
-			var csb = csbs.shift();
-			if(csb["Title"] === aliasCsb){
-				return csb;
-			}else{
-				var childCsb = exports.readCsb(csb["Path"], Buffer.from(csb["Dseed"], "hex"));
-				if(childCsb && childCsb["records"] && childCsb["records"]["Csb"]){
-					csbs = csbs.concat(childCsb["records"]["Csb"]);
-				}
-			}
-		}
+	if(!csbData || !csbData["records"] || !csbData["records"]["Csb"] || csbData["records"]["Csb"].length === 0){
 		return undefined;
 	}
+	var csbs = csbData["records"]["Csb"];
+	while(csbs.length > 0){
+		var csb = csbs.shift();
+		if(csb["Title"] === aliasCsb){
+			return csb;
+		}else{
+			var childCsb = exports.readCsb(csb["Path"], Buffer.from(csb["Dseed"], "hex"));
+			if(childCsb && childCsb["records"] && childCsb["records"]["Csb"]){
+				csbs = csbs.concat(childCsb["records"]["Csb"]);
+			}
+		}
+	}
+	return undefined;
+
 };
 
 exports.getCsb = function (pin, aliasCsb) {
 	var masterCsb = exports.readMasterCsb(pin);
+	if(!masterCsb.Data || !masterCsb.Data["records"]){
+		return undefined;
+	}
 	var csbInMaster = exports.findCsb(masterCsb.Data, aliasCsb);
 	if(csbInMaster){
 		var encryptedCsb = exports.readEncryptedCsb(csbInMaster["Path"]);
@@ -316,3 +293,18 @@ exports.indexOfKey = function(arr, property, key){
 };
 
 
+exports.traverseUrl = function (pin, csbData, url, lastCsb) {
+	var splitUrl = url.split("/");
+	var record = splitUrl[0];
+	var index = exports.indexOfRecord(csbData,"Csb", record);
+	if(index < 0){
+		splitUrl.unshift(lastCsb);
+		return splitUrl;
+	}else {
+		if (csbData["records"]) {
+			var childCsbData = exports.readCsb(csbData["records"]["Csb"][index]["Path"], Buffer.from(csbData["records"]["Csb"][index]["Dseed"], "hex"));
+			lastCsb = splitUrl.shift();
+			return  exports.traverseUrl(pin, childCsbData, splitUrl.join("/"), lastCsb);
+		}
+	}
+};

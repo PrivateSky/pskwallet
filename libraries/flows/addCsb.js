@@ -4,7 +4,10 @@ const utils = require(path.resolve(__dirname + "/../utils/utils"));
 const crypto = $$.requireModule("pskcrypto");
 $$.flow.describe("addCsb", {
 	start: function (aliasCsb) {
-		utils.requirePin(aliasCsb, null, this.addCsb);
+		var self = this;
+		utils.requirePin(null, function (err, pin) {
+			self.addCsb(pin, aliasCsb);
+		});
 	},
 	addCsb: function (pin, aliasCsb) {
 		var csbData   = utils.defaultCSB();
@@ -27,7 +30,6 @@ $$.flow.describe("addCsb", {
 			"Seed" : seed.toString("hex"),
 			"Dseed": crypto.deriveSeed(seed).toString("hex")
 		};
-		console.log(record);
 		masterCsb.Data["records"]["Csb"].push(record);
 		console.log(masterCsb.Path);
 		utils.writeCsbToFile(masterCsb.Path, masterCsb.Data, masterCsb.Dseed);

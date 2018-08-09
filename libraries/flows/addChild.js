@@ -3,7 +3,10 @@ require(path.resolve(__dirname + "/../../../../engine/core"));
 const utils = require(path.resolve(__dirname + "/../utils/utils"));
 $$.flow.describe("addChild", {
 	start: function (aliasParentCsb, aliasChildCsb) {
-		utils.requirePin([aliasParentCsb, aliasChildCsb], null, this.absorbCsb);
+		var self = this;
+		utils.requirePin(null, function (err, pin) {
+			self.absorbCsb(pin, aliasParentCsb, aliasChildCsb);
+		});
 	},
 	absorbCsb: function (pin, aliasParentCsb, aliasChildCsb) {
 		var masterCsb = utils.readMasterCsb(pin);

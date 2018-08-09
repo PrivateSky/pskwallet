@@ -4,7 +4,10 @@ const utils = require(path.resolve(__dirname + "/../utils/utils"));
 const crypto = $$.requireModule("pskcrypto");
 $$.flow.describe("getKey", {
 	start: function (aliasCsb, recordType, key, field) {
-		utils.requirePin([aliasCsb, recordType, key, field], null, this.getKey);
+		var self = this;
+		utils.requirePin(null, function (err, pin) {
+			self.getKey(pin, aliasCsb, recordType, key, field);
+		});
 	},
 	getKey: function (pin, aliasCsb, recordType, key, field) {
 		var csb = utils.getCsb(pin, aliasCsb);

@@ -5,7 +5,10 @@ const passReader = require(path.resolve(__dirname + "/../utils/passwordReader"))
 const crypto = $$.requireModule("pskcrypto");
 $$.flow.describe("setPin", {
 	start: function () {
-		utils.requirePin(null, "Enter old pin:", this.enterNewPin);
+		var self = this;
+		utils.requirePin("Enter old pin:", function (err, oldPin) {
+			self.enterNewPin(oldPin);
+		});
 	},
 	enterNewPin: function (oldPin) {
 		var self = this;

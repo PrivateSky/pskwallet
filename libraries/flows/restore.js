@@ -7,10 +7,15 @@ $$.requireModule('psk-http-client');
 
 $$.flow.describe("restore", {
 	start: function (aliasCsb) {
+		var self = this;
 		if(utils.masterCsbExists()) {
-			utils.enterSeed(aliasCsb, this.readMaster);
+			utils.enterSeed(function (err, seed) {
+				self.readMaster(seed, aliasCsb);
+			});
 		}else{
-			utils.enterSeed(aliasCsb, this.restoreMaster);
+			utils.enterSeed(function (err, seed) {
+				self.restoreMaster(seed, aliasCsb);
+			});
 		}
 	},
 	readMaster: function (seed, aliasCsb) {

@@ -4,7 +4,10 @@ const utils = require(path.resolve(__dirname + "/../utils/utils"));
 
 $$.flow.describe("deleteCsb", {
 	start: function (aliasCsb) {
-		utils.requirePin(aliasCsb, null, this.getCsb);
+		var self = this;
+		utils.requirePin(null, function (err, pin) {
+			self.getCsb(pin, aliasCsb);
+		});
 	},
 	getCsb: function (pin, aliasCsb) {
 		var csb,
@@ -19,8 +22,10 @@ $$.flow.describe("deleteCsb", {
 
 		}
 		prompt +="Do you want to continue?";
-
-		utils.confirmOperation([pin, csb, null], prompt, this.deleteCsb);
+		var self = this;
+		utils.confirmOperation(prompt, null, function (err, rl) {
+			self.deleteCsb(pin, csb);
+		});
 	},
 	deleteCsb: function (pin, csb) {
 

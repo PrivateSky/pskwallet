@@ -3,7 +3,10 @@ require(path.resolve(__dirname + "/../../../../engine/core"));
 const utils = require(path.resolve(__dirname + "/../utils/utils"));
 $$.flow.describe("setKey", {
 	start: function (aliasCsb, recordType, key, field) {
-		utils.requirePin([aliasCsb, recordType, key, field], null, this.readStructure)
+		var self = this;
+		utils.requirePin(null, function (err, pin) {
+			self.readStructure(pin, aliasCsb, recordType, key, field);
+		})
 	},
 	readStructure: function (pin, aliasCsb, recordType, key, field) {
 		var recordStructure = utils.getRecordStructure(recordType);
@@ -13,6 +16,11 @@ $$.flow.describe("setKey", {
 			console.log("No csb with the alias", aliasCsb ,"exists");
 			return;
 		}
+		this.checkInputValidity(pin, aliasCsb, recordType, key, field, fields, csb);
+
+	},
+	checkInputValidity: function (pin, aliasCsb, recordType, key, field, fields, csb) {
+		var self = this;
 		if(key){
 			var indexRecord = utils.indexOfRecord(csb.Data, recordType, key);
 			if(indexRecord >= 0){
@@ -20,7 +28,11 @@ $$.flow.describe("setKey", {
 				if(!field){
 					console.log("You are about to overwrite the following record:");
 					$$.flow.create("flows.getKey").getKey(pin, aliasCsb, recordType, key);
-					utils.confirmOperation([pin, csb, recordType, key, fields, 0, null], prompt, this.enterRecord);
+					utils.confirmOperation(prompt, null, function(err, rl){
+						utils.enterRecord(fields, 0, null, rl, function (err, record) {
+							self.addRecord(pin, csb, recordType, key, field, record)
+						});
+					});
 				}
 				else {
 					var indexField = utils.indexOfKey(fields, "fieldName", field);
@@ -29,7 +41,11 @@ $$.flow.describe("setKey", {
 					} else {
 						console.log("You are about to overwrite the following field:");
 						$$.flow.create("flows.getKey").getKey(pin, aliasCsb, recordType, key, field);
-						utils.confirmOperation([pin, csb, recordType, key, field, null], prompt, this.enterField);
+						utils.confirmOperation(prompt, function(err, rl){
+							utils.enterField(field, rl, function(err, answer){
+								self.addRecord(pin, csb, recordType, key, field, answer);
+							})
+						});
 					}
 				}
 			}else {
@@ -37,15 +53,10 @@ $$.flow.describe("setKey", {
 				return;
 			}
 		}else if(!key && !field) {
-			this.enterRecord(pin, csb, recordType, key, fields, 0);
+			utils.enterRecord(fields, 0, null, null, function (err, record) {
+				self.addRecord(pin, csb, recordType, key, field, record);
+			});
 		}
-	},
-	enterField: function (pin, aliasCsb, recordType, key, field) {
-		utils.enterField(pin, aliasCsb, recordType, key, field, null, null, this.addRecord);
-	},
-	enterRecord: function (pin, csb, recordType, key, fields, currentField) {
-		var record = {};
-		utils.enterRecord(pin, csb, recordType, key, fields, record, currentField, null, this.addRecord);
 	},
 	addRecord: function (pin, csb, recordType, key, field, record) {
 		if (!csb.Data["records"]) {
