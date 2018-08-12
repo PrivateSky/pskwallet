@@ -1,46 +1,48 @@
 var path = require("path");
 require(path.resolve(__dirname + "/../../../../engine/core"));
 const utils = require(path.resolve(__dirname + "/../utils/utils"));
+const fs = require("fs");
+const crypto = $$.requireModule("pskcrypto");
 $$.flow.describe("addChild", {
-	start: function (aliasParentCsb, aliasChildCsb) {
+	start: function (parentUrl, childUrl) {
 		var self = this;
 		utils.requirePin(null, function (err, pin) {
-			self.absorbCsb(pin, aliasParentCsb, aliasChildCsb);
+			self.addArchive(pin, parentUrl, childUrl);
 		});
 	},
-	absorbCsb: function (pin, aliasParentCsb, aliasChildCsb) {
+	addArchive: function (pin, parentUrl, childUrl) {
+		childUrl = path.resolve(childUrl);
+		if(!fs.existsSync(childUrl)){
+			console.log(childUrl, "is invalid.");
+			return;
+		}
 		var masterCsb = utils.readMasterCsb(pin);
-		if(!masterCsb.Data["records"]) {
-			console.log("There aren't any csbs in the current folder");
-		}
-
-		if(!masterCsb.Data["records"]["Csb"]){
-			console.log("There aren't any csbs in the current folder");
-		}
-		var indexParentCsb = utils.indexOfRecord(masterCsb.Data, "Csb", aliasParentCsb);
-		if( indexParentCsb < 0){
-			console.log(aliasParentCsb, "does not exist");
+		var parentChildCsbs = utils.traverseUrl(pin, masterCsb.Data, parentUrl);
+		var parentCsbData = parentChildCsbs[0];
+		console.log(parentChildCsbs[0]);
+		var index = utils.indexOfRecord(parentCsbData, "Csb", parentChildCsbs[1]);
+		if(index < 0){
+			console.log("Csb", parentChildCsbs[1], "does not exist");
 			return;
 		}
-		var indexChildCsb = utils.indexOfRecord(masterCsb.Data, "Csb", aliasChildCsb);
-		if(indexChildCsb < 0){
-			console.log(aliasChildCsb, "does not exist");
-			return;
-		}
-		var csbsInMaster = masterCsb.Data["records"]["Csb"];
+		var csb = {
+		};
+		csb["Path"] = parentCsbData["records"]["Csb"][index].Path;
+		csb["Dseed"] = Buffer.from(parentCsbData["records"]["Csb"][index].Dseed, "hex");
+		csb["Data"] = utils.readCsb(csb.Path, csb.Dseed);
 
-		var parentCsb = utils.readCsb(csbsInMaster[indexParentCsb]["Path"], Buffer.from(csbsInMaster[indexParentCsb]["Dseed"], "hex"));
+		if(!csb.Data["records"]){
+			csb.Data["records"] = {};
+		}
+		if(!csb.Data["records"]["Adiacent"]){
+			csb.Data["records"]["Adiacent"] = [];
+			if(!fs.existsSync(utils.Paths.Adiacent)){
+				fs.mkdirSync(utils.Paths.Adiacent);
+			}
+		}
+		crypto.encryptStream(childUrl,path.join(utils.Paths.Adiacent, crypto.generateSafeUid(csb.Dseed, path.basename(childUrl))), csb.Dseed);
+		csb.Data["records"]["Adiacent"].push(crypto.generateSafeUid(csb.Dseed, path.basename(childUrl)));
+		utils.writeCsbToFile(csb.Path, csb.Data, csb.Dseed);
 
-		if(!parentCsb["records"]){
-			parentCsb["records"] = {};
-		}
-		if(!parentCsb["records"]["Csb"]){
-			parentCsb["records"]["Csb"] = [];
-		}
-		parentCsb["records"]["Csb"].push(csbsInMaster[indexChildCsb]);
-		utils.writeCsbToFile(csbsInMaster[indexParentCsb]["Path"], parentCsb,  Buffer.from(csbsInMaster[indexParentCsb]["Dseed"], "hex"));
-		masterCsb.Data["records"]["Csb"].splice(indexChildCsb, 1);
-		utils.writeCsbToFile(utils.getMasterPath(masterCsb.Dseed), masterCsb.Data, masterCsb.Dseed);
-		console.log(aliasChildCsb, "has been added as child in", aliasParentCsb);
 	}
 });

@@ -11,6 +11,7 @@ exports.defaultPin = "12345678";
 exports.Paths = {
 	"auxFolder"          : path.join(process.cwd(), ".privateSky"),
 	"Dseed"             : path.join(process.cwd(), ".privateSky", "Dseed"),
+	"Adiacent"          : path.join(process.cwd(), "Adiacent"),
 	"recordStructures"  : path.join(__dirname, path.normalize("../utils/recordStructures"))
 };
 
@@ -293,18 +294,20 @@ exports.indexOfKey = function(arr, property, key){
 };
 
 
-exports.traverseUrl = function (pin, csbData, url, lastCsb) {
+exports.traverseUrl = function (pin, csbData, url, lastCsb, parentCsbData ) {
 	var splitUrl = url.split("/");
 	var record = splitUrl[0];
 	var index = exports.indexOfRecord(csbData,"Csb", record);
 	if(index < 0){
 		splitUrl.unshift(lastCsb);
+		splitUrl.unshift(parentCsbData);
 		return splitUrl;
 	}else {
 		if (csbData["records"]) {
 			var childCsbData = exports.readCsb(csbData["records"]["Csb"][index]["Path"], Buffer.from(csbData["records"]["Csb"][index]["Dseed"], "hex"));
 			lastCsb = splitUrl.shift();
-			return  exports.traverseUrl(pin, childCsbData, splitUrl.join("/"), lastCsb);
+			parentCsbData = csbData;
+			return  exports.traverseUrl(pin, childCsbData, splitUrl.join("/"), lastCsb, parentCsbData);
 		}
 	}
 };

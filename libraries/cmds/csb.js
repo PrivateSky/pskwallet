@@ -40,8 +40,11 @@ doGetUrl = function (url) {
 	$$.flow.create("flows.getUrl").start(url);
 };
 
-doAddChild = function(aliasParentCsb, aliasChildCsb){
-	$$.flow.create("flows.addChild").start(aliasParentCsb, aliasChildCsb);
+doAddChild = function(parentUrl, childUrl){
+	$$.flow.create("flows.addChild").start(parentUrl, childUrl);
+};
+doExtractChild = function(parentUrl, childAlias){
+	$$.flow.create("flows.extractChild").start(parentUrl, childAlias);
 };
 
 doListCsbs = function (aliasCsb) {
@@ -67,7 +70,8 @@ addCommand("reset", "pin", doResetPin);
 addCommand("restore", "csb", doRestore, "<aliasCsb>");
 addCommand("set", "url", doSetUrl, "<url>");
 addCommand("get", "url", doGetUrl, "<url>");
-addCommand("add", "child", doAddChild, "<aliasParentCsb> <aliasChildCsb>");
+addCommand("add", "child", doAddChild, "<parentUrl> <childUrl>");
+addCommand("extract", "child", doExtractChild, "<parentUrl> <childAlias>");
 addCommand("list", "csbs", doListCsbs, "<aliasCsb>");
 addCommand("move", "csb", doMoveCsb, "<csbAlias> <sourceCsbAlias> <destCsbAlias>");
 addCommand("delete", "csb", doDeleteCsb, "<aliasCsb>");

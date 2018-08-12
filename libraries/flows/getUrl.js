@@ -12,6 +12,7 @@ $$.flow.describe("getUrl", {
 	},
 	processUrl: function (pin, url) {
 		var args = url.split("/");
+		args.shift();
 		args.unshift(pin);
 		$$.flow.create("flows.getKey").getKey(...args);
 	}
