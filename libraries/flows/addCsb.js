@@ -31,7 +31,6 @@ $$.flow.describe("addCsb", {
 			"Dseed": crypto.deriveSeed(seed).toString("hex")
 		};
 		masterCsb.Data["records"]["Csb"].push(record);
-		console.log(masterCsb.Path);
 		utils.writeCsbToFile(masterCsb.Path, masterCsb.Data, masterCsb.Dseed);
 		var dseed = crypto.deriveSeed(seed);
 		utils.writeCsbToFile(pathCsb, csbData, dseed);

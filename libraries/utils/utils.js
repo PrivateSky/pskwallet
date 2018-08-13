@@ -107,10 +107,13 @@ exports.createMasterCsb = function(pin, pathMaster) {
 	fs.mkdirSync(exports.Paths.auxFolder);
 	var seed = crypto.generateSeed(exports.defaultBackup);
 	console.log("The following string represents the seed.Please save it.");
+	console.log();
 	console.log(seed.toString("base64"));
+	console.log();
+	console.log("The default pin is:", exports.defaultPin);
+	console.log();
 	var dseed = crypto.deriveSeed(seed);
 	pathMaster = pathMaster || exports.getMasterPath(dseed);
-	console.log("masterPath", pathMaster);
 	crypto.saveDSeed(dseed, pin, exports.Paths.Dseed);
 	var masterCsb = exports.defaultCSB();
 	// exports.Paths["masterCsb"] = path.join(exports.Paths.auxFolder, exports.generateCsbId(seed, true));
