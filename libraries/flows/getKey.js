@@ -4,6 +4,10 @@ const utils = require(path.resolve(__dirname + "/../utils/utils"));
 const crypto = $$.requireModule("pskcrypto");
 $$.flow.describe("getKey", {
 	start: function (aliasCsb, recordType, key, field) {
+		if(!key){
+			console.log("A key should be provided");
+			return;
+		}
 		var self = this;
 		utils.requirePin(null, function (err, pin) {
 			self.getKey(pin, aliasCsb, recordType, key, field);
@@ -15,6 +19,7 @@ $$.flow.describe("getKey", {
 			console.log("No csb with the alias", aliasCsb, "exists");
 			return;
 		}
+
 		var indexKey = utils.indexOfKey(csb.Data["records"][recordType], "Title", key);
 		if (indexKey >= 0) {
 			if (!field) {

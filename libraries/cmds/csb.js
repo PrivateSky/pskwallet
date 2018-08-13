@@ -60,24 +60,19 @@ doDeleteCsb = function (aliasCsb) {
 };
 
 
-addCommand("set", "pin", doSetPin, "\t\t\t\t |set the pin"); //seteaza la csb-ul master
+addCommand("set", "pin", doSetPin,  "\t\t\t\t\t |change the pin"); //seteaza la csb-ul master
 addCommand("create", "csb", doAddCSB, "<csbAlias> \t\t\t\t |create new CSB"); //creaza un nou CSB si il adaugi in csb-ul master
 addCommand("print", "csb", doPrintCsb, "<aliasCsb>\t |print the csb");
-addCommand("set", "key", doSetKey, "<csbAlias> <recordType> <key> <field>\t\t |set the key " ); //seteaza o cheie intr-un csb
-addCommand("get", "key", doGetKey, "<csbAlias> <recordType> <key> <field>\t\t |get the key " ); //citeste o cheie intr-un csb
-addCommand("add", "backup", doAddBackup,"<url>");
-addCommand("reset", "pin", doResetPin);
-addCommand("restore", "csb", doRestore, "<aliasCsb>");
-addCommand("set", "url", doSetUrl, "<url>");
-addCommand("get", "url", doGetUrl, "<url>");
-addCommand("add", "child", doAddChild, "<parentUrl> <childUrl>");
-addCommand("extract", "child", doExtractChild, "<parentUrl> <childAlias>");
-addCommand("list", "csbs", doListCsbs, "<aliasCsb>");
-addCommand("move", "csb", doMoveCsb, "<csbAlias> <sourceCsbAlias> <destCsbAlias>");
-addCommand("delete", "csb", doDeleteCsb, "<aliasCsb>");
-// doAddCSB("newCsb");
-// doAddCSB("nouCsb");
-// doSetPin("123");
-// doKeySet("newCsb", "CreditCard");
-// doKeyGet("newCsb", "CreditCard");
-// doAddBackup("'http://localhost:8080");
+addCommand("set", "key", doSetKey, "<csbAlias> <recordType> <key> <field>   |set the key " ); //seteaza o cheie intr-un csb
+addCommand("get", "key", doGetKey, "<csbAlias> <recordType> <key> <field>   |get the key " ); //citeste o cheie intr-un csb
+addCommand("add", "backup", doAddBackup,"<url>\t\t\t\t |save all csbs at address <url>");
+addCommand("restore", "csb", doRestore, "<aliasCsb>\t\t\t\t |restore the csb <aliasCsb> from one of the addresses stored\n\t\t\t\t\t\t\t  in backup\n");
+addCommand("reset", "pin", doResetPin, "\t\t\t\t\t |enter the seed in order to set the pin to a new value");
+addCommand("set", "url", doSetUrl, "<url> \t\t\t\t\t |set/update the record/field pointed by the provided <url>");
+addCommand("get", "url", doGetUrl, "<url> \t\t\t\t\t |print the record/field indicated by te provided <url>");
+addCommand("add", "child", doAddChild, "<parentUrl> <childUrl> \t\t |add file/folder to the csb pointed by <parentUrl>");
+addCommand("extract", "child", doExtractChild, "<parentUrl> <childAlias> \t |decrypt file/folder having the alias <childAlias>, contained\n\t\t\t\t\t\t\t   by the csb pointed to by <parentUrl>\n");
+addCommand("list", "csbs", doListCsbs, "<aliasCsb> \t\t\t\t |show all child csbs in the csb <aliasCsb>; if <aliasCsb> \n\t\t\t\t\t\t\t  is not provided, the command will print all the csbs \n\t\t\t\t\t\t\t  in the current folder\n");
+addCommand("move", "csb", doMoveCsb, "<csbAlias> <srcAlias> <destAlias> \t |move the csb <csbAlias> from <srcAlias> to <destAlias>");
+// addCommand("delete", "csb", doDeleteCsb, "<aliasCsb>");
+//

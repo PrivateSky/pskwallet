@@ -77,7 +77,7 @@ $$.flow.describe("setKey", {
 				csb.Data["records"][recordType].push(record);
 			}
 		}
-		utils.writeCsbToFile(csb.Path, csb.Data, csb.Dseed);
+		utils.writeCsbToFile(csb.Path, csb.Data, Buffer.from(csb.Dseed, "hex"));
 	}
 
 });
