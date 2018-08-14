@@ -36,5 +36,7 @@ $$.flow.describe("extractChild", {
 			return;
 		}
 		crypto.decryptStream(path.join(utils.Paths.Adiacent, csb.Data["records"]["Adiacent"][indexAdiacent]), path.join(process.cwd(), childAlias), csb.Dseed);
+		csb.Data["records"]["Adiacent"].splice(indexAdiacent, 1);
+		utils.writeCsbToFile(csb.Path, csb.Data, csb.Dseed);
 	}
 });

@@ -34,15 +34,30 @@ $$.flow.describe("addChild", {
 		if(!csb.Data["records"]){
 			csb.Data["records"] = {};
 		}
+		var self = this;
 		if(!csb.Data["records"]["Adiacent"]){
 			csb.Data["records"]["Adiacent"] = [];
 			if(!fs.existsSync(utils.Paths.Adiacent)){
 				fs.mkdirSync(utils.Paths.Adiacent);
 			}
+		}else{
+			var indexAdiacent = csb.Data["records"]["Adiacent"].indexOf(crypto.generateSafeUid(csb.Dseed, path.basename(childUrl)));
+			if(indexAdiacent >= 0){
+				console.log("A file with the name", path.basename(childUrl), "already exists in the current csb");
+				var prompt = "Do you want to overwrite it ?";
+				utils.confirmOperation(prompt, null, function (err, rl) {
+					self.saveChildInCsb(childUrl, csb);
+				})
+			}else{
+				self.saveChildInCsb(childUrl, csb);
+			}
 		}
+
+
+	},
+	saveChildInCsb: function (childUrl, csb) {
 		crypto.encryptStream(childUrl,path.join(utils.Paths.Adiacent, crypto.generateSafeUid(csb.Dseed, path.basename(childUrl))), csb.Dseed);
 		csb.Data["records"]["Adiacent"].push(crypto.generateSafeUid(csb.Dseed, path.basename(childUrl)));
 		utils.writeCsbToFile(csb.Path, csb.Data, csb.Dseed);
-
 	}
 });
