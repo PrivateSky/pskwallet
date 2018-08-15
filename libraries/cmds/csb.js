@@ -5,7 +5,7 @@ doSetPin = function () {
 };
 
 doAddCSB = function (aliasCSB) {
-	$$.flow.create("flows.addCsb").start(aliasCSB);
+	$$.flow.create("flows.createCsb").start(aliasCSB);
 };
 
 doPrintCsb = function (aliasCsb) {

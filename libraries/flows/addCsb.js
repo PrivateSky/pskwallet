@@ -2,38 +2,30 @@ var path = require("path");
 require(path.resolve(__dirname + "/../../../../engine/core"));
 const utils = require(path.resolve(__dirname + "/../utils/utils"));
 const crypto = $$.requireModule("pskcrypto");
+var fs = require("fs");
+
 $$.flow.describe("addCsb", {
-	start: function (aliasCsb) {
+	start: function (parentUrl, aliasCsb) {
 		var self = this;
 		utils.requirePin(null, function (err, pin) {
-			self.addCsb(pin, aliasCsb);
+			self.addCsb(pin, parentUrl, aliasCsb);
 		});
 	},
-	addCsb: function (pin, aliasCsb) {
-		var csbData   = utils.defaultCSB();
-		var seed      = crypto.generateSeed(utils.defaultBackup);
-		var masterCsb = utils.readMasterCsb(pin);
-		var pathCsb   = crypto.generateSafeUid(crypto.deriveSeed(seed));
-		if(utils.indexOfRecord(masterCsb.Data, "Csb", aliasCsb) >= 0){
-			console.log("A csb with the provided alias already exists");
+	addCsb: function (pin, parentUrl, aliasCsb) {
+		if(!fs.existsSync(path.join(process.cwd(), aliasCsb))){
+			console.log('No csb having the alias', aliasCsb, "exists.");
 			return;
 		}
-		if(!masterCsb.Data["records"]) {
-			masterCsb.Data["records"] = {};
+		var masterCsb = utils.readMasterCsb(pin);
+		var parentChildCsbs = utils.traverseUrl(pin, masterCsb.Data, parentUrl);
+		var parentCsb = parentChildCsbs[0];
+		var childCsb = fs.readFileSync(path.join(process.cwd(), aliasCsb));
+		if(!parentCsb["records"]){
+			parentCsb["records"] = {};
 		}
-		if(!masterCsb.Data["records"]["Csb"]){
-			masterCsb.Data["records"]["Csb"] = []
+		if(!parentCsb.Data["records"]["Csb"]){
+			parentCsb.Data["records"]["Csb"] = [];
 		}
-		var record = {
-			"Title": aliasCsb,
-			"Path" : pathCsb,
-			"Seed" : seed.toString("hex"),
-			"Dseed": crypto.deriveSeed(seed).toString("hex")
-		};
-		masterCsb.Data["records"]["Csb"].push(record);
-		utils.writeCsbToFile(masterCsb.Path, masterCsb.Data, masterCsb.Dseed);
-		var dseed = crypto.deriveSeed(seed);
-		utils.writeCsbToFile(pathCsb, csbData, dseed);
-		console.log(aliasCsb, "has been successfully created");
+		parentCsb.Data["records"]
 	}
 });
