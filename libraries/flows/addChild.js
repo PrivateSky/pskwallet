@@ -5,6 +5,10 @@ const fs = require("fs");
 const crypto = $$.requireModule("pskcrypto");
 $$.flow.describe("addChild", {
 	start: function (parentUrl, childUrl) {
+		if(!childUrl){
+			console.log("Child url is required.");
+			return;
+		}
 		var self = this;
 		utils.requirePin(null, function (err, pin) {
 			self.addArchive(pin, parentUrl, childUrl);
@@ -40,18 +44,18 @@ $$.flow.describe("addChild", {
 			if(!fs.existsSync(utils.Paths.Adiacent)){
 				fs.mkdirSync(utils.Paths.Adiacent);
 			}
-		}else{
-			var indexAdiacent = csb.Data["records"]["Adiacent"].indexOf(crypto.generateSafeUid(csb.Dseed, path.basename(childUrl)));
-			if(indexAdiacent >= 0){
-				console.log("A file with the name", path.basename(childUrl), "already exists in the current csb");
-				var prompt = "Do you want to overwrite it ?";
-				utils.confirmOperation(prompt, null, function (err, rl) {
-					self.saveChildInCsb(childUrl, csb);
-				})
-			}else{
-				self.saveChildInCsb(childUrl, csb);
-			}
 		}
+		var indexAdiacent = csb.Data["records"]["Adiacent"].indexOf(crypto.generateSafeUid(csb.Dseed, path.basename(childUrl)));
+		if(indexAdiacent >= 0){
+			console.log("A file with the name", path.basename(childUrl), "already exists in the current csb");
+			var prompt = "Do you want to overwrite it ?";
+			utils.confirmOperation(prompt, null, function (err, rl) {
+				self.saveChildInCsb(childUrl, csb);
+			})
+		}else{
+			self.saveChildInCsb(childUrl, csb);
+		}
+
 
 
 	},
