@@ -22,7 +22,7 @@ $$.flow.describe("getUrl", {
 		var csb = {};
 		csb["Path"] = parentCsbData["records"]["Csb"][index].Path;
 		csb["Dseed"] = parentCsbData["records"]["Csb"][index].Dseed;
-		csb["Data"] = utils.readCsb(csb.Path, Buffer.from(csb.Dseed, "hex"));
+		csb["Data"] = utils.readCsb(csb.Path, csb.Dseed);
 		args.shift();
 		args.unshift(pin);
 		args.unshift(csb);

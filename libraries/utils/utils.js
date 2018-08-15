@@ -142,6 +142,9 @@ exports.readMasterCsb = function(pin, seed){
 };
 
 exports.writeCsbToFile = function (csbPath, csbData, dseed) {
+	if(typeof dseed === "string"){
+		dseed = Buffer.from(dseed, "hex");
+	}
 	fs.writeFileSync(csbPath, crypto.encryptJson(csbData, dseed))
 };
 
@@ -206,6 +209,9 @@ exports.readEncryptedCsb = function (pathCsb) {
 };
 
 exports.readCsb = function (pathCsb, dseed) {
+	if(typeof dseed === "string"){
+		dseed = Buffer.from(dseed, "hex");
+	}
 	if(fs.existsSync(pathCsb)) {
 		var encryptedCsb = exports.readEncryptedCsb(pathCsb);
 		return crypto.decryptJson(encryptedCsb, dseed);
@@ -215,6 +221,9 @@ exports.readCsb = function (pathCsb, dseed) {
 };
 
 exports.getMasterPath = function(dseed){
+	if(typeof dseed === "string"){
+		dseed = Buffer.from(dseed, "hex");
+	}
 	return path.join(exports.Paths.auxFolder, crypto.generateSafeUid(dseed, exports.Paths.auxFolder));
 };
 
@@ -298,20 +307,31 @@ exports.indexOfKey = function(arr, property, key){
 };
 
 
-exports.traverseUrl = function (pin, csbData, url, lastCsb, parentCsbData ) {
+exports.traverseUrl = function (pin, csbData, url, lastCsbAlias, parentCsbData ) {
 	var splitUrl = url.split("/");
 	var record = splitUrl[0];
 	var index = exports.indexOfRecord(csbData,"Csb", record);
 	if(index < 0){
-		splitUrl.unshift(lastCsb);
+		var indexCsb = exports.indexOfRecord(parentCsbData, "Csb", lastCsbAlias);
+		if(indexCsb < 0){
+			return undefined;
+		}
+		var csb = {
+			"Title": lastCsbAlias,
+			"Data": csbData,
+			"Dseed": parentCsbData["records"]["Csb"][indexCsb]["Dseed"],
+			"Path" : parentCsbData["records"]["Csb"][indexCsb]["Path"]
+		};
+		splitUrl.unshift(lastCsbAlias);
+		splitUrl.unshift(csb);
 		splitUrl.unshift(parentCsbData);
 		return splitUrl;
 	}else {
 		if (csbData["records"]) {
 			var childCsbData = exports.readCsb(csbData["records"]["Csb"][index]["Path"], Buffer.from(csbData["records"]["Csb"][index]["Dseed"], "hex"));
-			lastCsb = splitUrl.shift();
+			lastCsbAlias = splitUrl.shift();
 			parentCsbData = csbData;
-			return  exports.traverseUrl(pin, childCsbData, splitUrl.join("/"), lastCsb, parentCsbData);
+			return  exports.traverseUrl(pin, childCsbData, splitUrl.join("/"), lastCsbAlias, parentCsbData);
 		}
 	}
 };

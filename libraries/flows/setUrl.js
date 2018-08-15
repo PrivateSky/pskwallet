@@ -13,22 +13,17 @@ $$.flow.describe("setUrl", {
 	processUrl: function (pin, url) {
 		var masterCsb = utils.readMasterCsb(pin);
 		var args = utils.traverseUrl(pin, masterCsb.Data, url);
-		var parentCsbData = args[0];
-		var index = utils.indexOfRecord(parentCsbData, "Csb", args[1]);
-		if(index < 0){
-			console.log("Csb", args[1], "does not exist");
+		if(!args){
+			console.log("Invalid Url");
 			return;
 		}
-		var csb = {};
-		csb["Path"] = parentCsbData["records"]["Csb"][index].Path;
-		csb["Dseed"] = parentCsbData["records"]["Csb"][index].Dseed;
-		csb["Data"] = utils.readCsb(csb.Path, Buffer.from(csb.Dseed, "hex"));
+		console.log(args[0]);
 		args.shift();
 		args.unshift(pin);
-		args.unshift(csb);
+		console.log(args);
 		this.readStructure(...args);
 	},
-	readStructure: function (csb, pin, aliasCsb, recordType, key, field) {
+	readStructure: function (pin, csb, aliasCsb, recordType, key, field) {
 		var recordStructure = utils.getRecordStructure(recordType);
 		var fields = recordStructure["fields"];
 		$$.flow.create("flows.setKey").checkInputValidity(pin, aliasCsb, recordType, key, field, fields, csb);

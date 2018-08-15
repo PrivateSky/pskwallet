@@ -37,9 +37,9 @@ $$.flow.describe("deleteCsb", {
 		while(csb.Data["records"]["Csb"].length > 0){
 			var csbRecord = csb.Data["records"]["Csb"].shift();
 			let childCsb = {
-				"Data": utils.readCsb(csbRecord["Path"], Buffer.from(csbRecord["Dseed"], "hex")),
+				"Data": utils.readCsb(csbRecord["Path"], csbRecord["Dseed"]),
 				"Path": csbRecord["Path"],
-				"Dseed": Buffer.from(csbRecord["Dseed"], "hex")
+				"Dseed": csbRecord["Dseed"]
 			};
 			if(csb.Data["records"]["Csb"].length === 0) {
 				if (this.__isMaster(pin, csb)) {

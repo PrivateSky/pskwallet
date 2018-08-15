@@ -24,8 +24,8 @@ doAddBackup = function (url) {
 	$$.flow.create("flows.addBackup").start(url);
 };
 
-doResetPin = function(seed){
-	$$.flow.create("flows.resetPin").start(seed);
+doResetPin = function(){
+	$$.flow.create("flows.resetPin").start();
 };
 
 doRestore = function (aliasCsb) {
@@ -40,11 +40,16 @@ doGetUrl = function (url) {
 	$$.flow.create("flows.getUrl").start(url);
 };
 
-doAddChild = function(parentUrl, childUrl){
-	$$.flow.create("flows.addChild").start(parentUrl, childUrl);
+doAddFile = function(csbUrl, filePath){
+	$$.flow.create("flows.addFile").start(csbUrl, filePath);
 };
-doExtractChild = function(parentUrl, childAlias){
-	$$.flow.create("flows.extractChild").start(parentUrl, childAlias);
+
+doAddFolder = function(csbUrl, folderPath){
+	$$.flow.create("flows.addFile").start(csbUrl, folderPath);
+};
+
+doExtract = function(csbUrl, alias){
+	$$.flow.create("flows.extract").start(csbUrl, alias);
 };
 
 doListCsbs = function (aliasCsb) {
@@ -61,18 +66,19 @@ doDeleteCsb = function (aliasCsb) {
 
 
 addCommand("set", "pin", doSetPin,  "\t\t\t\t\t |change the pin"); //seteaza la csb-ul master
-addCommand("create", "csb", doAddCSB, "<csbAlias> \t\t\t\t |create new CSB"); //creaza un nou CSB si il adaugi in csb-ul master
-addCommand("print", "csb", doPrintCsb, "<aliasCsb>\t |print the csb");
-addCommand("set", "key", doSetKey, "<csbAlias> <recordType> <key> <field>   |set the key " ); //seteaza o cheie intr-un csb
-addCommand("get", "key", doGetKey, "<csbAlias> <recordType> <key> <field>   |get the key " ); //citeste o cheie intr-un csb
+addCommand("create", "csb", doAddCSB, "<aliasCsb> \t\t\t\t |create a new CSB having the alias <aliasCsb>"); //creaza un nou CSB si il adaugi in csb-ul master
+addCommand("print", "csb", doPrintCsb, "<aliasCsb>\t\t\t\t |print the CSB having the alias <aliasCsb>");
+addCommand("set", "key", doSetKey, "<aliasCsb> <recordType> <key> <field>   |set the key " ); //seteaza o cheie intr-un csb
+addCommand("get", "key", doGetKey, "<aliasCsb> <recordType> <key> <field>   |get the key " ); //citeste o cheie intr-un csb
 addCommand("add", "backup", doAddBackup,"<url>\t\t\t\t |save all csbs at address <url>");
 addCommand("restore", "csb", doRestore, "<aliasCsb>\t\t\t\t |restore the csb <aliasCsb> from one of the addresses stored\n\t\t\t\t\t\t\t  in backup\n");
 addCommand("reset", "pin", doResetPin, "\t\t\t\t\t |enter the seed in order to set the pin to a new value");
 addCommand("set", "url", doSetUrl, "<url> \t\t\t\t\t |set/update the record/field pointed by the provided <url>");
 addCommand("get", "url", doGetUrl, "<url> \t\t\t\t\t |print the record/field indicated by te provided <url>");
-addCommand("add", "child", doAddChild, "<parentUrl> <childUrl> \t\t |add file/folder to the csb pointed by <parentUrl>");
-addCommand("extract", "child", doExtractChild, "<parentUrl> <childAlias> \t |decrypt file/folder having the alias <childAlias>, contained\n\t\t\t\t\t\t\t   by the csb pointed to by <parentUrl>\n");
+addCommand("add", "file", doAddFile, "<csbUrl> <filePath> \t\t\t |add a file to the csb pointed by <csbUrl>");
+addCommand("add", "folder", doAddFile, "<csbUrl> <folderPath> \t\t |add a folder to the csb pointed by <csbUrl>");
+addCommand("extract", null, doExtract, "<csbUrl> <alias> \t\t\t |decrypt file/folder/csb having the alias <alias>, contained\n\t\t\t\t\t\t\t   by the csb pointed to by <csbUrl>\n");
 addCommand("list", "csbs", doListCsbs, "<aliasCsb> \t\t\t\t |show all child csbs in the csb <aliasCsb>; if <aliasCsb> \n\t\t\t\t\t\t\t  is not provided, the command will print all the csbs \n\t\t\t\t\t\t\t  in the current folder\n");
-addCommand("move", "csb", doMoveCsb, "<csbAlias> <srcAlias> <destAlias> \t |move the csb <csbAlias> from <srcAlias> to <destAlias>");
+addCommand("move", "csb", doMoveCsb, "<aliasCsb> <srcAlias> <destAlias> \t |move the csb <aliasCsb> from <srcAlias> to <destAlias>");
 // addCommand("delete", "csb", doDeleteCsb, "<aliasCsb>");
 //
