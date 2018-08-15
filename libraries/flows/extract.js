@@ -12,12 +12,17 @@ $$.flow.describe("extract", {
 	},
 	checkTypeOfAlias: function (pin, csbUrl, alias) {
 		var masterCsb = utils.readMasterCsb(pin);
-		var parentChildCsbs = utils.traverseUrl(pin, masterCsb.Data,csbUrl);
-		if(!parentChildCsbs){
-			console.log("Invalid url");
-			return;
+		var csb;
+		if(csbUrl === "master"){
+			csb = utils.readMasterCsb(pin);
+		}else {
+			var parentChildCsbs = utils.traverseUrl(pin, masterCsb.Data, csbUrl);
+			if (!parentChildCsbs) {
+				console.log("Invalid url");
+				return;
+			}
+			csb = parentChildCsbs[1];
 		}
-		var csb = parentChildCsbs[1];
 		var indexCsb = utils.indexOfRecord(csb.Data, "Csb", alias);
 		if(indexCsb >= 0){
 			this.extractCsb(csb, alias, indexCsb);
@@ -38,8 +43,8 @@ $$.flow.describe("extract", {
 	extractCsb: function (csb, alias, indexCsb) {
 		var childCsb = utils.readCsb(csb.Data["records"]["Csb"][indexCsb]["Path"], csb.Data["records"]["Csb"][indexCsb]["Dseed"]);
 		fs.writeFileSync(path.join(process.cwd(), alias), JSON.stringify(childCsb, null, "\t"));
-		fs.unlinkSync(csb.Data["records"]["Csb"][indexCsb]["Path"]);
-		csb.Data["records"]["Csb"].splice(indexCsb, 1);
+		// fs.unlinkSync(csb.Data["records"]["Csb"][indexCsb]["Path"]);
+		// csb.Data["records"]["Csb"].splice(indexCsb, 1);
 		utils.writeCsbToFile(csb.Path, csb.Data, csb.Dseed);
 	},
 	extractArchive: function (csb, alias, indexAdiacent) {
