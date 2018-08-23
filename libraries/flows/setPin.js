@@ -11,17 +11,19 @@ $$.flow.describe("setPin", {
 		});
 	},
 	enterNewPin: function (oldPin) {
+		oldPin = oldPin || utils.defaultPin;
 		var self = this;
 		passReader.getPassword("Insert new pin:", function(err, newPin){
 			if(err){
 				console.log("An invalid character was introduced. Try again:")
-				this.enterNewPin(oldPin);
+				self.enterNewPin(oldPin);
 			}else{
 				self.actualizePin(oldPin, newPin);
 			}
 		});
 	},
 	actualizePin: function (oldPin, newPin) {
+		oldPin = oldPin || utils.defaultPin;
 		var dseed = crypto.loadDseed(oldPin, utils.Paths.Dseed);
 		crypto.saveDSeed(dseed, newPin, utils.Paths.Dseed);
 		console.log("The pin has been changed");
