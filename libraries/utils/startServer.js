@@ -8,7 +8,7 @@ var startServer = function (port, folderPath ) {
 	var virtualMq = VirtualMQ.createVirtualMQ(port, folderPath);
 
 };
-startServer(8080,  tempFolder + "/CSB");
+startServer(8080,  path.join(tempFolder, "CSB"));
 
 
 

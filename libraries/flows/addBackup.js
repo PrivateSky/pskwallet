@@ -18,7 +18,7 @@ $$.flow.describe("addBackup", {
 		var encryptedMaster = crypto.encryptJson(masterCsb.Data, masterCsb.Dseed);
 		utils.writeCsbToFile(masterCsb.Path, masterCsb.Data, masterCsb.Dseed);
 		var self = this;
-		$$.remote.doHttpPost(url+"/CSB/"+masterCsb.Uid, encryptedMaster.toString("hex"), function (err) {
+		$$.remote.doHttpPost(path.join(url, "CSB", masterCsb.Uid), encryptedMaster.toString("hex"), function (err) {
 			if(err){
 				console.log("Failed to post master Csb on server");
 			}else{
@@ -36,7 +36,7 @@ $$.flow.describe("addBackup", {
 			if(csb["records"] && csb["records"]["Csb"]){
 				csbs = csbs.concat(csb["records"]["Csb"]);
 			}
-			$$.remote.doHttpPost(url + "/CSB/" + csbs[currentCsb]["Path"], encryptedCsb.toString("hex"), function(err){
+			$$.remote.doHttpPost(path.join(url, "CSB", csbs[currentCsb]["Path"]), encryptedCsb.toString("hex"), function(err){
 				if(err){
 					console.log("Failed to post csb", csbs[currentCsb]["Title"],"on server");
 					process.exit();

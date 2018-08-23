@@ -29,7 +29,7 @@ $$.flow.describe("restore", {
 		var url = obj.backup;
 		console.log(url);
 		var self = this;
-		$$.remote.doHttpGet(url + "/CSB/" + utils.getMasterUid(crypto.deriveSeed(seed)), function (err, res) {
+		$$.remote.doHttpGet(path.join(url,"CSB", utils.getMasterUid(crypto.deriveSeed(seed))), function (err, res) {
 			if(err){
 				throw err;
 			}else{
@@ -49,12 +49,12 @@ $$.flow.describe("restore", {
 		var self = this;
 		if(currentCsb == csbs.length){
 			if(csbs.length == 1){
-				console.log(csbs[0]["Alias"], "has been restored");
+				console.log(csbs[0]["Title"], "has been restored");
 			}else {
 				console.log("All csbs have been restored");
 			}
 			}else{
-			$$.remote.doHttpGet(url + "/CSB/" + csbs[currentCsb]["Path"], function(err, res){
+			$$.remote.doHttpGet(path.join(url, "CSB", csbs[currentCsb]["Path"]), function(err, res){
 				if(err){
 					throw err;
 				}else{
