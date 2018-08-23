@@ -13,23 +13,16 @@ $$.flow.describe("getUrl", {
 	processUrl: function (pin, url) {
 		var masterCsb = utils.readMasterCsb(pin);
 		var args = utils.traverseUrl(pin, masterCsb.Data, url);
-		var parentCsbData = args[0];
-		var index = utils.indexOfRecord(parentCsbData, "Csb", args[1]);
-		if(index < 0){
-			console.log("Csb", args[1], "does not exist");
+		if(!args){
+			console.log("Invalid Url");
 			return;
 		}
-		var csb = {};
-		csb["Path"] = parentCsbData["records"]["Csb"][index].Path;
-		csb["Dseed"] = parentCsbData["records"]["Csb"][index].Dseed;
-		csb["Data"] = utils.readCsb(csb.Path, csb.Dseed);
 		args.shift();
 		args.unshift(pin);
-		args.unshift(csb);
 		this.getRecord(...args);
 
 	},
-	getRecord: function (csb, pin, aliasCsb, recordType, key, field) {
+	getRecord: function (pin,csb, aliasCsb, recordType, key, field) {
 		var indexKey = utils.indexOfKey(csb.Data["records"][recordType], "Title", key);
 		if (indexKey >= 0) {
 			if (!field) {
