@@ -4,6 +4,7 @@ const fs = require("fs");
 const path = require("path");
 const readline = require("readline");
 const passReader = require("./passwordReader");
+
 exports.defaultBackup = "http://localhost:8080";
 
 exports.defaultPin = "12345678";
@@ -167,7 +168,7 @@ exports.enterRecord = function(fields, currentField, record, rl, callback){
 };
 
 exports.enterField = function(field, rl, callback){
-	 rl = rl || readline.createInterface({
+	rl = rl || readline.createInterface({
 		input: process.stdin,
 		output: process.stdout
 	});
@@ -307,23 +308,15 @@ exports.indexOfKey = function(arr, property, key){
 };
 
 
-exports.traverseUrl = function (pin, csbData, url, lastCsbAlias, parentCsbData ) {
-	var splitUrl = url.split("/");
+exports.getRecordOfType = function (pin, csbData, ) {
+
+};
+
+function traverseUrlRecursively(pin, csbData, splitUrl, lastCsbAlias, parentCsbData ) {
 	var record = splitUrl[0];
 	var index = exports.indexOfRecord(csbData,"Csb", record);
 	if(index < 0){
-		var indexCsb = exports.indexOfRecord(parentCsbData, "Csb", lastCsbAlias);
-		if(indexCsb < 0){
-			return undefined;
-		}
-		var csb = {
-			"Title": lastCsbAlias,
-			"Data": csbData,
-			"Dseed": parentCsbData["records"]["Csb"][indexCsb]["Dseed"],
-			"Path" : parentCsbData["records"]["Csb"][indexCsb]["Path"]
-		};
 		splitUrl.unshift(lastCsbAlias);
-		splitUrl.unshift(csb);
 		splitUrl.unshift(parentCsbData);
 		return splitUrl;
 	}else {
@@ -331,7 +324,13 @@ exports.traverseUrl = function (pin, csbData, url, lastCsbAlias, parentCsbData )
 			var childCsbData = exports.readCsb(csbData["records"]["Csb"][index]["Path"], Buffer.from(csbData["records"]["Csb"][index]["Dseed"], "hex"));
 			lastCsbAlias = splitUrl.shift();
 			parentCsbData = csbData;
-			return  exports.traverseUrl(pin, childCsbData, splitUrl.join("/"), lastCsbAlias, parentCsbData);
+			return  traverseUrlRecursively(pin, childCsbData, splitUrl, lastCsbAlias, parentCsbData);
 		}
 	}
+};
+
+exports.traverseUrl = function (pin, url ) {
+	var masterCsb = exports.readMasterCsb(pin);
+	var splitUrl = url.split("/");
+	return traverseUrlRecursively(pin, masterCsb.Data, splitUrl);
 };
