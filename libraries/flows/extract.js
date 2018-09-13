@@ -4,11 +4,41 @@ const utils = require(path.resolve(__dirname + "/../utils/utils"));
 const fs = require("fs");
 const crypto = $$.requireModule("pskcrypto");
 $$.flow.describe("extract", {
-	start: function (csbUrl, alias) {
+	start: function (url) {
 		var self = this;
 		utils.requirePin(null, function (err, pin) {
-			self.checkTypeOfAlias(pin, csbUrl, alias);
+			self.checkType(pin, url);
 		});
+	},
+	checkType: function (pin, url) {
+		var args = utils.traverseUrl(pin, url);
+		if(args.length > 2){
+			console.log("Invalid url");
+			return;
+		}
+		var parentCsb = args[0];
+		var alias = args[1];
+		if(!parentCsb || !parentCsb.Data || (!parentCsb.Data["records"]["Csb"] && !parentCsb.Data["records"]["Adiacent"])){
+			console.log("Invalid url");
+			return;
+		}
+		if(parentCsb.Data["records"]["Csb"].length === 0 && parentCsb.Data["records"]["Adiacent"].length === 0) {
+			console.log("Nothing to extract");
+			return;
+		}
+		var indexCsb = utils.indexOfRecord(parentCsb.Data, "Csb", alias);
+		console.log("index = ", indexCsb);
+		if(indexCsb < 0 ){
+			var indexAdiacent = utils.indexOfRecord(parentCsb.Data, "Adiacent", alias);
+			if(indexAdiacent >= 0){
+				this.extractArchive(parentCsb, alias, indexAdiacent);
+			}else{
+				console.log("Invalid url.");
+				return;
+			}
+		}else{
+			this.extractCsb(parentCsb, alias, indexCsb);
+		}
 	},
 	checkTypeOfAlias: function (pin, csbUrl, alias) {
 		var masterCsb = utils.readMasterCsb(pin);
@@ -41,6 +71,7 @@ $$.flow.describe("extract", {
 		}
 	},
 	extractCsb: function (csb, alias, indexCsb) {
+		console.log("Extract csb");
 		var childCsb = utils.readCsb(csb.Data["records"]["Csb"][indexCsb]["Path"], csb.Data["records"]["Csb"][indexCsb]["Dseed"]);
 		fs.writeFileSync(path.join(process.cwd(), alias), JSON.stringify(childCsb, null, "\t"));
 		// fs.unlinkSync(csb.Data["records"]["Csb"][indexCsb]["Path"]);

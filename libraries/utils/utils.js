@@ -312,19 +312,23 @@ exports.getRecordOfType = function (pin, csbData, ) {
 
 };
 
-function traverseUrlRecursively(pin, csbData, splitUrl, lastCsbAlias, parentCsbData ) {
+function traverseUrlRecursively(pin, csb, splitUrl, lastAlias, parentCsb ) {
 	var record = splitUrl[0];
-	var index = exports.indexOfRecord(csbData,"Csb", record);
+	var index = exports.indexOfRecord(csb.Data,"Csb", record);
 	if(index < 0){
-		splitUrl.unshift(lastCsbAlias);
-		splitUrl.unshift(parentCsbData);
+		splitUrl.unshift(lastAlias);
+		splitUrl.unshift(parentCsb);
 		return splitUrl;
 	}else {
-		if (csbData["records"]) {
-			var childCsbData = exports.readCsb(csbData["records"]["Csb"][index]["Path"], Buffer.from(csbData["records"]["Csb"][index]["Dseed"], "hex"));
-			lastCsbAlias = splitUrl.shift();
-			parentCsbData = csbData;
-			return  traverseUrlRecursively(pin, childCsbData, splitUrl, lastCsbAlias, parentCsbData);
+		if (csb.Data["records"]) {
+			var childCsb ={
+				"Dseed": Buffer.from(csb.Data["records"]["Csb"][index]["Dseed"], "hex"),
+				"Path" : csb.Data["records"]["Csb"][index]["Path"],
+				"Data" : exports.readCsb(csb.Data["records"]["Csb"][index]["Path"], Buffer.from(csb.Data["records"]["Csb"][index]["Dseed"], "hex"))
+			};
+			lastAlias = splitUrl.shift();
+			parentCsb = csb;
+			return traverseUrlRecursively(pin, childCsb, splitUrl, lastAlias, parentCsb);
 		}
 	}
 };
@@ -332,5 +336,5 @@ function traverseUrlRecursively(pin, csbData, splitUrl, lastCsbAlias, parentCsbD
 exports.traverseUrl = function (pin, url ) {
 	var masterCsb = exports.readMasterCsb(pin);
 	var splitUrl = url.split("/");
-	return traverseUrlRecursively(pin, masterCsb.Data, splitUrl);
+	return traverseUrlRecursively(pin, masterCsb, splitUrl);
 };

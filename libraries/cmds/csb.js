@@ -48,8 +48,8 @@ doAddFolder = function(csbUrl, folderPath){
 	$$.flow.create("flows.addFile").start(csbUrl, folderPath);
 };
 
-doExtract = function(csbUrl, alias){
-	$$.flow.create("flows.extract").start(csbUrl, alias);
+doExtract = function(url){
+	$$.flow.create("flows.extract").start(url);
 };
 
 doListCsbs = function (aliasCsb) {
