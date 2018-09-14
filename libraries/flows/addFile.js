@@ -4,57 +4,68 @@ const utils = require(path.resolve(__dirname + "/../utils/utils"));
 const fs = require("fs");
 const crypto = $$.requireModule("pskcrypto");
 $$.flow.describe("addFile", {
-	start: function (csbUrl, filePath) {
+	start: function (url, filePath) {
 		if(!filePath){
 			console.log("Child url is required.");
 			return;
 		}
 		var self = this;
 		utils.requirePin(null, function (err, pin) {
-			self.addArchive(pin, csbUrl, filePath);
+			self.addArchive(pin, url, filePath);
 		});
 	},
-	addArchive: function (pin, csbUrl, filePath) {
+	addArchive: function (pin, url, filePath) {
 		filePath = path.resolve(filePath);
 		if(!fs.existsSync(filePath)){
 			console.log(filePath, "is invalid.");
 			return;
 		}
-		var masterCsb = utils.readMasterCsb(pin);
-		var parentChildCsbs = utils.traverseUrl(pin, masterCsb.Data, csbUrl);
-		if(!parentChildCsbs){
+		var args = utils.traverseUrl(pin, url);
+		if(args.length !== 3){
 			console.log("Invalid url");
 			return;
 		}
-		var csb = parentChildCsbs[1];
-
-		if(!csb.Data["records"]){
-			csb.Data["records"] = {};
-		}
+		var csb = utils.getChildCsb(args[0], args[1]);
+		var alias = args[2];
 		var self = this;
+		console.log(args[1]);
+
 		if(!csb.Data["records"]["Adiacent"]){
 			csb.Data["records"]["Adiacent"] = [];
 			if(!fs.existsSync(utils.Paths.Adiacent)){
 				fs.mkdirSync(utils.Paths.Adiacent);
 			}
 		}
-		var indexAdiacent = csb.Data["records"]["Adiacent"].indexOf(crypto.generateSafeUid(csb.Dseed, path.basename(filePath)));
+		var indexAdiacent = utils.indexOfRecord(csb.Data, "Adiacent", alias);
+		// var indexAdiacent = csb.Data["records"]["Adiacent"].indexOf(crypto.generateSafeUid(csb.Dseed, path.basename(filePath)));
+		console.log("----------------------------------indexAdiacent", indexAdiacent);
 		if(indexAdiacent >= 0){
 			console.log("A file with the name", path.basename(filePath), "already exists in the current csb");
 			var prompt = "Do you want to overwrite it ?";
 			utils.confirmOperation(prompt, null, function (err, rl) {
-				self.saveChildInCsb(filePath, csb);
+				self.saveChildInCsb(filePath, csb, alias);
 			})
 		}else{
-			self.saveChildInCsb(filePath, csb);
+			self.saveChildInCsb(filePath, csb, alias);
 		}
 
 
 
 	},
-	saveChildInCsb: function (filePath, csb) {
-		crypto.encryptStream(filePath,path.join(utils.Paths.Adiacent, crypto.generateSafeUid(csb.Dseed, path.basename(filePath))), csb.Dseed);
-		csb.Data["records"]["Adiacent"].push(crypto.generateSafeUid(csb.Dseed, path.basename(filePath)));
+	saveChildInCsb: function (filePath, csb, alias) {
+		var seed = crypto.generateSeed(utils.defaultBackup);
+		var dseed = crypto.deriveSeed(seed);
+		var pth = crypto.generateSafeUid(dseed, path.basename(filePath));
+		var fileRecord = {
+			"Title": alias,
+			"Path" : pth,
+			"Seed" : seed.toString("hex"),
+			"Dseed": crypto.deriveSeed(seed).toString("hex")
+		};
+		crypto.encryptStream(filePath,path.join(utils.Paths.Adiacent, pth), dseed);
+		csb.Data["records"]["Adiacent"].push(fileRecord);
+		console.log("This is the csb");
+		console.log(csb.Data["records"]["Adiacent"]);
 		utils.writeCsbToFile(csb.Path, csb.Data, csb.Dseed);
 	}
 });

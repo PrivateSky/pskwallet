@@ -90,7 +90,8 @@ exports.defaultCSB = function() {
 	return {
 		"version": 1,
 		"protocolVersion": 1,
-		"backups": []
+		"backups": [],
+		"records": {}
 	};
 };
 
@@ -307,9 +308,18 @@ exports.indexOfKey = function(arr, property, key){
 	return -1;
 };
 
-
-exports.getRecordOfType = function (pin, csbData, ) {
-
+exports.getChildCsb = function (parentCsb, aliasChildCsb) {
+	var indexChild = exports.indexOfRecord(parentCsb.Data, "Csb", aliasChildCsb);
+	if(indexChild >= 0){
+		var childCsb = {
+			"Title": aliasChildCsb,
+			"Dseed": Buffer.from(parentCsb.Data["records"]["Csb"][indexChild]["Dseed"], "hex"),
+			"Path" : parentCsb.Data["records"]["Csb"][indexChild]["Path"],
+			"Data" : exports.readCsb(parentCsb.Data["records"]["Csb"][indexChild]["Path"], Buffer.from(parentCsb.Data["records"]["Csb"][indexChild]["Dseed"], "hex"))
+		};
+		return childCsb;
+	}
+	return undefined;
 };
 
 function traverseUrlRecursively(pin, csb, splitUrl, lastAlias, parentCsb ) {

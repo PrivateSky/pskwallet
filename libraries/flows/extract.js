@@ -12,12 +12,13 @@ $$.flow.describe("extract", {
 	},
 	checkType: function (pin, url) {
 		var args = utils.traverseUrl(pin, url);
-		if(args.length > 2){
+		if(args.length > 3 || args.length < 2){
 			console.log("Invalid url");
 			return;
 		}
+
 		var parentCsb = args[0];
-		var alias = args[1];
+		var aliasCsb = args[1];
 		if(!parentCsb || !parentCsb.Data || (!parentCsb.Data["records"]["Csb"] && !parentCsb.Data["records"]["Adiacent"])){
 			console.log("Invalid url");
 			return;
@@ -26,61 +27,36 @@ $$.flow.describe("extract", {
 			console.log("Nothing to extract");
 			return;
 		}
-		var indexCsb = utils.indexOfRecord(parentCsb.Data, "Csb", alias);
-		console.log("index = ", indexCsb);
-		if(indexCsb < 0 ){
-			var indexAdiacent = utils.indexOfRecord(parentCsb.Data, "Adiacent", alias);
-			if(indexAdiacent >= 0){
-				this.extractArchive(parentCsb, alias, indexAdiacent);
-			}else{
+
+		var csb = utils.getChildCsb(parentCsb, aliasCsb);
+		if(!csb){
+			console.log("invalid url");
+			return;
+		}
+		if(args.length === 3) {
+			var aliasFile = args[2];
+			var indexAdiacent = utils.indexOfRecord(csb.Data, "Adiacent", aliasFile);
+			if (indexAdiacent >= 0) {
+				this.extractArchive(csb, aliasFile, indexAdiacent);
+			} else {
 				console.log("Invalid url.");
 				return;
 			}
-		}else{
-			this.extractCsb(parentCsb, alias, indexCsb);
-		}
-	},
-	checkTypeOfAlias: function (pin, csbUrl, alias) {
-		var masterCsb = utils.readMasterCsb(pin);
-		var csb;
-		if(csbUrl === "master"){
-			csb = utils.readMasterCsb(pin);
 		}else {
-			var parentChildCsbs = utils.traverseUrl(pin, masterCsb.Data, csbUrl);
-			if (!parentChildCsbs) {
-				console.log("Invalid url");
-				return;
-			}
-			csb = parentChildCsbs[1];
-		}
-		var indexCsb = utils.indexOfRecord(csb.Data, "Csb", alias);
-		if(indexCsb >= 0){
-			this.extractCsb(csb, alias, indexCsb);
-		}else{
-			if(!csb.Data["records"] || !csb.Data["records"]["Adiacent"]){
-				console.log("Csb", csb["Title"], "does not contain any file.");
-				return;
-			}
-			var indexAdiacent = csb.Data["records"]["Adiacent"].indexOf(crypto.generateSafeUid(Buffer.from(csb.Dseed, "hex"), alias));
-			if(indexAdiacent < 0){
-				console.log("Csb", csb["Title"], "does not contain a file having the alias", alias);
-				return;
-			}else{
-				this.extractArchive(csb, alias, indexAdiacent)
-			}
+			this.extractCsb(csb);
 		}
 	},
-	extractCsb: function (csb, alias, indexCsb) {
+	extractCsb: function (csb) {
 		console.log("Extract csb");
-		var childCsb = utils.readCsb(csb.Data["records"]["Csb"][indexCsb]["Path"], csb.Data["records"]["Csb"][indexCsb]["Dseed"]);
-		fs.writeFileSync(path.join(process.cwd(), alias), JSON.stringify(childCsb, null, "\t"));
+		// var childCsb = utils.readCsb(csb.Data["records"]["Csb"][indexCsb]["Path"], csb.Data["records"]["Csb"][indexCsb]["Dseed"]);
+		fs.writeFileSync(path.join(process.cwd(), csb.Title), JSON.stringify(csb.Data, null, "\t"));
 		// fs.unlinkSync(csb.Data["records"]["Csb"][indexCsb]["Path"]);
 		// csb.Data["records"]["Csb"].splice(indexCsb, 1);
-		utils.writeCsbToFile(csb.Path, csb.Data, csb.Dseed);
+		// utils.writeCsbToFile(csb.Path, csb.Data, csb.Dseed);
 	},
-	extractArchive: function (csb, alias, indexAdiacent) {
-		crypto.decryptStream(path.join(utils.Paths.Adiacent, csb.Data["records"]["Adiacent"][indexAdiacent]), path.join(process.cwd(), alias), csb.Dseed);
-		csb.Data["records"]["Adiacent"].splice(indexAdiacent, 1);
-		utils.writeCsbToFile(csb.Path, csb.Data, csb.Dseed);
+	extractArchive: function (csb, aliasFile, indexAdiacent) {
+		crypto.decryptStream(path.join(utils.Paths.Adiacent, csb.Data["records"]["Adiacent"][indexAdiacent]["Path"]), process.cwd(), Buffer.from(csb.Data["records"]["Adiacent"][indexAdiacent]["Dseed"], "hex"));
+		// csb.Data["records"]["Adiacent"].splice(indexAdiacent, 1);
+		// utils.writeCsbToFile(csb.Path, csb.Data, csb.Dseed);
 	}
 });
