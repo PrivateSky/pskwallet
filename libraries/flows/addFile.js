@@ -43,16 +43,16 @@ $$.flow.describe("addFile", {
 			console.log("A file with the name", path.basename(filePath), "already exists in the current csb");
 			var prompt = "Do you want to overwrite it ?";
 			utils.confirmOperation(prompt, null, function (err, rl) {
-				self.saveChildInCsb(filePath, csb, alias);
+				self.saveChildInCsb(filePath, csb, alias, indexAdiacent);
 			})
 		}else{
-			self.saveChildInCsb(filePath, csb, alias);
+			self.saveChildInCsb(filePath, csb, alias, indexAdiacent);
 		}
 
 
 
 	},
-	saveChildInCsb: function (filePath, csb, alias) {
+	saveChildInCsb: function (filePath, csb, alias, indexAdiacent) {
 		var seed = crypto.generateSeed(utils.defaultBackup);
 		var dseed = crypto.deriveSeed(seed);
 		var pth = crypto.generateSafeUid(dseed, path.basename(filePath));
@@ -63,6 +63,9 @@ $$.flow.describe("addFile", {
 			"Dseed": crypto.deriveSeed(seed).toString("hex")
 		};
 		crypto.encryptStream(filePath,path.join(utils.Paths.Adiacent, pth), dseed);
+		if(indexAdiacent >= 0){
+			csb.Data["records"]["Adiacent"].splice(indexAdiacent, 1);
+		}
 		csb.Data["records"]["Adiacent"].push(fileRecord);
 		console.log("This is the csb");
 		console.log(csb.Data["records"]["Adiacent"]);

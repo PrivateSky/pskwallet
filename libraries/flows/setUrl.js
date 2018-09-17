@@ -11,16 +11,16 @@ $$.flow.describe("setUrl", {
 		});
 	},
 	processUrl: function (pin, url) {
-		var masterCsb = utils.readMasterCsb(pin);
-		var args = utils.traverseUrl(pin, masterCsb.Data, url);
-		// if(!args){
-		// 	console.log("Invalid Url");
-		// 	return;
-		// }
+		var args = utils.traverseUrl(pin, url);
+		console.log(args);
+		if(!args){
+			console.log("Invalid Url");
+			return;
+		}
 		// console.log(args[0]);
 		// args.shift();
-		// args.unshift(pin);
-		// console.log(args);
+		args.unshift(pin);
+		console.log(args);
 		this.readStructure(...args);
 	},
 	readStructure: function (pin, csb, aliasCsb, recordType, key, field) {

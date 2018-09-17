@@ -11,13 +11,14 @@ $$.flow.describe("getUrl", {
 		});
 	},
 	processUrl: function (pin, url) {
-		var masterCsb = utils.readMasterCsb(pin);
-		var args = utils.traverseUrl(pin, masterCsb.Data, url);
+		var args = utils.traverseUrl(pin, url);
 		if(!args){
 			console.log("Invalid Url");
 			return;
 		}
-		args.shift();
+		var parentCsb = args.shift();
+		var csb = utils.getChildCsb(parentCsb, args[0]);
+		args.unshift(csb);
 		args.unshift(pin);
 		this.getRecord(...args);
 
@@ -33,7 +34,7 @@ $$.flow.describe("getUrl", {
 				console.log("The record type", recordType, "does not have a field", field);
 			}
 		} else {
-			console.log("No record having the key", key, "exists in", aliasCsb);
+			console.log("No record having the key", key, "exists in", csb);
 		}
 	}
 });
