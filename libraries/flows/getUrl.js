@@ -17,24 +17,28 @@ $$.flow.describe("getUrl", {
 			return;
 		}
 		var parentCsb = args.shift();
-		var csb = utils.getChildCsb(parentCsb, args[0]);
+		var csb = utils.getChildCsb(parentCsb, args.shift());
 		args.unshift(csb);
 		args.unshift(pin);
-		this.getRecord(...args);
+		var record = this.__getRecord(...args);
+		if(record){
+			console.log(record);
+		}
+		return record;
 
 	},
-	getRecord: function (pin,csb, aliasCsb, recordType, key, field) {
+	__getRecord: function (pin, csb, recordType, key, field) {
 		var indexKey = utils.indexOfKey(csb.Data["records"][recordType], "Title", key);
 		if (indexKey >= 0) {
 			if (!field) {
-				console.log(csb.Data["records"][recordType][indexKey]);
+				return csb.Data["records"][recordType][indexKey];
 			} else if (csb["records"][recordType][indexKey][field]) {
-				console.log(csb.Data["records"][recordType][indexKey][field]);
+				return csb.Data["records"][recordType][indexKey][field];
 			} else {
-				console.log("The record type", recordType, "does not have a field", field);
+				return undefined;
 			}
 		} else {
-			console.log("No record having the key", key, "exists in", csb);
+			return undefined;
 		}
 	}
 });

@@ -60,6 +60,10 @@ doMoveCsb = function (aliasCsb, aliasCsbSource, aliasCsbDest) {
 	$$.flow.create("flows.moveCsb").start(aliasCsb, aliasCsbSource, aliasCsbDest);
 };
 
+doCopyUrl = function (sourceUrl, destUrl) {
+	$$.flow.create("flows.copyUrl").start(sourceUrl, destUrl);
+};
+
 doDeleteCsb = function (aliasCsb) {
 	$$.flow.create("flows.deleteCsb").start(aliasCsb);
 };
@@ -80,5 +84,6 @@ addCommand("add", "folder", doAddFile, "<csbUrl> <folderPath> \t\t |add a folder
 addCommand("extract", null, doExtract, "<csbUrl> <alias> \t\t\t |decrypt file/folder/csb having the alias <alias>, contained\n\t\t\t\t\t\t\t   by the csb pointed to by <csbUrl>\n");
 addCommand("list", "csbs", doListCsbs, "<aliasCsb> \t\t\t\t |show all child csbs in the csb <aliasCsb>; if <aliasCsb> \n\t\t\t\t\t\t\t  is not provided, the command will print all the csbs \n\t\t\t\t\t\t\t  in the current folder\n");
 addCommand("move", "csb", doMoveCsb, "<aliasCsb> <srcAlias> <destAlias> \t |move the csb <aliasCsb> from <srcAlias> to <destAlias>");
+addCommand("copy", "url", doCopyUrl, "<srcUrl> <destUrl> \t |move the csb <aliasCsb> from <srcAlias> to <destAlias>");
 // addCommand("delete", "csb", doDeleteCsb, "<aliasCsb>");
 //

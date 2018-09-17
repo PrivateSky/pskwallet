@@ -30,7 +30,7 @@ $$.flow.describe("setKey", {
 					$$.flow.create("flows.getKey").getKey(pin, aliasCsb, recordType, key);
 					utils.confirmOperation(prompt, null, function(err, rl){
 						utils.enterRecord(fields, 0, null, rl, function (err, record) {
-							self.addRecord(pin, csb, recordType, key, field, record)
+							self.addRecord(pin, record, csb, recordType, key, field)
 						});
 					});
 				}
@@ -43,7 +43,7 @@ $$.flow.describe("setKey", {
 						$$.flow.create("flows.getKey").getKey(pin, aliasCsb, recordType, key, field);
 						utils.confirmOperation(prompt, function(err, rl){
 							utils.enterField(field, rl, function(err, answer){
-								self.addRecord(pin, csb, recordType, key, field, answer);
+								self.addRecord(pin, answer, csb, recordType, key, field);
 							})
 						});
 					}
@@ -54,11 +54,11 @@ $$.flow.describe("setKey", {
 			}
 		}else if(!key && !field) {
 			utils.enterRecord(fields, 0, null, null, function (err, record) {
-				self.addRecord(pin, csb, recordType, key, field, record);
+				self.addRecord(pin, record, csb, recordType, key, field);
 			});
 		}
 	},
-	addRecord: function (pin, csb, recordType, key, field, record) {
+	addRecord: function (pin, record, csb, recordType, key, field) {
 		if (!csb.Data["records"]) {
 			csb.Data["records"] = {};
 		}
@@ -79,5 +79,4 @@ $$.flow.describe("setKey", {
 		}
 		utils.writeCsbToFile(csb.Path, csb.Data, csb.Dseed);
 	}
-
 });
