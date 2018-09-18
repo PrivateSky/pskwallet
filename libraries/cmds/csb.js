@@ -72,6 +72,10 @@ doDeleteUrl = function (url) {
 	$$.flow.create("flows.deleteUrl").start(url);
 };
 
+doMoveUrl = function (sourceUrl, destUrl) {
+	$$.flow.create("flows.moveUrl").start(sourceUrl, destUrl);
+};
+
 
 addCommand("set", "pin", doSetPin,  "\t\t\t\t\t |change the pin"); //seteaza la csb-ul master
 addCommand("create", "csb", doAddCSB, "<aliasCsb> \t\t\t\t |create a new CSB having the alias <aliasCsb>"); //creaza un nou CSB si il adaugi in csb-ul master
@@ -90,5 +94,6 @@ addCommand("list", "csbs", doListCsbs, "<aliasCsb> \t\t\t\t |show all child csbs
 addCommand("move", "csb", doMoveCsb, "<aliasCsb> <srcAlias> <destAlias> \t |move the csb <aliasCsb> from <srcAlias> to <destAlias>");
 addCommand("copy", "url", doCopyUrl, "<srcUrl> <destUrl> \t |move the csb <aliasCsb> from <srcAlias> to <destAlias>");
 addCommand("delete", "url", doDeleteUrl, "<url>");
+addCommand("move", "url", doMoveUrl, "<srcUrl> <destUrl>");
 // addCommand("delete", "csb", doDeleteCsb, "<aliasCsb>");
 //
