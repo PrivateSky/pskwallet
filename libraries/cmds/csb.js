@@ -68,6 +68,10 @@ doDeleteCsb = function (aliasCsb) {
 	$$.flow.create("flows.deleteCsb").start(aliasCsb);
 };
 
+doDeleteUrl = function (url) {
+	$$.flow.create("flows.deleteUrl").start(url);
+};
+
 
 addCommand("set", "pin", doSetPin,  "\t\t\t\t\t |change the pin"); //seteaza la csb-ul master
 addCommand("create", "csb", doAddCSB, "<aliasCsb> \t\t\t\t |create a new CSB having the alias <aliasCsb>"); //creaza un nou CSB si il adaugi in csb-ul master
@@ -85,5 +89,6 @@ addCommand("extract", null, doExtract, "<csbUrl> <alias> \t\t\t |decrypt file/fo
 addCommand("list", "csbs", doListCsbs, "<aliasCsb> \t\t\t\t |show all child csbs in the csb <aliasCsb>; if <aliasCsb> \n\t\t\t\t\t\t\t  is not provided, the command will print all the csbs \n\t\t\t\t\t\t\t  in the current folder\n");
 addCommand("move", "csb", doMoveCsb, "<aliasCsb> <srcAlias> <destAlias> \t |move the csb <aliasCsb> from <srcAlias> to <destAlias>");
 addCommand("copy", "url", doCopyUrl, "<srcUrl> <destUrl> \t |move the csb <aliasCsb> from <srcAlias> to <destAlias>");
+addCommand("delete", "url", doDeleteUrl, "<url>");
 // addCommand("delete", "csb", doDeleteCsb, "<aliasCsb>");
 //

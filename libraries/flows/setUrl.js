@@ -12,13 +12,15 @@ $$.flow.describe("setUrl", {
 	},
 	processUrl: function (pin, url) {
 		var args = utils.traverseUrl(pin, url);
-		console.log(args);
 		if(!args){
 			console.log("Invalid Url");
 			return;
 		}
+		var parentCsb = args.shift();
+		var csb = utils.getChildCsb(parentCsb, args[0]);
 		// console.log(args[0]);
 		// args.shift();
+		args.unshift(csb);
 		args.unshift(pin);
 		console.log(args);
 		this.readStructure(...args);
