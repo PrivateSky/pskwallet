@@ -1,5 +1,5 @@
 var path = require("path");
-require(path.resolve(__dirname + "/../../../../engine/core"));
+
 const utils = require(path.resolve(__dirname + "/../utils/utils"));
 
 $$.flow.describe("deleteCsb", {

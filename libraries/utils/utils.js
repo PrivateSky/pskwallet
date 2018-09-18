@@ -1,5 +1,5 @@
-require("../../../../engine/core");
-const crypto = $$.requireModule("pskcrypto");
+
+const crypto = require("pskcrypto");
 const fs = require("fs");
 const path = require("path");
 const readline = require("readline");

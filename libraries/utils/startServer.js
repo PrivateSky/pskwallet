@@ -1,7 +1,6 @@
 var path = require("path");
-require(path.resolve(__dirname + "../../../../../engine/core"));
 var fs = require("fs");
-const VirtualMQ        = $$.requireModule('virtualmq');
+const VirtualMQ        = require('virtualmq');
 const tempFolder = path.resolve('./tmp');
 
 var startServer = function (port, folderPath ) {

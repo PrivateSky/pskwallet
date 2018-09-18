@@ -1,7 +1,6 @@
 var path = require("path");
-require(path.resolve(__dirname + "/../../../../engine/core"));
 const utils = require(path.resolve(__dirname + "/../utils/utils"));
-const crypto = $$.requireModule("pskcrypto");
+const crypto = require("pskcrypto");
 const passReader = require(path.resolve(__dirname + "/../utils/passwordReader"));
 $$.flow.describe("resetPin", {
 	start: function () {

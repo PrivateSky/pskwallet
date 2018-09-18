@@ -1,9 +1,9 @@
 var path = require("path");
-require(path.resolve(__dirname + "/../../../../engine/core"));
+
 const utils = require(path.resolve(__dirname + "/../utils/utils"));
-const crypto = $$.requireModule("pskcrypto");
+const crypto = require("pskcrypto");
 var fs = require("fs");
-const client = $$.requireModule('psk-http-client');
+const client = require('psk-http-client');
 $$.flow.describe("addBackup", {
 	start: function (url) {
 		var self = this;

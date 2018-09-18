@@ -1,4 +1,4 @@
-$$.requireLibrary("flows");
+$$.loadLibrary("flows", require("../flows"));
 
 doSetPin = function () {
 	$$.flow.create("flows.setPin").start();

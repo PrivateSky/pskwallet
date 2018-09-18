@@ -1,8 +1,8 @@
 var path = require("path");
-require(path.resolve(__dirname + "/../../../../engine/core"));
+
 const utils = require(path.resolve(__dirname + "/../utils/utils"));
 const fs = require("fs");
-const crypto = $$.requireModule("pskcrypto");
+const crypto = require("pskcrypto");
 $$.flow.describe("extract", {
 	start: function (url) {
 		var self = this;
