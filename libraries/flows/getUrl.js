@@ -19,7 +19,6 @@ $$.flow.describe("getUrl", {
 		var parentCsb = args.shift();
 		var csb = utils.getChildCsb(parentCsb, args.shift());
 		args.unshift(csb);
-		args.unshift(pin);
 		var record = this.__getRecord(...args);
 		if(record){
 			console.log(record);
@@ -27,7 +26,7 @@ $$.flow.describe("getUrl", {
 		return record;
 
 	},
-	__getRecord: function (pin, csb, recordType, key, field) {
+	__getRecord: function (csb, recordType, key, field) {
 		var indexKey = utils.indexOfKey(csb.Data["records"][recordType], "Title", key);
 		if (indexKey >= 0) {
 			if (!field) {
