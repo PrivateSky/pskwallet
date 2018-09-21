@@ -14,7 +14,7 @@ $$.flow.describe("setPin", {
 		var self = this;
 		passReader.getPassword("Insert new pin:", function(err, newPin){
 			if(err){
-				console.log("An invalid character was introduced. Try again:")
+				$$.interact.say("An invalid character was introduced. Try again:")
 				self.enterNewPin(oldPin);
 			}else{
 				self.actualizePin(oldPin, newPin);
@@ -25,6 +25,6 @@ $$.flow.describe("setPin", {
 		oldPin = oldPin || utils.defaultPin;
 		var dseed = crypto.loadDseed(oldPin, utils.Paths.Dseed);
 		crypto.saveDSeed(dseed, newPin, utils.Paths.Dseed);
-		console.log("The pin has been changed");
+		$$.interact.say("The pin has been changed");
 	}
 });

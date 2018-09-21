@@ -13,7 +13,7 @@ $$.flow.describe("getUrl", {
 	processUrl: function (pin, url) {
 		var args = utils.traverseUrl(pin, url);
 		if(!args){
-			console.log("Invalid Url");
+			$$.interact.say("Invalid Url");
 			return;
 		}
 		var parentCsb = args.shift();
@@ -21,7 +21,7 @@ $$.flow.describe("getUrl", {
 		args.unshift(csb);
 		var record = this.__getRecord(...args);
 		if(record){
-			console.log(record);
+			$$.interact.say(record);
 		}
 		return record;
 

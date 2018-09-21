@@ -13,7 +13,7 @@ $$.flow.describe("resetPin", {
 		var self = this;
 		passReader.getPassword("Enter a new pin:", function(err, answer){
 			if(err){
-				console.log("You introduced an invalid character. Please try again.")
+				$$.interact.say("You introduced an invalid character. Please try again.")
 				self.enterPin(seed);
 			}else {
 				self.updateData(seed, answer);
@@ -24,6 +24,6 @@ $$.flow.describe("resetPin", {
 		var masterCsb = utils.readMasterCsb(null, seed);
 		utils.writeCsbToFile(masterCsb.Path, masterCsb.Data, masterCsb.Dseed);
 		crypto.saveDSeed(masterCsb.Dseed, pin, utils.Paths.Dseed);
-		console.log("Pin has been changed");
+		$$.interact.say("Pin has been changed");
 	}
 });

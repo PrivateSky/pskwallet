@@ -13,7 +13,7 @@ $$.flow.describe("addCsb", {
 	},
 	addCsb: function (pin, parentUrl, aliasCsb) {
 		if(!fs.existsSync(path.join(process.cwd(), aliasCsb))){
-			console.log('No csb having the alias', aliasCsb, "exists.");
+			$$.interact.say('No csb having the alias', aliasCsb, "exists.");
 			return;
 		}
 		var masterCsb = utils.readMasterCsb(pin);

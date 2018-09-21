@@ -13,7 +13,7 @@ $$.flow.describe("setUrl", {
 	processUrl: function (pin, url) {
 		var args = utils.traverseUrl(pin, url);
 		if(!args){
-			console.log("Invalid Url");
+			$$.interact.say("Invalid Url");
 			return;
 		}
 		var parentCsb = args.shift();
@@ -33,8 +33,8 @@ $$.flow.describe("setUrl", {
 			if(indexRecord >= 0){
 				var prompt = "Do you want to continue?";
 				if(!field){
-					console.log("You are about to overwrite the following record:");
-					console.log($$.flow.create("flows.getUrl").__getRecord(csb, recordType, key));
+					$$.interact.say("You are about to overwrite the following record:");
+					$$.interact.say($$.flow.create("flows.getUrl").__getRecord(csb, recordType, key));
 					utils.confirmOperation(prompt, null, function(err, rl){
 						utils.enterRecord(fields, 0, null, rl, function (err, record) {
 							self.addRecord(record, csb, recordType, key, field)
@@ -44,10 +44,10 @@ $$.flow.describe("setUrl", {
 				else {
 					var indexField = utils.indexOfKey(fields, "fieldName", field);
 					if (indexField < 0) {
-						console.log("The record type", recordType, "does not have a field", field);
+						$$.interact.say("The record type", recordType, "does not have a field", field);
 					} else {
-						console.log("You are about to overwrite the following field:");
-						console.log($$.flow.create("flows.getUrl").__getRecord(csb, recordType, key, field));
+						$$.interact.say("You are about to overwrite the following field:");
+						$$.interact.say($$.flow.create("flows.getUrl").__getRecord(csb, recordType, key, field));
 						utils.confirmOperation(prompt, function(err, rl){
 							utils.enterField(field, rl, function(err, answer){
 								self.addRecord(answer, csb, recordType, key, field);
@@ -56,7 +56,7 @@ $$.flow.describe("setUrl", {
 					}
 				}
 			}else {
-				console.log("No record of type", recordType, "having the key", key, "could be found in", csb.Title);
+				$$.interact.say("No record of type", recordType, "having the key", key, "could be found in", csb.Title);
 				return;
 			}
 		}else if(!key && !field) {

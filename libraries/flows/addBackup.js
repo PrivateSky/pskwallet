@@ -20,7 +20,7 @@ $$.flow.describe("addBackup", {
 		var self = this;
 		$$.remote.doHttpPost(path.join(url, "CSB", masterCsb.Uid), encryptedMaster.toString("hex"), function (err) {
 			if(err){
-				console.log("Failed to post master Csb on server");
+				$$.interact.say("Failed to post master Csb on server");
 			}else{
 				self.backupCsbs(url, csbs, 0);
 			}
@@ -29,7 +29,7 @@ $$.flow.describe("addBackup", {
 	backupCsbs: function(url, csbs, currentCsb){
 		var self = this;
 		if(currentCsb == csbs.length){
-			console.log("All csbs are backed up");
+			$$.interact.say("All csbs are backed up");
 		}else{
 			var encryptedCsb = utils.readEncryptedCsb(csbs[currentCsb]["Path"]);
 			var csb = crypto.decryptJson(encryptedCsb, Buffer.from(csbs[currentCsb]["Dseed"], "hex"));
@@ -38,7 +38,7 @@ $$.flow.describe("addBackup", {
 			}
 			$$.remote.doHttpPost(path.join(url, "CSB", csbs[currentCsb]["Path"]), encryptedCsb.toString("hex"), function(err){
 				if(err){
-					console.log("Failed to post csb", csbs[currentCsb]["Title"],"on server");
+					$$.interact.say("Failed to post csb", csbs[currentCsb]["Title"],"on server");
 					process.exit();
 				}else{
 					self.backupCsbs(url, csbs, currentCsb + 1);

@@ -2,8 +2,8 @@
 const crypto = require("pskcrypto");
 const fs = require("fs");
 const path = require("path");
-const readline = require("readline");
-const passReader = require("./passwordReader");
+require("interact").initConsoleMode();
+
 
 exports.defaultBackup = "http://localhost:8080";
 
@@ -39,20 +39,25 @@ var checkSeedIsValid = function (seed) {
 var enterPin = function(prompt, noTries, callback){
 	prompt = prompt || "Insert pin:";
 	if(noTries == 0){
-		console.log("You have inserted an invalid pin 3 times");
-		console.log("Preparing to exit");
+		// console.log("You have inserted an invalid pin 3 times");
+		// console.log("Preparing to exit");
+		$$.interact.say("You have inserted an invalid pin 3 times");
+		$$.interact.say("Preparing to exit");
+
 	}else {
-		passReader.getPassword(prompt, function (err, pin) {
+		$$.interact.readPassword(prompt, function (err, pin) {
 			if(err) {
-				console.log("Pin is invalid");
-				console.log("Try again");
+				// console.log("Pin is invalid");
+				// console.log("Try again");
+				$$.interact.say("Pin is invalid");
+				$$.interact.say("Try again");
 				enterPin(prompt, noTries-1, callback);
 			}else{
 				if (checkPinIsValid(pin)) {
 					callback(null, pin);
 				} else {
-					console.log("Pin is invalid");
-					console.log("Try again");
+					$$.interact.say("Pin is invalid");
+					$$.interact.say("Try again");
 					enterPin(prompt, noTries-1, callback);
 				}
 			}
@@ -69,7 +74,7 @@ exports.requirePin = function (prompt, callback) {
 	}
 };
 exports.enterSeed = function (callback) {
-	passReader.getPassword("Enter seed:", function (err, answer) {
+	$$.interact.readPassword("Enter seed:", function (err, answer) {
 		if(!err) {
 			var seed = Buffer.from(answer, "base64");
 			if (!fs.existsSync(exports.Paths.auxFolder)) {
@@ -104,16 +109,16 @@ exports.masterCsbExists = function () {
 };
 
 exports.createMasterCsb = function(pin, pathMaster) {
-	console.log("Creating master csb");
+	$$.interact.say("Creating master csb");
 	pin = pin || exports.defaultPin;
 	fs.mkdirSync(exports.Paths.auxFolder);
 	var seed = crypto.generateSeed(exports.defaultBackup);
-	console.log("The following string represents the seed.Please save it.");
-	console.log();
-	console.log(seed.toString("base64"));
-	console.log();
-	console.log("The default pin is:", exports.defaultPin);
-	console.log();
+	$$.interact.say("The following string represents the seed.Please save it.");
+	$$.interact.say();
+	$$.interact.say(seed.toString("base64"));
+	$$.interact.say();
+	$$.interact.say("The default pin is:", exports.defaultPin);
+	$$.interact.say();
 	var dseed = crypto.deriveSeed(seed);
 	pathMaster = pathMaster || exports.getMasterPath(dseed);
 	crypto.saveDSeed(dseed, pin, exports.Paths.Dseed);
@@ -121,7 +126,7 @@ exports.createMasterCsb = function(pin, pathMaster) {
 	// exports.Paths["masterCsb"] = path.join(exports.Paths.auxFolder, exports.generateCsbId(seed, true));
 	// masterCsb["backups"].push(exports.Paths.masterCsb);
 	fs.writeFileSync(pathMaster, crypto.encryptJson(masterCsb, dseed));
-	console.log("Master csb has been created");
+	$$.interact.say("Master csb has been created");
 
 };
 
@@ -191,7 +196,7 @@ exports.confirmOperation = function (prompt, rl, callback) {
 		if (answer === "y") {
 			callback(null, rl);
 		} else if (answer !== "n") {
-			console.log("Invalid option");
+			$$.interact.say("Invalid option");
 			exports.confirmOperation(prompt, rl, callback);
 		}else{
 			rl.close();
@@ -272,18 +277,18 @@ exports.getCsb = function (pin, aliasCsb) {
 };
 
 exports.deleteCsb = function (csb) {
-	console.log("Deleting csb", csb.Path);
+	$$.interact.say("Deleting csb", csb.Path);
 	if(fs.existsSync(csb.Path)){
 		fs.unlinkSync(csb.Path)
 	}
 };
 
 exports.deleteMasterCsb = function (masterCsb) {
-	console.log("Deleting master");
+	$$.interact.say("Deleting master");
 	fs.unlinkSync(masterCsb.Path);
-	console.log("Deleting dseed");
+	$$.interact.say("Deleting dseed");
 	fs.unlinkSync(exports.Paths.Dseed);
-	console.log("Deleting .privateSky folder");
+	$$.interact.say("Deleting .privateSky folder");
 	fs.rmdirSync(exports.Paths.auxFolder);
 };
 

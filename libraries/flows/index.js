@@ -5,12 +5,12 @@ module.exports = $$.library(function () {
     require('./copyUrl');
     require('./createCsb');
     require('./CSBhandler');
-    require('./deleteCsb');
+    require('./deleteUrl');
     require('./extract');
     require('./getKey');
     require('./getUrl');
     require('./listCsbs');
-    require('./moveCsb');
+    require('./moveUrl');
     require('./printCsb');
     require('./resetPin');
     require('./restore');

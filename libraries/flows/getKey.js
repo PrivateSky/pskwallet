@@ -5,7 +5,7 @@ const crypto = require("pskcrypto");
 $$.flow.describe("getKey", {
 	start: function (aliasCsb, recordType, key, field) {
 		if(!key){
-			console.log("A key should be provided");
+			$$.interact.say("A key should be provided");
 			return;
 		}
 		var self = this;
@@ -16,21 +16,21 @@ $$.flow.describe("getKey", {
 	getKey: function (pin, aliasCsb, recordType, key, field) {
 		var csb = utils.getCsb(pin, aliasCsb);
 		if (!csb) {
-			console.log("No csb with the alias", aliasCsb, "exists");
+			$$.interact.say("No csb with the alias", aliasCsb, "exists");
 			return;
 		}
 
 		var indexKey = utils.indexOfKey(csb.Data["records"][recordType], "Title", key);
 		if (indexKey >= 0) {
 			if (!field) {
-				console.log(csb.Data["records"][recordType][indexKey]);
+				$$.interact.say(csb.Data["records"][recordType][indexKey]);
 			} else if (csb["records"][recordType][indexKey][field]) {
-				console.log(csb.Data["records"][recordType][indexKey][field]);
+				$$.interact.say(csb.Data["records"][recordType][indexKey][field]);
 			} else {
-				console.log("The record type", recordType, "does not have a field", field);
+				$$.interact.say("The record type", recordType, "does not have a field", field);
 			}
 		} else {
-			console.log("No record having the key", key, "exists in", aliasCsb);
+			$$.interact.say("No record having the key", key, "exists in", aliasCsb);
 		}
 	}
 });

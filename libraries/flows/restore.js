@@ -20,13 +20,13 @@ $$.flow.describe("restore", {
 	readMaster: function (seed, aliasCsb) {
 		var masterCsb = utils.readMasterCsb(null, seed);
 		var csbs 	  = this.__getCsbsToRestore(masterCsb.Data, aliasCsb);
-		console.log(masterCsb.Data["backups"]);
+		$$.interact.say(masterCsb.Data["backups"]);
 		this.restoreCsbs(masterCsb.Data["backups"][0], csbs, 0);
 	},
 	restoreMaster: function (seed, aliasCsb) {
 		var obj = JSON.parse(seed.toString());
 		var url = obj.backup;
-		console.log(url);
+		$$.interact.say(url);
 		var self = this;
 		$$.remote.doHttpGet(path.join(url,"CSB", utils.getMasterUid(crypto.deriveSeed(seed))), function (err, res) {
 			if(err){
@@ -37,7 +37,7 @@ $$.flow.describe("restore", {
 				fs.writeFileSync(utils.getMasterPath(dseed), encryptedMaster);
 				crypto.saveDSeed(dseed, utils.defaultPin, utils.Paths.Dseed);
 				var masterCsb = crypto.decryptJson(encryptedMaster, dseed);
-				// console.log(masterCsb)
+				// $$.interact.say(masterCsb)
 				// fs.writeFileSync(utils.Paths.recordStructures + "/test_csb_master.json", JSON.stringify(masterCsb,null, "\t"));
 				var csbs = self.__getCsbsToRestore(masterCsb, aliasCsb);
 				self.restoreCsbs(url, csbs, 0);
@@ -48,9 +48,9 @@ $$.flow.describe("restore", {
 		var self = this;
 		if(currentCsb == csbs.length){
 			if(csbs.length == 1){
-				console.log(csbs[0]["Title"], "has been restored");
+				$$.interact.say(csbs[0]["Title"], "has been restored");
 			}else {
-				console.log("All csbs have been restored");
+				$$.interact.say("All csbs have been restored");
 			}
 			}else{
 			$$.remote.doHttpGet(path.join(url, "CSB", csbs[currentCsb]["Path"]), function(err, res){

@@ -6,7 +6,7 @@ const crypto = require("pskcrypto");
 $$.flow.describe("addFile", {
 	start: function (url, filePath) {
 		if(!filePath){
-			console.log("Child url is required.");
+			$$.interact.say("Child url is required.");
 			return;
 		}
 		var self = this;
@@ -17,18 +17,18 @@ $$.flow.describe("addFile", {
 	addArchive: function (pin, url, filePath) {
 		filePath = path.resolve(filePath);
 		if(!fs.existsSync(filePath)){
-			console.log(filePath, "is invalid.");
+			$$.interact.say(filePath, "is invalid.");
 			return;
 		}
 		var args = utils.traverseUrl(pin, url);
 		if(args.length !== 3){
-			console.log("Invalid url");
+			$$.interact.say("Invalid url");
 			return;
 		}
 		var csb = utils.getChildCsb(args[0], args[1]);
 		var alias = args[2];
 		var self = this;
-		console.log(args[1]);
+		$$.interact.say(args[1]);
 
 		if(!csb.Data["records"]["Adiacent"]){
 			csb.Data["records"]["Adiacent"] = [];
@@ -38,9 +38,9 @@ $$.flow.describe("addFile", {
 		}
 		var indexAdiacent = utils.indexOfRecord(csb.Data, "Adiacent", alias);
 		// var indexAdiacent = csb.Data["records"]["Adiacent"].indexOf(crypto.generateSafeUid(csb.Dseed, path.basename(filePath)));
-		console.log("----------------------------------indexAdiacent", indexAdiacent);
+		$$.interact.say("----------------------------------indexAdiacent", indexAdiacent);
 		if(indexAdiacent >= 0){
-			console.log("A file with the name", path.basename(filePath), "already exists in the current csb");
+			$$.interact.say("A file with the name", path.basename(filePath), "already exists in the current csb");
 			var prompt = "Do you want to overwrite it ?";
 			utils.confirmOperation(prompt, null, function (err, rl) {
 				self.saveChildInCsb(filePath, csb, alias, indexAdiacent);
@@ -67,8 +67,8 @@ $$.flow.describe("addFile", {
 			csb.Data["records"]["Adiacent"].splice(indexAdiacent, 1);
 		}
 		csb.Data["records"]["Adiacent"].push(fileRecord);
-		console.log("This is the csb");
-		console.log(csb.Data["records"]["Adiacent"]);
+		$$.interact.say("This is the csb");
+		$$.interact.say(csb.Data["records"]["Adiacent"]);
 		utils.writeCsbToFile(csb.Path, csb.Data, csb.Dseed);
 	}
 });

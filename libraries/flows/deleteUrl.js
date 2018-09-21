@@ -20,7 +20,7 @@ $$.flow.describe("deleteUrl", {
 	},
 	deleteRecord: function (csb, recordType, key, field) {
 		if (!recordType) {
-			console.log("Nothing to remove");
+			$$.interact.say("Nothing to remove");
 			return;
 		}
 		if (!key) {
@@ -33,7 +33,7 @@ $$.flow.describe("deleteUrl", {
 		} else {
 			var indexRecord = utils.indexOfRecord(csb.Data, recordType, key);
 			if(indexRecord < 0){
-				console.log("The provided record does not exist");
+				$$.interact.say("The provided record does not exist");
 				return;
 			}
 			var record = csb.Data["records"][recordType][indexRecord];
@@ -41,7 +41,7 @@ $$.flow.describe("deleteUrl", {
 				if(record[field]){
 					record[field] = "";
 				}else{
-					console.log("The provided field does not exist");
+					$$.interact.say("The provided field does not exist");
 					return;
 				}
 			}else{

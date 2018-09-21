@@ -13,7 +13,7 @@ $$.flow.describe("setKey", {
 		var fields = recordStructure["fields"];
 		var csb = utils.getCsb(pin, aliasCsb);
 		if(!csb){
-			console.log("No csb with the alias", aliasCsb ,"exists");
+			$$.interact.say("No csb with the alias", aliasCsb ,"exists");
 			return;
 		}
 		this.checkInputValidity(pin, aliasCsb, recordType, key, field, fields, csb);
@@ -26,7 +26,7 @@ $$.flow.describe("setKey", {
 			if(indexRecord >= 0){
 				var prompt = "Do you want to continue?";
 				if(!field){
-					console.log("You are about to overwrite the following record:");
+					$$.interact.say("You are about to overwrite the following record:");
 					$$.flow.create("flows.getKey").getKey(pin, aliasCsb, recordType, key);
 					utils.confirmOperation(prompt, null, function(err, rl){
 						utils.enterRecord(fields, 0, null, rl, function (err, record) {
@@ -37,9 +37,9 @@ $$.flow.describe("setKey", {
 				else {
 					var indexField = utils.indexOfKey(fields, "fieldName", field);
 					if (indexField < 0) {
-						console.log("The record type", recordType, "does not have a field", field);
+						$$.interact.say("The record type", recordType, "does not have a field", field);
 					} else {
-						console.log("You are about to overwrite the following field:");
+						$$.interact.say("You are about to overwrite the following field:");
 						$$.flow.create("flows.getKey").getKey(pin, aliasCsb, recordType, key, field);
 						utils.confirmOperation(prompt, function(err, rl){
 							utils.enterField(field, rl, function(err, answer){
@@ -49,7 +49,7 @@ $$.flow.describe("setKey", {
 					}
 				}
 			}else {
-				console.log("No record of type", recordType, "having the key", key, "could be found in", aliasCsb);
+				$$.interact.say("No record of type", recordType, "having the key", key, "could be found in", aliasCsb);
 				return;
 			}
 		}else if(!key && !field) {

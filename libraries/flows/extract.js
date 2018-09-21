@@ -13,24 +13,24 @@ $$.flow.describe("extract", {
 	checkType: function (pin, url) {
 		var args = utils.traverseUrl(pin, url);
 		if(args.length > 3 || args.length < 2){
-			console.log("Invalid url");
+			$$.interact.say("Invalid url");
 			return;
 		}
 
 		var parentCsb = args[0];
 		var aliasCsb = args[1];
 		if(!parentCsb || !parentCsb.Data || (!parentCsb.Data["records"]["Csb"] && !parentCsb.Data["records"]["Adiacent"])){
-			console.log("Invalid url");
+			$$.interact.say("Invalid url");
 			return;
 		}
 		if(parentCsb.Data["records"]["Csb"].length === 0 && parentCsb.Data["records"]["Adiacent"].length === 0) {
-			console.log("Nothing to extract");
+			$$.interact.say("Nothing to extract");
 			return;
 		}
 
 		var csb = utils.getChildCsb(parentCsb, aliasCsb);
 		if(!csb){
-			console.log("invalid url");
+			$$.interact.say("invalid url");
 			return;
 		}
 		if(args.length === 3) {
@@ -39,7 +39,7 @@ $$.flow.describe("extract", {
 			if (indexAdiacent >= 0) {
 				this.extractArchive(csb, aliasFile, indexAdiacent);
 			} else {
-				console.log("Invalid url.");
+				$$.interact.say("Invalid url.");
 				return;
 			}
 		}else {
@@ -47,7 +47,7 @@ $$.flow.describe("extract", {
 		}
 	},
 	extractCsb: function (csb) {
-		console.log("Extract csb");
+		$$.interact.say("Extract csb");
 		// var childCsb = utils.readCsb(csb.Data["records"]["Csb"][indexCsb]["Path"], csb.Data["records"]["Csb"][indexCsb]["Dseed"]);
 		fs.writeFileSync(path.join(process.cwd(), csb.Title), JSON.stringify(csb.Data, null, "\t"));
 		// fs.unlinkSync(csb.Data["records"]["Csb"][indexCsb]["Path"]);

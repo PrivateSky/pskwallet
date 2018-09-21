@@ -17,9 +17,9 @@ $$.flow.describe("printCsb", {
 			csb = utils.getCsb(pin, aliasCsb);
 		}
 		if(!csb.Data || !csb.Data["records"] || Object.keys(csb.Data["records"]).length === 0 ){
-			console.log("There aren't any csbs in the current folder");
+			$$.interact.say("There aren't any csbs in the current folder");
 			return;
 		}
-		console.log(csb.Data["records"]);
+		$$.interact.say(csb.Data["records"]);
 	}
 });

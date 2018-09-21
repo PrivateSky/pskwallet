@@ -7,7 +7,7 @@ $$.flow.describe("listCsbs", {
 	start: function (aliasCsb) {
 		var self = this;
 		if(!utils.masterCsbExists()){
-			console.log("No csb exists");
+			$$.interact.say("No csb exists");
 		}else{
 			utils.requirePin(null, function (err, pin) {
 				self.getCsb(pin, aliasCsb);
@@ -25,13 +25,13 @@ $$.flow.describe("listCsbs", {
 			var csbs = csb.Data["records"]["Csb"];
 			this.listCsbs(csbs, 0);
 		}else{
-			console.log("No csb exists");
+			$$.interact.say("No csb exists");
 		}
 	},
 	listCsbs: function (csbs, currentCsb) {
 		if(currentCsb < csbs.length) {
 			var csb = csbs[currentCsb];
-			console.log(csb["Title"]);
+			$$.interact.say(csb["Title"]);
 			var csbData = utils.readCsb(csb["Path"],csb["Dseed"]);
 			if (csbData["records"] && csbData["records"]["Csb"]) {
 				csbs = csbs.concat(csbData["records"]["Csb"]);
