@@ -17,7 +17,7 @@ $$.flow.describe("listCsbs", {
 	getCsb: function (pin, aliasCsb) {
 		var csb;
 		if(!aliasCsb){
-			csb = utils.readMasterCsb(pin);
+			csb = utils.loadMasterCsb(pin);
 		}else{
 			csb = utils.getCsb(pin, aliasCsb);
 		}

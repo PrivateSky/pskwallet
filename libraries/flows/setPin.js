@@ -1,6 +1,6 @@
 var path = require("path");
 const utils = require(path.resolve(__dirname + "/../utils/utils"));
-const passReader = require(path.resolve(__dirname + "/../utils/passwordReader"));
+require("interact").initConsoleMode();
 const crypto = require("pskcrypto");
 $$.flow.describe("setPin", {
 	start: function () {
@@ -12,7 +12,7 @@ $$.flow.describe("setPin", {
 	enterNewPin: function (oldPin) {
 		oldPin = oldPin || utils.defaultPin;
 		var self = this;
-		passReader.getPassword("Insert new pin:", function(err, newPin){
+		$$.interact.readPassword("Insert new pin:", function(err, newPin){
 			if(err){
 				$$.interact.say("An invalid character was introduced. Try again:")
 				self.enterNewPin(oldPin);

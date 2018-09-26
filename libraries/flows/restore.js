@@ -18,7 +18,7 @@ $$.flow.describe("restore", {
 		}
 	},
 	readMaster: function (seed, aliasCsb) {
-		var masterCsb = utils.readMasterCsb(null, seed);
+		var masterCsb = utils.loadMasterCsb(null, seed);
 		var csbs 	  = this.__getCsbsToRestore(masterCsb.Data, aliasCsb);
 		$$.interact.say(masterCsb.Data["backups"]);
 		this.restoreCsbs(masterCsb.Data["backups"][0], csbs, 0);

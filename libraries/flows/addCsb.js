@@ -16,7 +16,7 @@ $$.flow.describe("addCsb", {
 			$$.interact.say('No csb having the alias', aliasCsb, "exists.");
 			return;
 		}
-		var masterCsb = utils.readMasterCsb(pin);
+		var masterCsb = utils.loadMasterCsb(pin);
 		var parentChildCsbs = utils.traverseUrl(pin, masterCsb.Data, parentUrl);
 		var parentCsb = parentChildCsbs[0];
 		var childCsb = fs.readFileSync(path.join(process.cwd(), aliasCsb));

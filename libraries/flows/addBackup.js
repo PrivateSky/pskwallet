@@ -12,7 +12,7 @@ $$.flow.describe("addBackup", {
 		});
 	},
 	backupMaster: function (pin, url) {
-		var masterCsb = utils.readMasterCsb(pin);
+		var masterCsb = utils.loadMasterCsb(pin);
 		masterCsb.Data["backups"].push(url);
 		var csbs = masterCsb.Data["records"]["Csb"];
 		var encryptedMaster = crypto.encryptJson(masterCsb.Data, masterCsb.Dseed);

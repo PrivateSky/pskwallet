@@ -1,7 +1,7 @@
 var path = require("path");
 const utils = require(path.resolve(__dirname + "/../utils/utils"));
 const crypto = require("pskcrypto");
-const passReader = require(path.resolve(__dirname + "/../utils/passwordReader"));
+require("interact").initConsoleMode();
 $$.flow.describe("resetPin", {
 	start: function () {
 		var self = this;
@@ -11,7 +11,7 @@ $$.flow.describe("resetPin", {
 	},
 	enterPin: function (seed) {
 		var self = this;
-		passReader.getPassword("Enter a new pin:", function(err, answer){
+		$$.interact.readPassword("Enter a new pin:", function(err, answer){
 			if(err){
 				$$.interact.say("You introduced an invalid character. Please try again.")
 				self.enterPin(seed);
@@ -21,7 +21,7 @@ $$.flow.describe("resetPin", {
 		});
 	},
 	updateData: function (seed, pin) {
-		var masterCsb = utils.readMasterCsb(null, seed);
+		var masterCsb = utils.loadMasterCsb(null, seed);
 		utils.writeCsbToFile(masterCsb.Path, masterCsb.Data, masterCsb.Dseed);
 		crypto.saveDSeed(masterCsb.Dseed, pin, utils.Paths.Dseed);
 		$$.interact.say("Pin has been changed");
