@@ -11,15 +11,18 @@ $$.flow.describe("setUrl", {
 		});
 	},
 	processUrl: function (pin, url) {
-		var args = utils.traverseUrl(pin, url);
-		if(!args){
-			$$.interact.say("Invalid Url");
-			return;
-		}
-		var parentCsb = args.shift();
-		var csb = utils.getChildCsb(parentCsb, args.shift());
-		args.unshift(csb);
-		this.readStructure(...args);
+		utils.traverseUrl(pin, url, function (err, args) {
+			console.log(args);
+		})
+		// var args = utils.traverseUrl(pin, url);
+		// if(!args){
+		// 	$$.interact.say("Invalid Url");
+		// 	return;
+		// }
+		// var parentCsb = args.shift();
+		// var csb = utils.getChildCsb(parentCsb, args.shift());
+		// args.unshift(csb);
+		// this.readStructure(...args);
 	},
 	readStructure: function (csb, recordType, key, field) {
 		var recordStructure = utils.getRecordStructure(recordType);
