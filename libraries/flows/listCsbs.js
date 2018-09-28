@@ -6,13 +6,16 @@ var fs = require("fs");
 $$.flow.describe("listCsbs", {
 	start: function (aliasCsb) {
 		var self = this;
-		if(!utils.masterCsbExists()){
-			$$.interact.say("No csb exists");
-		}else{
-			utils.requirePin(null, function (err, pin) {
-				self.getCsb(pin, aliasCsb);
-			});
-		}
+		utils.masterCsbExists(function (err, status) {
+			if(err){
+				$$.interact.say("No csb exists");
+			}else{
+				utils.requirePin(null, function (err, pin) {
+					self.getCsb(pin, aliasCsb);
+				});
+			}
+		})
+
 	},
 	getCsb: function (pin, aliasCsb) {
 		var csb;

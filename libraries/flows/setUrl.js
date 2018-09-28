@@ -11,23 +11,27 @@ $$.flow.describe("setUrl", {
 		});
 	},
 	processUrl: function (pin, url) {
+		var self = this;
 		utils.traverseUrl(pin, url, function (err, args) {
-			console.log(args);
-		})
-		// var args = utils.traverseUrl(pin, url);
-		// if(!args){
-		// 	$$.interact.say("Invalid Url");
-		// 	return;
-		// }
-		// var parentCsb = args.shift();
-		// var csb = utils.getChildCsb(parentCsb, args.shift());
-		// args.unshift(csb);
-		// this.readStructure(...args);
+			if(!args){
+				$$.interact.say("Invalid Url");
+				return;
+			}
+			var parentCsb = args.shift();
+			utils.getChildCsb(parentCsb, args.shift(), function (err, csb) {
+				args.unshift(csb);
+				self.readStructure(...args);
+			});
+		});
+
+
 	},
 	readStructure: function (csb, recordType, key, field) {
-		var recordStructure = utils.getRecordStructure(recordType);
-		var fields = recordStructure["fields"];
-		this.checkInputValidity(csb, recordType, key, field, fields);
+		var self = this;
+		utils.getRecordStructure(recordType, function (err, recordStructure) {
+			var fields = recordStructure["fields"];
+			self.checkInputValidity(csb, recordType, key, field, fields);
+		});
 	},
 	checkInputValidity: function (csb, recordType, key, field, fields) {
 		var self = this;
@@ -87,7 +91,11 @@ $$.flow.describe("setUrl", {
 				csb.Data["records"][recordType].push(record);
 			}
 		}
-		utils.writeCsbToFile(csb.Path, csb.Data, csb.Dseed);
+		utils.writeCsbToFile(csb.Path, csb.Data, csb.Dseed, function (err) {
+			if(!err){
+				console.log("Done");
+			}
+		});
 	}
 	
 });

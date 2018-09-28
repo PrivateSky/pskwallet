@@ -2,6 +2,7 @@
 const crypto = require("pskcrypto");
 const fs = require("fs");
 const path = require("path");
+const readline = require("readline");
 require("interact").initConsoleMode();
 
 
@@ -16,7 +17,7 @@ exports.Paths = {
 	"recordStructures"  : path.join(__dirname, path.normalize("../utils/recordStructures"))
 };
 
-var checkPinIsValid = function (pin, callback) {
+function checkPinIsValid(pin, callback) {
 
 	exports.loadMasterCsb(pin, null, function (err, csb) {
 		if(err){
@@ -26,9 +27,9 @@ var checkPinIsValid = function (pin, callback) {
 		}
 	});
 
-};
+}
 
-var checkSeedIsValid = function (seed, callback) {
+function checkSeedIsValid(seed, callback) {
 	var dseed = crypto.deriveSeed(seed);
 	fs.readFile(exports.getMasterPath(dseed), function (err, encryptedMaster) {
 		try{
@@ -39,29 +40,31 @@ var checkSeedIsValid = function (seed, callback) {
 		callback(null, true);
 	});
 
-};
+}
 
-var enterPin = function(prompt, noTries, callback){
+ function enterPin(prompt, noTries, callback){
 	prompt = prompt || "Insert pin:";
 	if(noTries == 0){
-		// console.log("You have inserted an invalid pin 3 times");
-		// console.log("Preparing to exit");
-		$$.interact.say("You have inserted an invalid pin 3 times");
-		$$.interact.say("Preparing to exit");
+		console.log("You have inserted an invalid pin 3 times");
+		console.log("Preparing to exit");
+		// $$.interact.say("You have inserted an invalid pin 3 times");
+		// $$.interact.say("Preparing to exit");
 
 	}else {
-		$$.interact.readPassword(prompt, function (err, pin) {
+		$$.interact.readPin(prompt, function (err, pin) {
 			if(err) {
-				// console.log("Pin is invalid");
-				// console.log("Try again");
-				$$.interact.say("Pin is invalid");
-				$$.interact.say("Try again");
+				console.log("Pin is invalid");
+				console.log("Try again");
+				// $$.interact.say("Pin is invalid");
+				// $$.interact.say("Try again");
 				enterPin(prompt, noTries-1, callback);
 			}else{
 				checkPinIsValid(pin, function (err, status) {
 					if(err){
-						$$.interact.say("Pin is invalid");
-						$$.interact.say("Try again");
+						console.log("Pin is invalid");
+						console.log("Try again");
+						// $$.interact.say("Pin is invalid");
+						// $$.interact.say("Try again");
 						enterPin(prompt, noTries-1, callback);
 					}else{
 						callback(null, pin);
@@ -70,7 +73,7 @@ var enterPin = function(prompt, noTries, callback){
 			}
 		});
 	}
-};
+}
 
 exports.requirePin = function (prompt, callback) {
 	exports.masterCsbExists(function (err, status) {
@@ -184,7 +187,6 @@ exports.loadMasterCsb = function(pin, seed, callback){
 				callback(err);
 			}else{
 				var csbData = crypto.decryptJson(encryptedCsb, dseed);
-				console.log()
 				var csb = {
 					"Dseed"  : dseed,
 					"Data": csbData,
@@ -198,7 +200,6 @@ exports.loadMasterCsb = function(pin, seed, callback){
 	if(seed){
 		var dseed = crypto.deriveSeed(seed);
 		readMaster(dseed, callback);
-
 	}else {
 		crypto.loadDseed(pin, exports.Paths.Dseed, function (err, dseed) {
 			readMaster(dseed, callback);
@@ -316,18 +317,40 @@ exports.findCsb = function (csbData, aliasCsb, callback) {
 	while(csbs.length > 0){
 		var csb = csbs.shift();
 		if(csb["Title"] === aliasCsb){
-			return csb;
+			callback(null, csb);
+			return;
 		}else{
-			var childCsb = exports.readCsb(csb["Path"], Buffer.from(csb["Dseed"], "hex"));
-			if(childCsb && childCsb["records"] && childCsb["records"]["Csb"]){
-				csbs = csbs.concat(childCsb["records"]["Csb"]);
-			}
+			exports.readCsb(csb["Path"], Buffer.from(csb["Dseed"], "hex"), function (err, childCsb) {
+				if(!err){
+					if(childCsb && childCsb["records"] && childCsb["records"]["Csb"]){
+						csbs = csbs.concat(childCsb["records"]["Csb"]);
+					}
+				}
+			});
+
 		}
 	}
-	return undefined;
 
 };
 
+exports.getCsb = function (pin, aliasCsb) {
+	var masterCsb = exports.readMasterCsb(pin);
+	if(!masterCsb.Data || !masterCsb.Data["records"]){
+		return undefined;
+	}
+	var csbInMaster = exports.findCsb(masterCsb.Data, aliasCsb);
+	if(csbInMaster){
+		var encryptedCsb = exports.readEncryptedCsb(csbInMaster["Path"]);
+		var dseed = crypto.deriveSeed(Buffer.from(csbInMaster["Seed"], 'hex'));
+		var csbData = crypto.decryptJson(encryptedCsb, dseed);
+		return {
+			"Data": csbData,
+			"Dseed": dseed,
+			"Path": csbInMaster["Path"]
+		};
+	}
+	return undefined;
+};
 
 exports.indexOfRecord = function(csbData, recordType, recordKey) {
 	if(csbData && csbData["records"] && csbData["records"][recordType]){
@@ -372,8 +395,7 @@ exports.getChildCsb = function (parentCsb, aliasChildCsb, callback) {
 
 function traverseUrlRecursively(pin, csb, splitUrl, lastAlias, parentCsb, callback) {
 	var record = splitUrl[0];
-	var index = exports.indexOfRecord(csb.Data,"Csb", record);
-	console.log(callback);
+	var index = exports.indexOfRecord(csb.Data, "Csb", record);
 	if(index < 0){
 		splitUrl.unshift(lastAlias);
 		splitUrl.unshift(parentCsb);
@@ -395,8 +417,7 @@ function traverseUrlRecursively(pin, csb, splitUrl, lastAlias, parentCsb, callba
 					parentCsb = csb;
 					traverseUrlRecursively(pin, childCsb, splitUrl, lastAlias, parentCsb, callback);
 				}
-			})
-
+			});
 		}
 	}
 }
@@ -407,10 +428,10 @@ exports.traverseUrl = function (pin, url, callback) {
 			callback(err);
 		}else{
 			var splitUrl = url.split("/");
-			traverseUrlRecursively(pin, masterCsb, splitUrl, function (err, split) {
-				callback(err, split);
+			traverseUrlRecursively(pin, masterCsb, splitUrl, null, null, function (err, args) {
+				callback(err, args);
 			});
 		}
 	});
-
 };
+
