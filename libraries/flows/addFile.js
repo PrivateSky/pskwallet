@@ -14,6 +14,8 @@ $$.flow.describe("addFile", {
 			self.addArchive(pin, url, filePath, function (err) {
 				if(err){
 					throw err;
+				}else{
+					console.log("Completed");
 				}
 			});
 		});
@@ -51,8 +53,6 @@ $$.flow.describe("addFile", {
 							return;
 						}
 						var indexAdiacent = utils.indexOfRecord(csb.Data, "Adiacent", alias);
-						// var indexAdiacent = csb.Data["records"]["Adiacent"].indexOf(crypto.generateSafeUid(csb.Dseed, path.basename(filePath)));
-						$$.interact.say("----------------------------------indexAdiacent", indexAdiacent);
 						if(indexAdiacent >= 0){
 							$$.interact.say("A file with the name", path.basename(filePath), "already exists in the current csb");
 							var prompt = "Do you want to overwrite it ?";
@@ -87,19 +87,24 @@ $$.flow.describe("addFile", {
 			"Seed" : seed.toString("hex"),
 			"Dseed": crypto.deriveSeed(seed).toString("hex")
 		};
-		crypto.encryptStream(filePath,path.join(utils.Paths.Adiacent, pth), dseed);
-		if(indexAdiacent >= 0){
-			csb.Data["records"]["Adiacent"].splice(indexAdiacent, 1);
-		}
-		csb.Data["records"]["Adiacent"].push(fileRecord);
-		$$.interact.say("This is the csb");
-		$$.interact.say(csb.Data["records"]["Adiacent"]);
-		utils.writeCsbToFile(csb.Path, csb.Data, csb.Dseed, function (err) {
+		crypto.encryptStream(filePath,path.join(utils.Paths.Adiacent, pth), dseed, function (err) {
 			if(err){
-				callback(err);
-				return;
+				return callback(err);
 			}
-			$$.interact.say(filePath, "was added in", csb.Title);
+			if(indexAdiacent >= 0){
+				csb.Data["records"]["Adiacent"].splice(indexAdiacent, 1);
+			}
+			csb.Data["records"]["Adiacent"].push(fileRecord);
+			$$.interact.say("This is the csb");
+			$$.interact.say(csb.Data["records"]["Adiacent"]);
+			utils.writeCsbToFile(csb.Path, csb.Data, csb.Dseed, function (err) {
+				if(err){
+					callback(err);
+					return;
+				}
+				$$.interact.say(filePath, "was added in", csb.Title);
+			});
 		});
+
 	}
 });

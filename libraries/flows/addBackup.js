@@ -50,19 +50,48 @@ $$.flow.describe("addBackup", {
 					return callback(err);
 				}
 				var csb = crypto.decryptJson(encryptedCsb, Buffer.from(csbs[currentCsb]["Dseed"], "hex"));
-				if(csb["records"] && csb["records"]["Csb"]){
-					csbs = csbs.concat(csb["records"]["Csb"]);
+				function __backupCsb() {
+					$$.remote.doHttpPost(path.join(url, "CSB", csbs[currentCsb]["Path"]), encryptedCsb.toString("hex"), function(err){
+						if(err){
+							$$.interact.say("Failed to post csb", csbs[currentCsb]["Title"],"on server");
+							callback(err);
+						}else{
+							self.backupCsbs(url, csbs, currentCsb + 1, callback);
+						}
+					})
 				}
-				$$.remote.doHttpPost(path.join(url, "CSB", csbs[currentCsb]["Path"]), encryptedCsb.toString("hex"), function(err){
-					if(err){
-						$$.interact.say("Failed to post csb", csbs[currentCsb]["Title"],"on server");
-						process.exit();
-					}else{
-						self.backupCsbs(url, csbs, currentCsb + 1, callback);
+
+				if(csb["records"]){
+					if(csb["records"]["Csb"] && csb["records"]["Csb"].length > 0) {
+						csbs = csbs.concat(csb["records"]["Csb"]);
 					}
-				})
+					if(csb["records"]["Adiacent"] && csb["records"]["Adiacent"].length > 0){
+						self.backupArchives(url, csb["records"]["Adiacent"], 0, function (err) {
+							if(err){
+								return callback(err);
+							}
+							__backupCsb();
+						})
+					}else{
+						__backupCsb();
+					}
+				}
 			});
 		}
+	},
+	backupArchives: function (url, archives, currentArchive, callback) {
+		var self = this;
+		if(currentArchive == archives.length){
+			return callback();
+		}
+		const stream = fs.createReadStream(path.join(utils.Paths.Adiacent, archives[currentArchive]["Path"]));
+		$$.remote.doHttpPost(path.join(url, "CSB", archives[currentArchive]["Path"]), stream, function(err){
+			if(err){
+				$$.interact.say("Failed to post archive", archives[currentArchive]["Title"],"on server");
+				callback(err);
+			}else{
+				self.backupArchives(url, archives, currentArchive + 1, callback);
+			}
+		})
 	}
-
 });

@@ -80,7 +80,7 @@ exports.requirePin = function (prompt, callback) {
 		if(err){
 			console.log("Error");
 			exports.createMasterCsb(null, null, function (err) {
-				callback()
+				callback(err)
 			});
 
 		}else{

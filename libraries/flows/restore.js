@@ -5,12 +5,12 @@ var fs = require("fs");
 require('psk-http-client');
 
 $$.flow.describe("restore", {
-	start: function (aliasCsb) {
+	start: function (alias) {
 		var self = this;
 		utils.masterCsbExists(function (err, status) {
 			if(!err){
 				utils.enterSeed(function (err, seed) {
-					self.readMaster(seed, aliasCsb, function (err) {
+					self.readMaster(seed, alias, function (err) {
 						if(err){
 							throw err;
 						}
@@ -18,7 +18,7 @@ $$.flow.describe("restore", {
 				});
 			}else{
 				utils.enterSeed(function (err, seed) {
-					self.restoreMaster(seed, aliasCsb, function (err) {
+					self.restoreMaster(seed, alias, function (err) {
 						if(err) {
 							throw err;
 						}
@@ -27,13 +27,13 @@ $$.flow.describe("restore", {
 			}
 		});
 	},
-	readMaster: function (seed, aliasCsb, callback) {
+	readMaster: function (seed, alias, callback) {
 		var self = this;
 		utils.loadMasterCsb(null, seed, function (err, masterCsb) {
 			if(err){
 				return callback(err);
 			}
-			self.__getCsbsToRestore(masterCsb.Data, aliasCsb, function (err, csbs) {
+			self.__getCsbsToRestore(masterCsb.Data, alias, function (err, csbs) {
 				if(err){
 					return callback(err);
 				}
@@ -48,7 +48,7 @@ $$.flow.describe("restore", {
 		});
 
 	},
-	restoreMaster: function (seed, aliasCsb, callback) {
+	restoreMaster: function (seed, alias, callback) {
 		var obj = JSON.parse(seed.toString());
 		var url = obj.backup;
 		$$.interact.say(url);
@@ -68,7 +68,7 @@ $$.flow.describe("restore", {
 							return callback(err);
 						}
 						var masterCsb = crypto.decryptJson(encryptedMaster, dseed);
-						self.__getCsbsToRestore(masterCsb, aliasCsb, function (err, csbs) {
+						self.__getCsbsToRestore(masterCsb, alias, function (err, csbs) {
 							if(err){
 								return callback(err);
 							}
@@ -97,30 +97,71 @@ $$.flow.describe("restore", {
 				if(err){
 					callback(err);
 				}else{
-					var encryptedCsb = Buffer.from(res, "hex");
-					var csb = crypto.decryptJson(encryptedCsb, Buffer.from(csbs[currentCsb]["Dseed"], "hex"));
-					if(csb["records"] && csb["records"]["Csb"]){
-						csbs = csbs.concat(csb["records"]["Csb"]);
-					}
-					fs.writeFile(csbs[currentCsb]["Path"], encryptedCsb, function (err) {
-						if(err){
-							return callback(err);
-						}
-						self.restoreCsbs(url, csbs, currentCsb + 1, function (err) {
+					function __saveCsb() {
+						fs.writeFile(csbs[currentCsb]["Path"], encryptedCsb, function (err) {
 							if(err){
 								return callback(err);
 							}
+							self.restoreCsbs(url, csbs, currentCsb + 1, function (err) {
+								if(err){
+									return callback(err);
+								}
+							});
 						});
-					});
+					}
+					var encryptedCsb = Buffer.from(res, "hex");
+					var csb = crypto.decryptJson(encryptedCsb, Buffer.from(csbs[currentCsb]["Dseed"], "hex"));
+					if(csb["records"] ){
+						if(csb["records"]["Csb"] && csb["records"]["Csb"].length > 0) {
+							csbs = csbs.concat(csb["records"]["Csb"]);
+						}
+						if(csb["records"]["Adiacent"] && csb["records"]["Adiacent"].length > 0){
+							self.restoreArchives(url, csb["records"]["Adiacent"], 0, function (err) {
+								if(err){
+									return callback(err);
+								}
+								__saveCsb();
+							})
+						}else{
+							__saveCsb();
+						}
+
+					}
+
 				}
 			})
 		}
 	},
-	__getCsbsToRestore: function (masterCsbData, aliasCsb, callback) {
-		if(!aliasCsb){
+	restoreArchives: function (url, archives, currentArchive, callback) {
+		var self = this;
+		if(currentArchive == archives.length){
+			return callback(null);
+		}
+		$$.remote.doHttpGet(path.join(url, "CSB", archives[currentArchive]["Path"]), function(err, data){
+			if(err){
+				$$.interact.say("Failed to post archive", archives[currentArchive]["Title"],"on server");
+				callback(err);
+			}else{
+				$$.ensureFolderExists(utils.Paths.Adiacent, function (err) {
+					if(err){
+						return callback(err);
+					}
+					fs.writeFile(path.join(utils.Paths.Adiacent, archives[currentArchive]["Path"]), data, function (err) {
+						if(err){
+							return callback(err);
+						}
+					});
+					self.restoreArchives(url, archives, currentArchive + 1, callback);
+				});
+			}
+		});
+
+	},
+	__getCsbsToRestore: function (masterCsbData, alias, callback) {
+		if(!alias){
 			callback(null, masterCsbData["records"]["Csb"]);
 		}else{
-			utils.findCsb(masterCsbData, aliasCsb, function (err, csb) {
+			utils.findCsb(masterCsbData, alias, function (err, csb) {
 				if(err){
 					return callback(err);
 				}
@@ -128,6 +169,5 @@ $$.flow.describe("restore", {
 			});
 		}
 	}
-
 });
 
