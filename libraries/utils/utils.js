@@ -307,14 +307,37 @@ exports.getMasterPath = function(dseed){
 exports.getMasterUid = function (dseed){
 	return crypto.generateSafeUid(dseed, exports.Paths.auxFolder)
 };
-
+var walk = function(dir, done) {
+	var results = [];
+	fs.readdir(dir, function(err, list) {
+		if (err) return done(err);
+		var i = 0;
+		(function next() {
+			var file = list[i++];
+			if (!file)  done(null, results);
+			file = dir + '/' + file;
+			fs.stat(file, function(err, stat) {
+				if (stat && stat.isDirectory()) {
+					walk(file, function(err, res) {
+						results = results.concat(res);
+						next();
+					});
+				} else {
+					results.push(file);
+					next();
+				}
+			});
+		})();
+	});
+};
 exports.findCsb = function (csbData, aliasCsb, callback) {
 	if(!csbData || !csbData["records"] || !csbData["records"]["Csb"] || csbData["records"]["Csb"].length === 0){
-		callback();
+		callback(new Error("Csb empty"));
 		return;
 	}
-	let csbs = csbData["records"]["Csb"];
-	while(csbs.length > 0){
+	var csbs = csbData["records"]["Csb"];
+
+	if(csbs.length > 0){
 		var csb = csbs.shift();
 		if(csb["Title"] === aliasCsb){
 			callback(null, csb);
@@ -333,23 +356,38 @@ exports.findCsb = function (csbData, aliasCsb, callback) {
 
 };
 
-exports.getCsb = function (pin, aliasCsb) {
-	var masterCsb = exports.readMasterCsb(pin);
-	if(!masterCsb.Data || !masterCsb.Data["records"]){
-		return undefined;
-	}
-	var csbInMaster = exports.findCsb(masterCsb.Data, aliasCsb);
-	if(csbInMaster){
-		var encryptedCsb = exports.readEncryptedCsb(csbInMaster["Path"]);
-		var dseed = crypto.deriveSeed(Buffer.from(csbInMaster["Seed"], 'hex'));
-		var csbData = crypto.decryptJson(encryptedCsb, dseed);
-		return {
-			"Data": csbData,
-			"Dseed": dseed,
-			"Path": csbInMaster["Path"]
-		};
-	}
-	return undefined;
+exports.getCsb = function (pin, aliasCsb, callback) {
+	exports.loadMasterCsb(pin, null, function (err, masterCsb) {
+		if(!err){
+			if(!masterCsb.Data || !masterCsb.Data["records"]){
+				callback(new Error("Master csb is empty"));
+				return;
+			}
+			exports.findCsb(masterCsb.Data, aliasCsb, function (err, csbInMaster) {
+				if(err){
+					callback(err);
+					return;
+				}
+				if(csbInMaster){
+					exports.readEncryptedCsb(csbInMaster["Path"], function (err, encryptedCsb) {
+						if(err){
+							callback(err);
+							return;
+						}
+						var dseed = crypto.deriveSeed(Buffer.from(csbInMaster["Seed"], 'hex'));
+						var csbData = crypto.decryptJson(encryptedCsb, dseed);
+						var csb = {
+							"Data": csbData,
+							"Dseed": dseed,
+							"Path": csbInMaster["Path"]
+						};
+						callback(null, csb);
+					});
+
+				}
+			});
+		}
+	});
 };
 
 exports.indexOfRecord = function(csbData, recordType, recordKey) {

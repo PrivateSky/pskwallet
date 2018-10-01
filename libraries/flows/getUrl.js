@@ -31,6 +31,7 @@ $$.flow.describe("getUrl", {
 					if(!err){
 						args.unshift(csb);
 						var record = self.__getRecord(...args);
+						console.log("Record", record);
 						callback(null, record);
 					}
 				});
@@ -38,6 +39,7 @@ $$.flow.describe("getUrl", {
 		});
 	},
 	__getRecord: function (csb, recordType, key, field) {
+		console.log("Csb", csb);
 		var indexKey = utils.indexOfKey(csb.Data["records"][recordType], "Title", key);
 		if (indexKey >= 0) {
 			if (!field) {

@@ -11,12 +11,17 @@ $$.flow.describe("addCsb", {
 			self.addCsb(pin, parentUrl, aliasCsb);
 		});
 	},
-	addCsb: function (pin, parentUrl, aliasCsb) {
+	addCsb: function (pin, parentUrl, aliasCsb, callback) {
 		if(!fs.existsSync(path.join(process.cwd(), aliasCsb))){
 			$$.interact.say('No csb having the alias', aliasCsb, "exists.");
 			return;
 		}
-		var masterCsb = utils.loadMasterCsb(pin);
+		utils.loadMasterCsb(pin, function (err, masterCsb) {
+			if(err){
+				callback(err);
+				return;
+			}
+		});
 		var parentChildCsbs = utils.traverseUrl(pin, masterCsb.Data, parentUrl);
 		var parentCsb = parentChildCsbs[0];
 		var childCsb = fs.readFileSync(path.join(process.cwd(), aliasCsb));

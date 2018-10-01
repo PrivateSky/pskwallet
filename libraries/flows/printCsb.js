@@ -10,11 +10,16 @@ $$.flow.describe("printCsb", {
 		});
 	},
 	printCsb: function (pin, aliasCsb) {
-		var csb;
+		var self = this;
 		if(!aliasCsb){
-			csb = utils.loadMasterCsb(pin);
+			utils.loadMasterCsb(pin, self.__processCsb);
 		}else{
-			csb = utils.getCsb(pin, aliasCsb);
+			 utils.getCsb(pin, aliasCsb, self.__processCsb);
+		}
+	},
+	__processCsb: function (err, csb) {
+		if(err){
+			throw err;
 		}
 		if(!csb.Data || !csb.Data["records"] || Object.keys(csb.Data["records"]).length === 0 ){
 			$$.interact.say("There aren't any csbs in the current folder");

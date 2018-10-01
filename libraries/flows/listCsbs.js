@@ -11,25 +11,33 @@ $$.flow.describe("listCsbs", {
 				$$.interact.say("No csb exists");
 			}else{
 				utils.requirePin(null, function (err, pin) {
-					self.getCsb(pin, aliasCsb);
+					self.getCsb(pin, aliasCsb, function (err, csb) {
+						if(err){
+							console.log('Errror')
+							throw err;
+						}else{
+							console.log("---------csb:", csb);
+						}
+					});
 				});
 			}
 		})
 
 	},
-	getCsb: function (pin, aliasCsb) {
-		var csb;
-		if(!aliasCsb){
-			csb = utils.loadMasterCsb(pin);
-		}else{
-			csb = utils.getCsb(pin, aliasCsb);
-		}
-		if(csb.Data["records"] && csb.Data["records"]["Csb"] && csb.Data["records"]["Csb"].length){
-			var csbs = csb.Data["records"]["Csb"];
-			this.listCsbs(csbs, 0);
-		}else{
-			$$.interact.say("No csb exists");
-		}
+	getCsb: function (pin, aliasCsb, callback) {
+		utils.getCsb(pin, aliasCsb, callback);
+		// var csb;
+		// if(!aliasCsb){
+		// 	csb = utils.loadMasterCsb(pin);
+		// }else{
+		// 	csb = utils.getCsb(pin, aliasCsb);
+		// }
+		// if(csb.Data["records"] && csb.Data["records"]["Csb"] && csb.Data["records"]["Csb"].length){
+		// 	var csbs = csb.Data["records"]["Csb"];
+		// 	this.listCsbs(csbs, 0);
+		// }else{
+		// 	$$.interact.say("No csb exists");
+		// }
 	},
 	listCsbs: function (csbs, currentCsb) {
 		if(currentCsb < csbs.length) {

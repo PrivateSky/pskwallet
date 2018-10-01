@@ -7,18 +7,35 @@ $$.flow.describe("copyUrl", {
 	start: function (sourceUrl, destUrl) {
 		var self = this;
 		utils.requirePin(null, function (err, pin) {
-			self.processUrl(pin, sourceUrl, destUrl);
+			self.processUrl(pin, sourceUrl, destUrl, function (err) {
+				if(!err){
+					console.log("Done copying");
+				}else{
+					throw err;
+				}
+			});
 		})
 	},
-	processUrl: function (pin, sourceUrl, destUrl) {
-		var srcRecord = $$.flow.create("flows.getUrl").processUrl(pin, sourceUrl);
-		var destArgs = utils.traverseUrl(pin, destUrl);
+	processUrl: function (pin, sourceUrl, destUrl, callback) {
+		$$.flow.create("flows.getUrl").processUrl(pin, sourceUrl, function (err, srcRecord) {
+			if(err){
+				callback(err);
+				return;
+			}
+			utils.traverseUrl(pin, destUrl, function (err, destArgs) {
+				if(!err){
+					var parentCsb = destArgs.shift();
+					utils.getChildCsb(parentCsb, destArgs.shift(), function (err, csb) {
+						if(!err){
+							destArgs.unshift(csb);
+							destArgs.unshift(srcRecord);
+							destArgs.unshift(pin);
+							$$.flow.create("flows.setKey").addRecord(...destArgs);
+						}
+					});
 
-		var parentCsb = destArgs.shift();
-		var csb = utils.getChildCsb(parentCsb, destArgs.shift());
-		destArgs.unshift(csb);
-		destArgs.unshift(srcRecord);
-		destArgs.unshift(pin);
-		$$.flow.create("flows.setKey").addRecord(...destArgs);
+				}
+			});
+		});
 	}
 });
