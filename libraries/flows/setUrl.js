@@ -41,7 +41,7 @@ $$.flow.describe("setUrl", {
 				var prompt = "Do you want to continue?";
 				if(!field){
 					$$.interact.say("You are about to overwrite the following record:");
-					$$.interact.say($$.flow.create("flows.getUrl").__getRecord(csb, recordType, key));
+					$$.interact.say($$.flow.describe("flows.getUrl").__getRecord(csb, recordType, key));
 					utils.confirmOperation(prompt, null, function(err, rl){
 						utils.enterRecord(fields, 0, null, rl, function (err, record) {
 							self.addRecord(record, csb, recordType, key, field)
@@ -54,7 +54,7 @@ $$.flow.describe("setUrl", {
 						$$.interact.say("The record type", recordType, "does not have a field", field);
 					} else {
 						$$.interact.say("You are about to overwrite the following field:");
-						$$.interact.say($$.flow.create("flows.getUrl").__getRecord(csb, recordType, key, field));
+						$$.interact.say($$.flow.describe("flows.getUrl").__getRecord(csb, recordType, key, field));
 						utils.confirmOperation(prompt, function(err, rl){
 							utils.enterField(field, rl, function(err, answer){
 								self.addRecord(answer, csb, recordType, key, field);

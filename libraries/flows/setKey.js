@@ -27,7 +27,7 @@ $$.flow.describe("setKey", {
 				var prompt = "Do you want to continue?";
 				if(!field){
 					$$.interact.say("You are about to overwrite the following record:");
-					$$.flow.create("flows.getKey").getKey(pin, aliasCsb, recordType, key);
+					$$.flow.describe("flows.getKey").getKey(pin, aliasCsb, recordType, key);
 					utils.confirmOperation(prompt, null, function(err, rl){
 						utils.enterRecord(fields, 0, null, rl, function (err, record) {
 							self.addRecord(pin, record, csb, recordType, key, field)
@@ -40,7 +40,7 @@ $$.flow.describe("setKey", {
 						$$.interact.say("The record type", recordType, "does not have a field", field);
 					} else {
 						$$.interact.say("You are about to overwrite the following field:");
-						$$.flow.create("flows.getKey").getKey(pin, aliasCsb, recordType, key, field);
+						$$.flow.describe("flows.getKey").getKey(pin, aliasCsb, recordType, key, field);
 						utils.confirmOperation(prompt, function(err, rl){
 							utils.enterField(field, rl, function(err, answer){
 								self.addRecord(pin, answer, csb, recordType, key, field);
