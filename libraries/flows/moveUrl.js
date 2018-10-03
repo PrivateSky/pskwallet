@@ -11,7 +11,7 @@ $$.flow.describe("moveUrl", {
 		})
 	},
 	moveRecord: function (pin, sourceUrl, destUrl) {
-		$$.flow.create("flows.copyUrl").processUrl(pin, sourceUrl, destUrl);
-		$$.flow.create("flows.deleteUrl").processUrl(pin, sourceUrl);
+		$$.flow.describe("flows.copyUrl").processUrl(pin, sourceUrl, destUrl);
+		$$.flow.describe("flows.deleteUrl").processUrl(pin, sourceUrl);
 	}
 });

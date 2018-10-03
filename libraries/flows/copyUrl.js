@@ -17,7 +17,7 @@ $$.flow.describe("copyUrl", {
 		})
 	},
 	processUrl: function (pin, sourceUrl, destUrl, callback) {
-		$$.flow.create("flows.getUrl").processUrl(pin, sourceUrl, function (err, srcRecord) {
+		$$.flow.describe("flows.getUrl").processUrl(pin, sourceUrl, function (err, srcRecord) {
 			if(err){
 				callback(err);
 				return;
@@ -30,7 +30,7 @@ $$.flow.describe("copyUrl", {
 							destArgs.unshift(csb);
 							destArgs.unshift(srcRecord);
 							destArgs.unshift(pin);
-							$$.flow.create("flows.setKey").addRecord(...destArgs);
+							$$.flow.describe("flows.setKey").addRecord(...destArgs);
 						}
 					});
 
