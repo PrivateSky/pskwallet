@@ -26,7 +26,7 @@ $$.flow.describe("addBackup", {
 					return callback(err);
 				}
 
-				$$.remote.doHttpPost(url + "/CSB/" + masterCsb.Uid, encryptedMaster.toString("hex"), function (err, res) {
+				$$.remote.doHttpPost(url + "/CSB/" + masterCsb.Uid, encryptedMaster, function (err, res) {
 					if(err){
 						$$.interact.say("Failed to post master Csb on server");
 					}else{
@@ -52,7 +52,7 @@ $$.flow.describe("addBackup", {
 				}
 				var csb = crypto.decryptJson(encryptedCsb, Buffer.from(csbs[currentCsb]["Dseed"], "hex"));
 				function __backupCsb() {
-					$$.remote.doHttpPost(path.join(url, "CSB", csbs[currentCsb]["Path"]), encryptedCsb.toString("hex"), function(err){
+					$$.remote.doHttpPost(path.join(url, "CSB", csbs[currentCsb]["Path"]), encryptedCsb, function(err){
 						if(err){
 							$$.interact.say("Failed to post csb", csbs[currentCsb]["Title"],"on server");
 							callback(err);
@@ -87,19 +87,9 @@ $$.flow.describe("addBackup", {
 			return callback();
 		}
 		const stream = fs.createReadStream(path.join(utils.Paths.Adiacent, archives[currentArchive]["Path"]));
-		// console.log('stats ', fs.statSync(path.join(utils.Paths.Adiacent, archives[currentArchive]["Path"])));
-		// stream.on('readable', function () {
-		// 	var buffer = stream.read(10);
-		// 	if (buffer) {
-		// 		console.log(buffer.toString('utf8'));
-		// 	}
-		// });
-		// console.log('DOING HTTP POST', path.join(utils.Paths.Adiacent, archives[currentArchive]["Path"]));
-		stream.setEncoding('hex');
 		$$.remote.doHttpPost(url + "/CSB/" + archives[currentArchive]["Path"], stream, function(err){
 			stream.close();
 			if(err){
-				console.log(err.statusCode)
 				$$.interact.say("Failed to post archive", archives[currentArchive]["Title"],"on server");
 				callback(err);
 			}else{

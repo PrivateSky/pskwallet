@@ -53,12 +53,11 @@ $$.flow.describe("restore", {
 		var url = obj.backup;
 		$$.interact.say(url);
 		var self = this;
-		$$.remote.doHttpGet(path.join(url,"CSB", utils.getMasterUid(crypto.deriveSeed(seed))), function (err, res) {
+		$$.remote.doHttpGet(path.join(url,"CSB", utils.getMasterUid(crypto.deriveSeed(seed))), function (err, encryptedMaster) {
 			if(err){
 				callback(err);
 			}else{
 				var dseed = crypto.deriveSeed(seed);
-				var encryptedMaster = Buffer.from(res, 'hex');
 				fs.writeFile(utils.getMasterPath(dseed), encryptedMaster, function (err) {
 					if(err){
 						return callback(err);
@@ -93,7 +92,7 @@ $$.flow.describe("restore", {
 				$$.interact.say("All csbs have been restored");
 			}
 			}else{
-			$$.remote.doHttpGet(path.join(url, "CSB", csbs[currentCsb]["Path"]), function(err, res){
+			$$.remote.doHttpGet(path.join(url, "CSB", csbs[currentCsb]["Path"]), function(err, encryptedCsb){
 				if(err){
 					callback(err);
 				}else{
@@ -109,7 +108,6 @@ $$.flow.describe("restore", {
 							});
 						});
 					}
-					var encryptedCsb = Buffer.from(res, "hex");
 					var csb = crypto.decryptJson(encryptedCsb, Buffer.from(csbs[currentCsb]["Dseed"], "hex"));
 					if(csb["records"] ){
 						if(csb["records"]["Csb"] && csb["records"]["Csb"].length > 0) {
@@ -148,8 +146,6 @@ $$.flow.describe("restore", {
 					if(err){
 						return callback(err);
 					}
-
-					data = Buffer.from(data, 'hex');
 					console.log('data length ', data.length)
 					fs.writeFile(path.join(utils.Paths.Adiacent, archives[currentArchive]["Path"]), data, function (err) {
 						if(err){
