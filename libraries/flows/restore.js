@@ -137,6 +137,8 @@ $$.flow.describe("restore", {
 		if(currentArchive == archives.length){
 			return callback(null);
 		}
+
+		console.log('getting ', url + "/CSB/" + archives[currentArchive]["Path"]);
 		$$.remote.doHttpGet(path.join(url, "CSB", archives[currentArchive]["Path"]), function(err, data){
 			if(err){
 				$$.interact.say("Failed to post archive", archives[currentArchive]["Title"],"on server");
@@ -146,6 +148,9 @@ $$.flow.describe("restore", {
 					if(err){
 						return callback(err);
 					}
+
+					data = Buffer.from(data, 'hex');
+					console.log('data length ', data.length)
 					fs.writeFile(path.join(utils.Paths.Adiacent, archives[currentArchive]["Path"]), data, function (err) {
 						if(err){
 							return callback(err);

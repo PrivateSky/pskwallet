@@ -75,7 +75,7 @@ addCommand("print", "csb", doPrintCsb, "<aliasCsb>\t\t\t\t |print the CSB having
 addCommand("set", "key", doSetKey, "<aliasCsb> <recordType> <key> <field>   |set the key " ); //seteaza o cheie intr-un csb
 addCommand("get", "key", doGetKey, "<aliasCsb> <recordType> <key> <field>   |get the key " ); //citeste o cheie intr-un csb
 addCommand("add", "backup", doAddBackup,"<url>\t\t\t\t |save all csbs at address <url>");
-addCommand("restore", "csb", doRestore, "<aliasCsb>\t\t\t\t |restore the csb <aliasCsb> from one of the addresses stored\n\t\t\t\t\t\t\t  in backup\n");
+addCommand("restore", null, doRestore, "<alias>\t\t\t\t |restore the csb  or archive having the name <alias> from one of the addresses stored\n\t\t\t\t\t\t\t  in backup\n");
 addCommand("reset", "pin", doResetPin, "\t\t\t\t\t |enter the seed in order to set the pin to a new value");
 addCommand("set", "url", doSetUrl, "<url> \t\t\t\t\t |set/update the record/field pointed by the provided <url>");
 addCommand("get", "url", doGetUrl, "<url> \t\t\t\t\t |print the record/field indicated by te provided <url>");

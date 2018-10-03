@@ -13,24 +13,27 @@ $$.flow.describe("getKey", {
 			self.getKey(pin, aliasCsb, recordType, key, field);
 		});
 	},
-	getKey: function (pin, aliasCsb, recordType, key, field) {
-		var csb = utils.getCsb(pin, aliasCsb);
-		if (!csb) {
-			$$.interact.say("No csb with the alias", aliasCsb, "exists");
-			return;
-		}
-
-		var indexKey = utils.indexOfKey(csb.Data["records"][recordType], "Title", key);
-		if (indexKey >= 0) {
-			if (!field) {
-				$$.interact.say(csb.Data["records"][recordType][indexKey]);
-			} else if (csb["records"][recordType][indexKey][field]) {
-				$$.interact.say(csb.Data["records"][recordType][indexKey][field]);
-			} else {
-				$$.interact.say("The record type", recordType, "does not have a field", field);
+	getKey: function (pin, aliasCsb, recordType, key, field, callback) {
+		utils.getCsb(pin, aliasCsb, function (err, csb) {
+			if(err){
+				return callback(err);
 			}
-		} else {
-			$$.interact.say("No record having the key", key, "exists in", aliasCsb);
-		}
+			if (!csb) {
+				$$.interact.say("No csb with the alias", aliasCsb, "exists");
+				return;
+			}
+			var indexKey = utils.indexOfKey(csb.Data["records"][recordType], "Title", key);
+			if (indexKey >= 0) {
+				if (!field) {
+					$$.interact.say(csb.Data["records"][recordType][indexKey]);
+				} else if (csb["records"][recordType][indexKey][field]) {
+					$$.interact.say(csb.Data["records"][recordType][indexKey][field]);
+				} else {
+					$$.interact.say("The record type", recordType, "does not have a field", field);
+				}
+			} else {
+				$$.interact.say("No record having the key", key, "exists in", aliasCsb);
+			}
+		});
 	}
 });

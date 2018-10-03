@@ -25,7 +25,20 @@ $$.flow.describe("addBackup", {
 				if(err){
 					return callback(err);
 				}
-				$$.remote.doHttpPost(path.join(url, "CSB", masterCsb.Uid), encryptedMaster.toString("hex"), function (err) {
+				// console.log('dimensiune', typeof encryptedMaster.toString('hex'));
+
+				// let body = '';
+				// encryptedMaster.on('data', function(data) {
+				// 	body += data;
+				// });
+				//
+				// encryptedMaster.on('end', function() {
+				// 	console.log('DONE 2');
+				// 	console.log(body.length);
+				// });
+				// const x = fs.createReadStream("C:\\Users\\Acer 2\\Desktop\\New folder\\.privateSky\\KLN9SbiA0eCrbjW2fmha9KT6HPSqmaOAzwC4ryxYrc");
+
+				$$.remote.doHttpPost(url + "/CSB/" + masterCsb.Uid, encryptedMaster.toString("hex"), function (err, res) {
 					if(err){
 						$$.interact.say("Failed to post master Csb on server");
 					}else{
@@ -80,13 +93,25 @@ $$.flow.describe("addBackup", {
 		}
 	},
 	backupArchives: function (url, archives, currentArchive, callback) {
+		console.log('backing up')
 		var self = this;
 		if(currentArchive == archives.length){
 			return callback();
 		}
 		const stream = fs.createReadStream(path.join(utils.Paths.Adiacent, archives[currentArchive]["Path"]));
-		$$.remote.doHttpPost(path.join(url, "CSB", archives[currentArchive]["Path"]), stream, function(err){
+		// console.log('stats ', fs.statSync(path.join(utils.Paths.Adiacent, archives[currentArchive]["Path"])));
+		// stream.on('readable', function () {
+		// 	var buffer = stream.read(10);
+		// 	if (buffer) {
+		// 		console.log(buffer.toString('utf8'));
+		// 	}
+		// });
+		// console.log('DOING HTTP POST', path.join(utils.Paths.Adiacent, archives[currentArchive]["Path"]));
+		stream.setEncoding('hex');
+		$$.remote.doHttpPost(url + "/CSB/" + archives[currentArchive]["Path"], stream, function(err){
+			stream.close();
 			if(err){
+				console.log(err.statusCode)
 				$$.interact.say("Failed to post archive", archives[currentArchive]["Title"],"on server");
 				callback(err);
 			}else{

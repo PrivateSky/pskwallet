@@ -78,13 +78,11 @@ function checkSeedIsValid(seed, callback) {
 exports.requirePin = function (prompt, callback) {
 	exports.masterCsbExists(function (err, status) {
 		if(err){
-			console.log("Error");
 			exports.createMasterCsb(null, null, function (err) {
 				callback(err)
 			});
 
 		}else{
-			console.log("No error");
 			enterPin(prompt, 3, callback);
 		}
 	});
