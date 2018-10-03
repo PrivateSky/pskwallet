@@ -1,71 +1,71 @@
 $$.loadLibrary("flows", require("../flows"));
 
 doSetPin = function () {
-	$$.flow.describe("flows.setPin").start();
+	$$.flow.start("flows.setPin").start();
 };
 
 doAddCSB = function (aliasCSB) {
-	$$.flow.describe("flows.createCsb").start(aliasCSB);
+	$$.flow.start("flows.createCsb").start(aliasCSB);
 };
 
 doPrintCsb = function (aliasCsb) {
-	$$.flow.describe("flows.printCsb").start(aliasCsb);
+	$$.flow.start("flows.printCsb").start(aliasCsb);
 };
 
 doSetKey = function (aliasCsb, recordType, key, field) {
-	$$.flow.describe("flows.setKey").start(aliasCsb, recordType, key, field);
+	$$.flow.start("flows.setKey").start(aliasCsb, recordType, key, field);
 };
 
 doGetKey = function (aliasCsb, recordType, key, field) {
-	$$.flow.describe("flows.getKey").start(aliasCsb, recordType, key, field);
+	$$.flow.start("flows.getKey").start(aliasCsb, recordType, key, field);
 };
 
 doAddBackup = function (url) {
-	$$.flow.describe("flows.addBackup").start(url);
+	$$.flow.start("flows.addBackup").start(url);
 };
 
 doResetPin = function(){
-	$$.flow.describe("flows.resetPin").start();
+	$$.flow.start("flows.resetPin").start();
 };
 
 doRestore = function (aliasCsb) {
-	$$.flow.describe("flows.restore").start(aliasCsb);
+	$$.flow.start("flows.restore").start(aliasCsb);
 };
 
 doSetUrl = function (url) {
-	$$.flow.describe("flows.setUrl").start(url);
+	$$.flow.start("flows.setUrl").start(url);
 };
 
 doGetUrl = function (url) {
-	$$.flow.describe("flows.getUrl").start(url);
+	$$.flow.start("flows.getUrl").start(url);
 };
 
 doAddFile = function(csbUrl, filePath){
-	$$.flow.describe("flows.addFile").start(csbUrl, filePath);
+	$$.flow.start("flows.addFile").start(csbUrl, filePath);
 };
 
 doAddFolder = function(csbUrl, folderPath){
-	$$.flow.describe("flows.addFile").start(csbUrl, folderPath);
+	$$.flow.start("flows.addFile").start(csbUrl, folderPath);
 };
 
 doExtract = function(url){
-	$$.flow.describe("flows.extract").start(url);
+	$$.flow.start("flows.extract").start(url);
 };
 
 doListCsbs = function (aliasCsb) {
-	$$.flow.describe("flows.listCsbs").start(aliasCsb);
+	$$.flow.start("flows.listCsbs").start(aliasCsb);
 };
 
 doCopyUrl = function (sourceUrl, destUrl) {
-	$$.flow.describe("flows.copyUrl").start(sourceUrl, destUrl);
+	$$.flow.start("flows.copyUrl").start(sourceUrl, destUrl);
 };
 
 doDeleteUrl = function (url) {
-	$$.flow.describe("flows.deleteUrl").start(url);
+	$$.flow.start("flows.deleteUrl").start(url);
 };
 
 doMoveUrl = function (sourceUrl, destUrl) {
-	$$.flow.describe("flows.moveUrl").start(sourceUrl, destUrl);
+	$$.flow.start("flows.moveUrl").start(sourceUrl, destUrl);
 };
 
 
