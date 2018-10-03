@@ -25,18 +25,6 @@ $$.flow.describe("addBackup", {
 				if(err){
 					return callback(err);
 				}
-				// console.log('dimensiune', typeof encryptedMaster.toString('hex'));
-
-				// let body = '';
-				// encryptedMaster.on('data', function(data) {
-				// 	body += data;
-				// });
-				//
-				// encryptedMaster.on('end', function() {
-				// 	console.log('DONE 2');
-				// 	console.log(body.length);
-				// });
-				// const x = fs.createReadStream("C:\\Users\\Acer 2\\Desktop\\New folder\\.privateSky\\KLN9SbiA0eCrbjW2fmha9KT6HPSqmaOAzwC4ryxYrc");
 
 				$$.remote.doHttpPost(url + "/CSB/" + masterCsb.Uid, encryptedMaster.toString("hex"), function (err, res) {
 					if(err){
