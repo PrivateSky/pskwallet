@@ -7,18 +7,28 @@ $$.flow.describe("deleteUrl", {
 	start: function (url) {
 		var self = this;
 		utils.requirePin(null, function (err, pin) {
-			self.processUrl(pin, url);
+			self.processUrl(pin, url, function (err) {
+				if(err) throw err;
+			});
 		})
 	},
-	processUrl: function (pin, url) {
-		var args = utils.traverseUrl(pin, url);
-		var parentCsb = args.shift();
-		var csb = utils.getChildCsb(parentCsb, args.shift());
-		args.unshift(csb);
-		this.deleteRecord(...args);
-		
+	processUrl: function (pin, url, callback) {
+		var self = this;
+		utils.traverseUrl(pin, url, function (err, args) {
+			if(err){
+				return callback(err);
+			}
+			var parentCsb = args.shift();
+			utils.getChildCsb(parentCsb, args.shift(), function (err, csb) {
+				if(err){
+					return callback(err);
+				}
+				args.unshift(csb);
+				self.deleteRecord(...args, callback);
+			});
+		});
 	},
-	deleteRecord: function (csb, recordType, key, field) {
+	deleteRecord: function (csb, recordType, key, field, callback) {
 		if (!recordType) {
 			$$.interact.say("Nothing to remove");
 			return;
@@ -26,6 +36,9 @@ $$.flow.describe("deleteUrl", {
 		if (!key) {
 			var prompt = "You are  about to delete all records of type " + recordType + " from csb " + csb.Title;
 			utils.confirmOperation(prompt, null, function (err, rl) {
+				if(err){
+					return callback(err);
+				}
 				if (csb && csb.Data && csb.Data["records"] && csb.Data["records"][recordType]) {
 					csb.Data["records"][recordType] = [];
 				}
@@ -48,6 +61,10 @@ $$.flow.describe("deleteUrl", {
 				csb.Data["records"][recordType].splice(indexRecord, 1);
 			}
 		}
-		utils.writeCsbToFile(csb.Path, csb.Data, csb.Dseed);
+		utils.writeCsbToFile(csb.Path, csb.Data, csb.Dseed, function (err) {
+			if(err) {
+				return callback(err);
+			}
+		});
 	}
 });

@@ -14,7 +14,6 @@ $$.flow.describe("listCsbs", {
 				utils.requirePin(null, function (err, pin) {
 					self.getCsb(pin, aliasCsb, function (err, csb) {
 						if(err){
-							console.log('Errror')
 							throw err;
 						}else{
 							console.log("---------csb:", csb);
