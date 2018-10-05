@@ -16,14 +16,27 @@ $$.flow.describe("resetPin", {
 				$$.interact.say("You introduced an invalid character. Please try again.")
 				self.enterPin(seed);
 			}else {
-				self.updateData(seed, answer);
+				self.updateData(seed, answer, function (err) {
+					if(err){
+						throw err;}
+				});
 			}
 		});
 	},
-	updateData: function (seed, pin) {
-		var masterCsb = utils.loadMasterCsb(null, seed);
-		utils.writeCsbToFile(masterCsb.Path, masterCsb.Data, masterCsb.Dseed);
-		crypto.saveDSeed(masterCsb.Dseed, pin, utils.Paths.Dseed);
-		$$.interact.say("Pin has been changed");
+	updateData: function (seed, pin, callback) {
+		utils.loadMasterCsb(null, seed, function (err, masterCsb) {
+			utils.writeCsbToFile(masterCsb.Path, masterCsb.Data, masterCsb.Dseed, function (err) {
+				if(err){
+					return callback(err);
+				}
+				crypto.saveDSeed(masterCsb.Dseed, pin, utils.Paths.Dseed, function (err) {
+					if(err){
+						return callback(err);
+					}
+					$$.interact.say("Pin has been changed");
+				});
+			});
+		});
+
 	}
 });
