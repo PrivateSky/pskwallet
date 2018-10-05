@@ -18,15 +18,15 @@ $$.flow.describe("addBackup", {
 	backupMaster: function (pin, url, callback) {
 		var self = this;
 		utils.loadMasterCsb(pin, null, function (err, masterCsb) {
-			masterCsb.Data["backups"].push(url);
+			// masterCsb.Data["backups"].push(url);
 			var csbs = masterCsb.Data["records"]["Csb"];
 			var encryptedMaster = crypto.encryptJson(masterCsb.Data, masterCsb.Dseed);
+			console.log(encryptedMaster.length);
 			utils.writeCsbToFile(masterCsb.Path, masterCsb.Data, masterCsb.Dseed, function (err) {
 				if(err){
 					return callback(err);
 				}
-
-				$$.remote.doHttpPost(url + "/CSB/" + masterCsb.Uid, encryptedMaster, function (err, res) {
+				$$.remote.doHttpPost(url + "/CSB/" + masterCsb.Uid, encryptedMaster, function (err) {
 					if(err){
 						$$.interact.say("Failed to post master Csb on server");
 					}else{
@@ -50,9 +50,11 @@ $$.flow.describe("addBackup", {
 				if(err){
 					return callback(err);
 				}
+				console.log(Buffer.isBuffer(encryptedCsb));
+
 				var csb = crypto.decryptJson(encryptedCsb, Buffer.from(csbs[currentCsb]["Dseed"], "hex"));
 				function __backupCsb() {
-					$$.remote.doHttpPost(path.join(url, "CSB", csbs[currentCsb]["Path"]), encryptedCsb, function(err){
+					$$.remote.doHttpPost(url + "/CSB/" + csbs[currentCsb]["Path"], encryptedCsb, function(err){
 						if(err){
 							$$.interact.say("Failed to post csb", csbs[currentCsb]["Title"],"on server");
 							callback(err);
@@ -87,9 +89,11 @@ $$.flow.describe("addBackup", {
 			return callback();
 		}
 		const stream = fs.createReadStream(path.join(utils.Paths.Adiacent, archives[currentArchive]["Path"]));
+		// stream.setEncoding('binary');
 		$$.remote.doHttpPost(url + "/CSB/" + archives[currentArchive]["Path"], stream, function(err){
 			stream.close();
 			if(err){
+				console.log(err.statusCode);
 				$$.interact.say("Failed to post archive", archives[currentArchive]["Title"],"on server");
 				callback(err);
 			}else{

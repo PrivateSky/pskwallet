@@ -53,11 +53,16 @@ $$.flow.describe("restore", {
 		var url = obj.backup;
 		$$.interact.say(url);
 		var self = this;
-		$$.remote.doHttpGet(path.join(url,"CSB", utils.getMasterUid(crypto.deriveSeed(seed))), function (err, encryptedMaster) {
+		console.log(url +"/CSB/" + utils.getMasterUid(crypto.deriveSeed(seed)));
+		$$.remote.doHttpGet(url +"/CSB/" + utils.getMasterUid(crypto.deriveSeed(seed)), function (err, encryptedMaster) {
 			if(err){
 				callback(err);
 			}else{
 				var dseed = crypto.deriveSeed(seed);
+				console.log("Typeee", typeof encryptedMaster);
+				// encryptedMaster = Buffer.from(encryptedMaster, 'binary');
+				// encryptedMaster = Buffer.from(encryptedMaster);
+				console.log(encryptedMaster.length);
 				fs.writeFile(utils.getMasterPath(dseed), encryptedMaster, function (err) {
 					if(err){
 						return callback(err);
@@ -91,8 +96,8 @@ $$.flow.describe("restore", {
 			}else {
 				$$.interact.say("All csbs have been restored");
 			}
-			}else{
-			$$.remote.doHttpGet(path.join(url, "CSB", csbs[currentCsb]["Path"]), function(err, encryptedCsb){
+		}else{
+			$$.remote.doHttpGet(url + "/CSB/" + csbs[currentCsb]["Path"], function(err, encryptedCsb){
 				if(err){
 					callback(err);
 				}else{
@@ -108,6 +113,9 @@ $$.flow.describe("restore", {
 							});
 						});
 					}
+					console.log("Typeee", typeof encryptedCsb);
+					// encryptedCsb = Buffer.from(encryptedCsb, 'binary');
+					// encryptedCsb = Buffer.from(encryptedCsb);
 					var csb = crypto.decryptJson(encryptedCsb, Buffer.from(csbs[currentCsb]["Dseed"], "hex"));
 					if(csb["records"] ){
 						if(csb["records"]["Csb"] && csb["records"]["Csb"].length > 0) {
@@ -135,9 +143,7 @@ $$.flow.describe("restore", {
 		if(currentArchive == archives.length){
 			return callback(null);
 		}
-
-		console.log('getting ', url + "/CSB/" + archives[currentArchive]["Path"]);
-		$$.remote.doHttpGet(path.join(url, "CSB", archives[currentArchive]["Path"]), function(err, data){
+		$$.remote.doHttpGet(url + "/CSB/" + archives[currentArchive]["Path"], function(err, data){
 			if(err){
 				$$.interact.say("Failed to post archive", archives[currentArchive]["Title"],"on server");
 				callback(err);
@@ -146,7 +152,8 @@ $$.flow.describe("restore", {
 					if(err){
 						return callback(err);
 					}
-					console.log('data length ', data.length)
+
+					// data = Buffer.from(data);
 					fs.writeFile(path.join(utils.Paths.Adiacent, archives[currentArchive]["Path"]), data, function (err) {
 						if(err){
 							return callback(err);
