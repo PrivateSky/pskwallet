@@ -5,11 +5,10 @@ $$.flow.describe("setKey", {
 	start: function (aliasCsb, recordType, key, field) {
 		var self = this;
 		utils.requirePin(null, function (err, pin) {
-			self.readStructure(pin, aliasCsb, recordType, key, field, function (err) {
+			self.readStructure(pin, aliasCsb, recordType, key, field, function (err, record) {
 				if(err){
-					throw err;
+					console.log( err);
 				}
-
 			});
 		})
 	},
@@ -37,10 +36,21 @@ $$.flow.describe("setKey", {
 				var prompt = "Do you want to continue?";
 				if(!field){
 					$$.interact.say("You are about to overwrite the following record:");
-					$$.flow.describe("flows.getKey").getKey(pin, aliasCsb, recordType, key);
-					utils.confirmOperation(prompt, null, function(err, rl){
-						utils.enterRecord(fields, 0, null, rl, function (err, record) {
-							self.addRecord(pin, record, csb, recordType, key, field)
+					$$.flow.start("flows.getKey").getKey(pin, aliasCsb, recordType, key, null, function (err, record) {
+						if(err){
+							return callback(err);
+						}
+						// console.log(record);
+						utils.confirmOperation(prompt, null, function(err, rl){
+							if(err){
+								return callback(err);
+							}
+							utils.enterRecord(fields, 0, null, rl, function (err, record) {
+								if(err){
+									return callback(err);
+								}
+								self.addRecord(pin, record, csb, recordType, key, field, callback)
+							});
 						});
 					});
 				}
@@ -50,25 +60,38 @@ $$.flow.describe("setKey", {
 						$$.interact.say("The record type", recordType, "does not have a field", field);
 					} else {
 						$$.interact.say("You are about to overwrite the following field:");
-						$$.flow.describe("flows.getKey").getKey(pin, aliasCsb, recordType, key, field);
-						utils.confirmOperation(prompt, function(err, rl){
-							utils.enterField(field, rl, function(err, answer){
-								self.addRecord(pin, answer, csb, recordType, key, field);
-							})
+						$$.flow.start("flows.getKey").getKey(pin, aliasCsb, recordType, key, field, function (err, record) {
+							if(err){
+								return callback(err);
+							}
+							// console.log(record);
+							utils.confirmOperation(prompt, function(err, rl){
+								if(err){
+									return callback(err);
+								}
+								utils.enterField(field, rl, function(err, answer){
+									if(err){
+										return callback(err);
+									}
+									self.addRecord(pin, answer, csb, recordType, key, field, callback);
+								})
+							});
 						});
 					}
 				}
 			}else {
 				$$.interact.say("No record of type", recordType, "having the key", key, "could be found in", aliasCsb);
-				return;
 			}
 		}else if(!key && !field) {
 			utils.enterRecord(fields, 0, null, null, function (err, record) {
-				self.addRecord(pin, record, csb, recordType, key, field);
+				if(err){
+					return callback(err);
+				}
+				self.addRecord(pin, record, csb, recordType, key, field, callback);
 			});
 		}
 	},
-	addRecord: function (pin, record, csb, recordType, key, field) {
+	addRecord: function (pin, record, csb, recordType, key, field, callback) {
 		if (!csb.Data["records"]) {
 			csb.Data["records"] = {};
 		}
@@ -88,9 +111,10 @@ $$.flow.describe("setKey", {
 			}
 		}
 		utils.writeCsbToFile(csb.Path, csb.Data, csb.Dseed, function (err) {
-			if(!err){
-				console.log("Done");
+			if(err){
+				return callback(err);
 			}
+			console.log("Done");
 		});
 	}
 });

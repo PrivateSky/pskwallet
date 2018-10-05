@@ -10,7 +10,9 @@ $$.flow.describe("getKey", {
 		}
 		var self = this;
 		utils.requirePin(null, function (err, pin) {
-			self.getKey(pin, aliasCsb, recordType, key, field);
+			self.getKey(pin, aliasCsb, recordType, key, field, function (err) {
+				if(err) throw err;
+			});
 		});
 	},
 	getKey: function (pin, aliasCsb, recordType, key, field, callback) {
@@ -26,8 +28,10 @@ $$.flow.describe("getKey", {
 			if (indexKey >= 0) {
 				if (!field) {
 					$$.interact.say(csb.Data["records"][recordType][indexKey]);
+					callback(null, csb.Data["records"][recordType][indexKey]);
 				} else if (csb["records"][recordType][indexKey][field]) {
 					$$.interact.say(csb.Data["records"][recordType][indexKey][field]);
+					callback(null, csb.Data["records"][recordType][indexKey][field]);
 				} else {
 					$$.interact.say("The record type", recordType, "does not have a field", field);
 				}
