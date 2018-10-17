@@ -2,13 +2,12 @@ var path = require("path");
 
 const utils = require(path.resolve(__dirname + "/../utils/utils"));
 const crypto = require("pskcrypto");
-$$.flow.describe("createCsb", {
+$$.swarm.describe("createCsb", {
 	start: function (aliasCsb) {
 		var self = this;
-		utils.requirePin(null, function (err, pin) {
-			self.createCsb(pin, aliasCsb);
-		});
+		self.swarm("interaction", "step1", aliasCsb);
 	},
+	step1:"interaction",
 	createCsb: function (pin, aliasCsb) {
 		var csbData   = utils.defaultCSB();
 		var seed      = crypto.generateSeed(utils.defaultBackup);

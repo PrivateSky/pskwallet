@@ -3,7 +3,7 @@ const crypto = require("pskcrypto");
 const fs = require("fs");
 const path = require("path");
 const readline = require("readline");
-require("interact").initConsoleMode();
+const getPassword = require("./getPassword");
 
 
 exports.defaultBackup = "http://localhost:8080";
@@ -51,7 +51,7 @@ function checkSeedIsValid(seed, callback) {
 		// $$.interact.say("Preparing to exit");
 
 	}else {
-		$$.interact.readPin(prompt, function (err, pin) {
+		getPassword(prompt, function (err, pin) {
 			if(err) {
 				console.log("Pin is invalid");
 				console.log("Try again");
@@ -88,7 +88,7 @@ exports.requirePin = function (prompt, callback) {
 	});
 };
 exports.enterSeed = function (callback) {
-	$$.interact.readPassword("Enter seed:", function (err, answer) {
+	getPassword("Enter seed:", function (err, answer) {
 		if(!err) {
 			var seed = Buffer.from(answer, "base64");
 			$$.ensureFolderExists(exports.Paths.auxFolder, function (err) {
@@ -144,19 +144,19 @@ exports.masterCsbExists = function (callback) {
 };
 
 exports.createMasterCsb = function(pin, pathMaster, callback) {
-	$$.interact.say("Creating master csb");
+	console.log("Creating master csb");
 	pin = pin || exports.defaultPin;
 	fs.mkdir(exports.Paths.auxFolder, function (err) {
 		if(err){
 			callback(err);
 		}else {
 			var seed = crypto.generateSeed(exports.defaultBackup);
-			$$.interact.say("The following string represents the seed.Please save it.");
-			$$.interact.say();
-			$$.interact.say(seed.toString("base64"));
-			$$.interact.say();
-			$$.interact.say("The default pin is:", exports.defaultPin);
-			$$.interact.say();
+			console.log("The following string represents the seed.Please save it.");
+			console.log();
+			console.log(seed.toString("base64"));
+			console.log();
+			console.log("The default pin is:", exports.defaultPin);
+			console.log();
 			var dseed = crypto.deriveSeed(seed);
 			pathMaster = pathMaster || exports.getMasterPath(dseed);
 			crypto.saveDSeed(dseed, pin, exports.Paths.Dseed, function (err) {
@@ -166,7 +166,7 @@ exports.createMasterCsb = function(pin, pathMaster, callback) {
 						if (err) {
 							callback(err);
 						} else {
-							$$.interact.say("Master csb has been created");
+							console.log("Master csb has been created");
 							callback();
 						}
 					});
@@ -256,7 +256,7 @@ exports.confirmOperation = function (prompt, rl, callback) {
 		if (answer === "y") {
 			callback(null, rl);
 		} else if (answer !== "n") {
-			$$.interact.say("Invalid option");
+			console.log("Invalid option");
 			exports.confirmOperation(prompt, rl, callback);
 		}else{
 			rl.close();

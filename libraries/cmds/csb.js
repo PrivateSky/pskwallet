@@ -1,11 +1,20 @@
 $$.loadLibrary("flows", require("../flows"));
-
+var is = require("interact").createInteractionSpace();
+var utils = require('../utils/utils')
 doSetPin = function () {
 	$$.flow.start("flows.setPin").start();
 };
 
 doAddCSB = function (aliasCSB) {
-	$$.flow.start("flows.createCsb").start(aliasCSB);
+	// $$.flow.start("flows.createCsb").start(aliasCSB);
+	is.startSwarm("flows.createCsb", "start", aliasCSB).on({
+		step1:function(aliasCsb){
+			var self = this;
+			utils.requirePin(null, function (err, pin) {
+				self.swarm("createCsb",pin, aliasCsb);
+			});
+		}
+	});
 };
 
 doPrintCsb = function (aliasCsb) {

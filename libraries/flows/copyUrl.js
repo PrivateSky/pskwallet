@@ -28,7 +28,8 @@ $$.flow.describe("copyUrl", {
 							destArgs.unshift(csb);
 							destArgs.unshift(srcRecord);
 							destArgs.unshift(pin);
-							$$.flow.start("flows.setKey").addRecord(...destArgs, callback);
+							destArgs.push(callback);
+							$$.flow.start("flows.setKey").addRecord(...destArgs);
 						}
 					});
 

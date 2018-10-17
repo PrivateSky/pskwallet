@@ -24,7 +24,8 @@ $$.flow.describe("deleteUrl", {
 					return callback(err);
 				}
 				args.unshift(csb);
-				self.deleteRecord(...args, callback);
+				args.push(callback);
+				self.deleteRecord(...args);
 			});
 		});
 	},
