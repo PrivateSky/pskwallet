@@ -4,6 +4,7 @@ module.exports = $$.library(function () {
     require('./remoting');
     require('./shares');
     require('./sync');
+    require('./remotes');
 });
 
 
