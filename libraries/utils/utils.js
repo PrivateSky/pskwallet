@@ -3,7 +3,7 @@ const crypto = require("pskcrypto");
 const fs = require("fs");
 const path = require("path");
 const readline = require("readline");
-const getPassword = require("./getPassword");
+const getPassword = require("./getPassword").readPassword;
 
 
 exports.defaultBackup = "http://localhost:8080";
@@ -17,7 +17,7 @@ exports.Paths = {
 	"recordStructures"  : path.join(__dirname, path.normalize("../utils/recordStructures"))
 };
 
-function checkPinIsValid(pin, callback) {
+exports.checkPinIsValid = function(pin, callback) {
 
 	exports.loadMasterCsb(pin, null, function (err, csb) {
 		if(err){
@@ -29,7 +29,7 @@ function checkPinIsValid(pin, callback) {
 
 }
 
-function checkSeedIsValid(seed, callback) {
+exports.checkSeedIsValid = function(seed, callback) {
 	var dseed = crypto.deriveSeed(seed);
 	fs.readFile(exports.getMasterPath(dseed), function (err, encryptedMaster) {
 		try{
@@ -40,7 +40,7 @@ function checkSeedIsValid(seed, callback) {
 		callback(null, true);
 	});
 
-}
+};
 
  function enterPin(prompt, noTries, callback){
 	prompt = prompt || "Insert pin:";
@@ -59,7 +59,7 @@ function checkSeedIsValid(seed, callback) {
 				// $$.interact.say("Try again");
 				enterPin(prompt, noTries-1, callback);
 			}else{
-				checkPinIsValid(pin, function (err, status) {
+				exports.checkPinIsValid(pin, function (err, status) {
 					if(err){
 						console.log("Pin is invalid");
 						console.log("Try again");
@@ -109,7 +109,7 @@ exports.enterSeed = function (callback) {
 						}
 					})
 				}else{
-					checkSeedIsValid(seed, function (err, status) {
+					exports.checkSeedIsValid(seed, function (err, status) {
 						if(err){
 							callback(err, null);
 						}else{

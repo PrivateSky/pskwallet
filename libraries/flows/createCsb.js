@@ -5,9 +5,31 @@ const crypto = require("pskcrypto");
 $$.swarm.describe("createCsb", {
 	start: function (aliasCsb) {
 		var self = this;
-		self.swarm("interaction", "step1", aliasCsb);
+		utils.masterCsbExists(function (err, status) {
+			if(err){
+				utils.createMasterCsb(null, null, function (err) {
+					if(err){
+						throw err;
+					}
+					self.createCsb(null, aliasCsb);
+				});
+			}else{
+				self.swarm("interaction", "readPin", aliasCsb, 3);
+			}
+		});
 	},
-	step1:"interaction",
+	readPin:"interaction",
+	validatePin: function (pin, aliasCsb, noTries) {
+		var self = this;
+		utils.checkPinIsValid(pin, function (err) {
+			if(err){
+				self.swarm("interaction", "readPin", aliasCsb, noTries-1);
+			}else {
+				self.createCsb(pin, aliasCsb);
+			}
+		})
+	},
+
 	createCsb: function (pin, aliasCsb) {
 		var csbData   = utils.defaultCSB();
 		var seed      = crypto.generateSeed(utils.defaultBackup);
@@ -33,7 +55,7 @@ $$.swarm.describe("createCsb", {
 			utils.writeCsbToFile(masterCsb.Path, masterCsb.Data, masterCsb.Dseed, function (err) {
 				var dseed = crypto.deriveSeed(seed);
 				utils.writeCsbToFile(pathCsb, csbData, dseed, function (err) {
-					// $$.interact.say(aliasCsb, "has been successfully created");
+					console.log("Csb", aliasCsb, "was successfully created.");
 				});
 
 			});

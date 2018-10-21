@@ -1,5 +1,5 @@
 
-exports = function (prompt, callback) {
+exports.readPassword = function (prompt, callback) {
 	var stdin = process.stdin;
 	var stdout = process.stdout;
 

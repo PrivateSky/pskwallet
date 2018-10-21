@@ -1,18 +1,53 @@
 $$.loadLibrary("flows", require("../flows"));
-var is = require("interact").createInteractionSpace();
-var utils = require('../utils/utils')
+const is = require("interact").createInteractionSpace();
+const utils = require('../utils/utils')
+const getPassword = require("../utils/getPassword").readPassword;
 doSetPin = function () {
-	$$.flow.start("flows.setPin").start();
+	is.startSwarm("setPin", "start").on({
+		enterOldPin: function () {
+			var self = this;
+			utils.requirePin("Enter old pin:", function (err, oldPin) {
+				console.log(self);
+				self.swarm("requestNewPin", oldPin, function (err) {
+					if(err){
+						throw err;
+					}
+				});
+			});
+		},
+		enterNewPin: function (oldPin, callback) {
+			oldPin = oldPin || utils.defaultPin;
+			var self = this;
+			getPassword("Insert new pin:", function(err, newPin){
+				if(err){
+					console.log("An invalid character was introduced. Try again:")
+					self.enterNewPin(oldPin, callback);
+				}else{
+					self.swarm("actualizePin", oldPin, newPin, callback);
+				}
+			});
+		},
+
+	})
 };
 
 doAddCSB = function (aliasCSB) {
-	// $$.flow.start("flows.createCsb").start(aliasCSB);
-	is.startSwarm("flows.createCsb", "start", aliasCSB).on({
-		step1:function(aliasCsb){
+	is.startSwarm("createCsb", "start", aliasCSB).on({
+		readPin:function(aliasCsb, noTries){
+			console.log("interaction read pin");
+			if(noTries == 0){
+				console.log("You inserted an invalid pin three times");
+				return;
+			}
 			var self = this;
-			utils.requirePin(null, function (err, pin) {
-				self.swarm("createCsb",pin, aliasCsb);
-			});
+			getPassword(null, function (err, pin) {
+				if(err){
+					console.log("You inserted an invalid pin");
+					self.readPin(noTries-1);
+				}else{
+					self.swarm("validatePin", pin, aliasCSB, noTries);
+				}
+			})
 		}
 	});
 };
