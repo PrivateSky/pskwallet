@@ -4,27 +4,17 @@ const utils = require('../utils/utils')
 const getPassword = require("../utils/getPassword").readPassword;
 doSetPin = function () {
 	is.startSwarm("setPin", "start").on({
-		enterOldPin: function () {
+		enterOldPin: function (noTries) {
 			var self = this;
-			utils.requirePin("Enter old pin:", function (err, oldPin) {
-				console.log(self);
-				self.swarm("requestNewPin", oldPin, function (err) {
-					if(err){
-						throw err;
-					}
+			utils.enterPin("Enter old pin:", noTries, function (err, oldPin) {
+				self.swarm("validatePin", oldPin, noTries);
 				});
-			});
 		},
-		enterNewPin: function (oldPin, callback) {
+		enterNewPin: function (oldPin) {
 			oldPin = oldPin || utils.defaultPin;
 			var self = this;
-			getPassword("Insert new pin:", function(err, newPin){
-				if(err){
-					console.log("An invalid character was introduced. Try again:")
-					self.enterNewPin(oldPin, callback);
-				}else{
-					self.swarm("actualizePin", oldPin, newPin, callback);
-				}
+			utils.enterPin("Insert new pin:",3 , function(err, newPin){
+				self.swarm("actualizePin", oldPin, newPin);
 			});
 		},
 
@@ -34,20 +24,10 @@ doSetPin = function () {
 doAddCSB = function (aliasCSB) {
 	is.startSwarm("createCsb", "start", aliasCSB).on({
 		readPin:function(aliasCsb, noTries){
-			console.log("interaction read pin");
-			if(noTries == 0){
-				console.log("You inserted an invalid pin three times");
-				return;
-			}
 			var self = this;
-			getPassword(null, function (err, pin) {
-				if(err){
-					console.log("You inserted an invalid pin");
-					self.readPin(noTries-1);
-				}else{
-					self.swarm("validatePin", pin, aliasCSB, noTries);
-				}
-			})
+			utils.enterPin(null, noTries, function (err, pin) {
+				self.swarm("validatePin", pin, aliasCSB, noTries);
+			});
 		}
 	});
 };

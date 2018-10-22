@@ -36,7 +36,6 @@ $$.swarm.describe("createCsb", {
 		utils.loadMasterCsb(pin, null, function (err, masterCsb) {
 			var pathCsb   = crypto.generateSafeUid(crypto.deriveSeed(seed));
 			if(utils.indexOfRecord(masterCsb.Data, "Csb", aliasCsb) >= 0){
-				// $$.interact.say("A csb with the provided alias already exists");
 				return;
 			}
 			if(!masterCsb.Data["records"]) {

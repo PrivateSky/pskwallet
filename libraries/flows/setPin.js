@@ -3,13 +3,21 @@ const utils = require(path.resolve(__dirname + "/../utils/utils"));
 const crypto = require("pskcrypto");
 $$.swarm.describe("setPin", {
 	start: function () {
-		this.swarm("interaction", "enterOldPin", null);
+		this.swarm("interaction", "enterOldPin", 3);
 	},
 	enterOldPin: "interaction",
 
-	requestNewPin: function (oldPin, callback) {
-		this.swarm("interaction", "enterNewPin", oldPin);
+	validatePin: function (oldPin, noTries) {
+		var self = this;
+		utils.checkPinIsValid(oldPin, function (err) {
+			if(err){
+				self.swarm("interaction", "enterOldPin", oldPin, noTries-1);
+			}else {
+				self.swarm("interaction", "enterNewPin", oldPin);
+			}
+		})
 	},
+	enterNewPin: "interaction",
 	actualizePin: function (oldPin, newPin, callback) {
 			oldPin = oldPin || utils.defaultPin;
 			crypto.loadDseed(oldPin, utils.Paths.Dseed, function (err, dseed) {

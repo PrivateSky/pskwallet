@@ -42,51 +42,25 @@ exports.checkSeedIsValid = function(seed, callback) {
 
 };
 
- function enterPin(prompt, noTries, callback){
+exports.enterPin = function(prompt, noTries, callback){
 	prompt = prompt || "Insert pin:";
 	if(noTries == 0){
 		console.log("You have inserted an invalid pin 3 times");
 		console.log("Preparing to exit");
-		// $$.interact.say("You have inserted an invalid pin 3 times");
-		// $$.interact.say("Preparing to exit");
 
 	}else {
 		getPassword(prompt, function (err, pin) {
 			if(err) {
 				console.log("Pin is invalid");
 				console.log("Try again");
-				// $$.interact.say("Pin is invalid");
-				// $$.interact.say("Try again");
-				enterPin(prompt, noTries-1, callback);
+				exports.enterPin(prompt, noTries-1, callback);
 			}else{
-				exports.checkPinIsValid(pin, function (err, status) {
-					if(err){
-						console.log("Pin is invalid");
-						console.log("Try again");
-						// $$.interact.say("Pin is invalid");
-						// $$.interact.say("Try again");
-						enterPin(prompt, noTries-1, callback);
-					}else{
-						callback(null, pin);
-					}
-				});
+				callback(null, pin);
 			}
 		});
 	}
-}
-
-exports.requirePin = function (prompt, callback) {
-	exports.masterCsbExists(function (err, status) {
-		if(err){
-			exports.createMasterCsb(null, null, function (err) {
-				callback(err)
-			});
-
-		}else{
-			enterPin(prompt, 3, callback);
-		}
-	});
 };
+
 exports.enterSeed = function (callback) {
 	getPassword("Enter seed:", function (err, answer) {
 		if(!err) {
