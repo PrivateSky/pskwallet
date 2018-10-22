@@ -4,13 +4,13 @@ const utils = require(path.resolve(__dirname + "/../utils/utils"));
 const crypto = require("pskcrypto");
 
 $$.flow.describe("getUrl", {
-	start: function (url, callback) {// url = alias1/alias2/.../aliasn/recordType/key/field
+	start: function (url, callback) {
 		var self = this;
 		utils.requirePin(null, function (err, pin) {
 			self.processUrl(pin, url, function(err, record){
 				if (record) {
 					if(!callback) {
-						$$.interact.say(record);
+						console.log(record);
 					}else{
 						callback(null, record);
 					}
@@ -23,7 +23,7 @@ $$.flow.describe("getUrl", {
 		utils.traverseUrl(pin, url, function (err, args) {
 			if(!err) {
 				if (!args) {
-					$$.interact.say("Invalid Url");
+					console.log("Invalid Url");
 					return;
 				}
 				var parentCsb = args.shift();

@@ -63,37 +63,10 @@ exports.enterPin = function(prompt, noTries, callback){
 
 exports.enterSeed = function (callback) {
 	getPassword("Enter seed:", function (err, answer) {
-		if(!err) {
-			var seed = Buffer.from(answer, "base64");
-			$$.ensureFolderExists(exports.Paths.auxFolder, function (err) {
-				if(err){
-					callback(err, null);
-				}else{
-					
-				}
-			});
-			
-			fs.access(exports.Paths.auxFolder, function (err) {
-				if(err){
-					fs.mkdir(exports.Paths.auxFolder, function (err) {
-						if(err){
-							callback(err, null);
-						}else{
-							callback(null, seed);
-						}
-					})
-				}else{
-					exports.checkSeedIsValid(seed, function (err, status) {
-						if(err){
-							callback(err, null);
-						}else{
-							callback(null, seed);
-						}
-					})
-				}
-			});
+		if(err){
+			callback(err);
 		}else{
-			throw err;
+			callback(null, Buffer.from(answer, "base64"));
 		}
 	});
 };

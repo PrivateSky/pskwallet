@@ -19,10 +19,13 @@ $$.swarm.describe("createCsb", {
 		});
 	},
 	readPin:"interaction",
+
 	validatePin: function (pin, aliasCsb, noTries) {
 		var self = this;
 		utils.checkPinIsValid(pin, function (err) {
 			if(err){
+				console.log("Invalid pin");
+				console.log("Try again");
 				self.swarm("interaction", "readPin", aliasCsb, noTries-1);
 			}else {
 				self.createCsb(pin, aliasCsb);

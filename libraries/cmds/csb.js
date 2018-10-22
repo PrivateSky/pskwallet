@@ -1,8 +1,8 @@
 $$.loadLibrary("flows", require("../flows"));
-const is = require("interact").createInteractionSpace();
-const utils = require('../utils/utils')
+var is = require("interact").createInteractionSpace();
+const utils = require('../utils/utils');
 const getPassword = require("../utils/getPassword").readPassword;
-doSetPin = function () {
+function doSetPin() {
 	is.startSwarm("setPin", "start").on({
 		enterOldPin: function (noTries) {
 			var self = this;
@@ -19,9 +19,9 @@ doSetPin = function () {
 		},
 
 	})
-};
+}
 
-doAddCSB = function (aliasCSB) {
+function doAddCsb(aliasCSB) {
 	is.startSwarm("createCsb", "start", aliasCSB).on({
 		readPin:function(aliasCsb, noTries){
 			var self = this;
@@ -30,16 +30,58 @@ doAddCSB = function (aliasCSB) {
 			});
 		}
 	});
-};
+}
 
-doPrintCsb = function (aliasCsb) {
-	$$.flow.start("flows.printCsb").start(aliasCsb);
-};
+function doSetKey(aliasCsb, recordType, key, field) {
+	is.startSwarm("setKey", "start", aliasCsb, recordType, key, field).on({
+		readPin: function(aliasCsb, recordType, key, field, noTries){
+			console.log("interaction - read pin", arguments);
+			var self = this;
+			utils.enterPin(null, noTries, function (err, pin) {
+				self.swarm("validatePin", pin, aliasCsb, recordType, key, field, noTries);
+			});
+		},
+		readStructure: function (pin, aliasCsb, recordType, key, field) {
+			var self = this;
+			console.log("arguments", arguments);
+			utils.getRecordStructure(recordType, function (err, recordStructure) {
+				if(err){
+					throw err;
+				}
+				console.log("recordStructure", recordStructure);
+				var fields = recordStructure["fields"];
+				self.swarm("checkInputValidity", pin, aliasCsb, recordType, key, field, fields);
+			});
+		},
+	});
+}
 
-doSetKey = function (aliasCsb, recordType, key, field) {
-	$$.flow.start("flows.setKey").start(aliasCsb, recordType, key, field);
-};
-
+function doResetPin(){
+	is.startSwarm("resetPin", "start").on({
+		readSeed :function(noTries){
+			var self = this;
+			if(noTries == 0){
+				console.log("You have introduced an invalid seed three times");
+				return;
+			}
+			getPassword("Enter seed:", function(err, seed){
+				if(err){
+					console.log("You have introduced an invalid character");
+					console.log("Try again");
+					self.readSeed(noTries-1);
+				}else{
+					self.swarm("checkSeedValidity", seed);
+				}
+			});
+		},
+		readPin: function (seed) {
+			var self = this;
+			utils.enterPin("Enter a new pin", 3, function (err, pin) {
+				self.swarm("updateData", seed, pin);
+			});
+		}
+	})
+}
 doGetKey = function (aliasCsb, recordType, key, field) {
 	$$.flow.start("flows.getKey").start(aliasCsb, recordType, key, field);
 };
@@ -48,9 +90,6 @@ doAddBackup = function (url) {
 	$$.flow.start("flows.addBackup").start(url);
 };
 
-doResetPin = function(){
-	$$.flow.start("flows.resetPin").start();
-};
 
 doRestore = function (aliasCsb) {
 	$$.flow.start("flows.restore").start(aliasCsb);
@@ -80,6 +119,10 @@ doListCsbs = function (aliasCsb) {
 	$$.flow.start("flows.listCsbs").start(aliasCsb);
 };
 
+doPrintCsb = function (aliasCsb) {
+	$$.flow.start("flows.printCsb").start(aliasCsb);
+};
+
 doCopyUrl = function (sourceUrl, destUrl) {
 	$$.flow.start("flows.copyUrl").start(sourceUrl, destUrl);
 };
@@ -94,7 +137,7 @@ doMoveUrl = function (sourceUrl, destUrl) {
 
 
 addCommand("set", "pin", doSetPin,  "\t\t\t\t\t |change the pin"); //seteaza la csb-ul master
-addCommand("create", "csb", doAddCSB, "<aliasCsb> \t\t\t\t |create a new CSB having the alias <aliasCsb>"); //creaza un nou CSB si il adaugi in csb-ul master
+addCommand("create", "csb", doAddCsb, "<aliasCsb> \t\t\t\t |create a new CSB having the alias <aliasCsb>"); //creaza un nou CSB si il adaugi in csb-ul master
 addCommand("print", "csb", doPrintCsb, "<aliasCsb>\t\t\t\t |print the CSB having the alias <aliasCsb>");
 addCommand("set", "key", doSetKey, "<aliasCsb> <recordType> <key> <field>   |set the key " ); //seteaza o cheie intr-un csb
 addCommand("get", "key", doGetKey, "<aliasCsb> <recordType> <key> <field>   |get the key " ); //citeste o cheie intr-un csb

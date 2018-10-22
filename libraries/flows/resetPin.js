@@ -1,37 +1,50 @@
 var path = require("path");
 const utils = require(path.resolve(__dirname + "/../utils/utils"));
 const crypto = require("pskcrypto");
-const getPassword = require("../utils/getPassword");
-$$.flow.describe("resetPin", {
+const fs = require("fs");
+
+$$.swarm.describe("resetPin", {
 	start: function () {
-		var self = this;
-		utils.enterSeed(function (err, seed) {
-			self.enterPin(seed);
-		});
+		this.swarm("interaction", "readSeed", 3);
 	},
-	enterPin: function (seed) {
+	readSeed: "interaction",
+
+	checkSeedValidity: function (seed) {
 		var self = this;
-		getPassword("Enter a new pin:", function(err, answer){
+
+		fs.access(utils.Paths.auxFolder, function (err) {
 			if(err){
-				console.log("You introduced an invalid character. Please try again.")
-				self.enterPin(seed);
-			}else {
-				self.updateData(seed, answer, function (err) {
+				fs.mkdir(utils.Paths.auxFolder, function (err) {
 					if(err){
-						throw err;}
-				});
+						throw err;
+					}
+					self.updateData(seed);
+				})
+			}else{
+				utils.checkSeedIsValid(seed, function (err, status) {
+					if(err) {
+						console.log("Seed is invalid");
+						return;
+					}else{
+						self.swarm("interaction", "readPin", seed);
+					}
+				})
 			}
 		});
+
+
 	},
-	updateData: function (seed, pin, callback) {
+	readPin: "interaction",
+
+	updateData: function (seed, pin) {
 		utils.loadMasterCsb(null, seed, function (err, masterCsb) {
 			utils.writeCsbToFile(masterCsb.Path, masterCsb.Data, masterCsb.Dseed, function (err) {
 				if(err){
-					return callback(err);
+					throw err;
 				}
 				crypto.saveDSeed(masterCsb.Dseed, pin, utils.Paths.Dseed, function (err) {
 					if(err){
-						return callback(err);
+						throw err;
 					}
 					console.log("Pin has been changed");
 				});

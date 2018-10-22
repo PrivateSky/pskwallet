@@ -11,6 +11,8 @@ $$.swarm.describe("setPin", {
 		var self = this;
 		utils.checkPinIsValid(oldPin, function (err) {
 			if(err){
+				console.log("Invalid pin");
+				console.log("Try again");
 				self.swarm("interaction", "enterOldPin", oldPin, noTries-1);
 			}else {
 				self.swarm("interaction", "enterNewPin", oldPin);
@@ -18,6 +20,7 @@ $$.swarm.describe("setPin", {
 		})
 	},
 	enterNewPin: "interaction",
+
 	actualizePin: function (oldPin, newPin, callback) {
 			oldPin = oldPin || utils.defaultPin;
 			crypto.loadDseed(oldPin, utils.Paths.Dseed, function (err, dseed) {
