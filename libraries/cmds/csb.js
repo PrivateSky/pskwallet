@@ -6,14 +6,14 @@ function doSetPin() {
 	is.startSwarm("setPin", "start").on({
 		enterOldPin: function (noTries) {
 			var self = this;
-			utils.enterPin("Enter old pin:", noTries, function (err, oldPin) {
+			utils.insertPassword("Enter old pin:", noTries, function (err, oldPin) {
 				self.swarm("validatePin", oldPin, noTries);
 				});
 		},
 		enterNewPin: function (oldPin) {
 			oldPin = oldPin || utils.defaultPin;
 			var self = this;
-			utils.enterPin("Insert new pin:",3 , function(err, newPin){
+			utils.insertPassword("Insert new pin:",3 , function(err, newPin){
 				self.swarm("actualizePin", oldPin, newPin);
 			});
 		},
@@ -25,7 +25,7 @@ function doAddCsb(aliasCSB) {
 	is.startSwarm("createCsb", "start", aliasCSB).on({
 		readPin:function(aliasCsb, noTries){
 			var self = this;
-			utils.enterPin(null, noTries, function (err, pin) {
+			utils.insertPassword(null, noTries, function (err, pin) {
 				self.swarm("validatePin", pin, aliasCSB, noTries);
 			});
 		}
@@ -37,7 +37,7 @@ function doSetKey(aliasCsb, recordType, key, field) {
 		readPin: function(aliasCsb, recordType, key, field, noTries){
 			console.log("interaction - read pin", arguments);
 			var self = this;
-			utils.enterPin(null, noTries, function (err, pin) {
+			utils.insertPassword(null, noTries, function (err, pin) {
 				self.swarm("validatePin", pin, aliasCsb, recordType, key, field, noTries);
 			});
 		},
@@ -58,25 +58,15 @@ function doSetKey(aliasCsb, recordType, key, field) {
 
 function doResetPin(){
 	is.startSwarm("resetPin", "start").on({
-		readSeed :function(noTries){
+		readSeed :function(){
 			var self = this;
-			if(noTries == 0){
-				console.log("You have introduced an invalid seed three times");
-				return;
-			}
-			getPassword("Enter seed:", function(err, seed){
-				if(err){
-					console.log("You have introduced an invalid character");
-					console.log("Try again");
-					self.readSeed(noTries-1);
-				}else{
-					self.swarm("checkSeedValidity", seed);
-				}
+			utils.insertPassword("Enter seed: ", 3, function (err, seed) {
+				self.swarm("checkSeedValidity", seed);
 			});
 		},
 		readPin: function (seed) {
 			var self = this;
-			utils.enterPin("Enter a new pin", 3, function (err, pin) {
+			utils.insertPassword("Enter a new pin: ", 3, function (err, pin) {
 				self.swarm("updateData", seed, pin);
 			});
 		}

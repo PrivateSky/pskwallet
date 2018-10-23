@@ -30,7 +30,7 @@ exports.checkPinIsValid = function(pin, callback) {
 }
 
 exports.checkSeedIsValid = function(seed, callback) {
-	var dseed = crypto.deriveSeed(seed);
+	var dseed = crypto.deriveSeed(Buffer.from(seed, "base64"));
 	fs.readFile(exports.getMasterPath(dseed), function (err, encryptedMaster) {
 		try{
 			crypto.decryptJson(encryptedMaster, dseed);
@@ -42,10 +42,10 @@ exports.checkSeedIsValid = function(seed, callback) {
 
 };
 
-exports.enterPin = function(prompt, noTries, callback){
+exports.insertPassword = function(prompt, noTries, callback){
 	prompt = prompt || "Insert pin:";
 	if(noTries == 0){
-		console.log("You have inserted an invalid pin 3 times");
+		console.log("You have inserted an invalid character 3 times");
 		console.log("Preparing to exit");
 
 	}else {
@@ -53,22 +53,12 @@ exports.enterPin = function(prompt, noTries, callback){
 			if(err) {
 				console.log("Pin is invalid");
 				console.log("Try again");
-				exports.enterPin(prompt, noTries-1, callback);
+				exports.insertPassword(prompt, noTries-1, callback);
 			}else{
 				callback(null, pin);
 			}
 		});
 	}
-};
-
-exports.enterSeed = function (callback) {
-	getPassword("Enter seed:", function (err, answer) {
-		if(err){
-			callback(err);
-		}else{
-			callback(null, Buffer.from(answer, "base64"));
-		}
-	});
 };
 
 exports.defaultCSB = function() {

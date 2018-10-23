@@ -18,13 +18,12 @@ $$.swarm.describe("resetPin", {
 					if(err){
 						throw err;
 					}
-					self.updateData(seed);
+					self.swarm("interaction", "readPin", seed);
 				})
 			}else{
 				utils.checkSeedIsValid(seed, function (err, status) {
 					if(err) {
-						console.log("Seed is invalid");
-						return;
+						console.log("Seed is; invalid");
 					}else{
 						self.swarm("interaction", "readPin", seed);
 					}
@@ -37,19 +36,11 @@ $$.swarm.describe("resetPin", {
 	readPin: "interaction",
 
 	updateData: function (seed, pin) {
-		utils.loadMasterCsb(null, seed, function (err, masterCsb) {
-			utils.writeCsbToFile(masterCsb.Path, masterCsb.Data, masterCsb.Dseed, function (err) {
-				if(err){
-					throw err;
-				}
-				crypto.saveDSeed(masterCsb.Dseed, pin, utils.Paths.Dseed, function (err) {
-					if(err){
-						throw err;
-					}
-					console.log("Pin has been changed");
-				});
-			});
+		crypto.saveDSeed(crypto.deriveSeed(Buffer.from(seed, "base64")), pin, utils.Paths.Dseed, function (err) {
+			if(err){
+				throw err;
+			}
+			console.log("Pin has been changed");
 		});
-
 	}
 });
