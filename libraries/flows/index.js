@@ -1,5 +1,4 @@
 module.exports = $$.library(function () {
-    require('./addBackup');
     require('./addCsb');
     require('./addFile');
     require('./copyUrl');
@@ -14,6 +13,7 @@ module.exports = $$.library(function () {
     require('./printCsb');
     require('./resetPin');
     require('./restore');
+	require('./saveBackup');
     require('./setKey');
     require('./setPin');
     require('./setUrl');
