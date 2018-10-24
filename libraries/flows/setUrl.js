@@ -3,31 +3,38 @@ var path = require("path");
 const utils = require(path.resolve(__dirname + "/../utils/utils"));
 const crypto = require("pskcrypto");
 
-$$.flow.describe("setUrl", {
-	start: function (url) {// url = alias1/alias2/.../aliasn/recordType/key/field
-		var self = this;
-		utils.requirePin(null, function (err, pin) {
-			self.processUrl(pin, url, function (err) {
-				if(err){
-					throw err;
-				}
-			});
-		});
+$$.swarm.describe("setUrl", {
+	start: function (url) {
+		this.url = url;
+		this.swarm("interaction", "readPin", 3);
 	},
-	processUrl: function (pin, url, callback) {
+	readPin: "interaction",
+
+	validatePin: function (pin, noTries) {
 		var self = this;
-		utils.traverseUrl(pin, url, function (err, args) {
+		utils.checkPinIsValid(pin, function (err, status) {
+			if(err){
+				console.log("Pin is invalid");
+				console.log("Try again");
+				self.swarm("interaction", "readPin", noTries-1);
+			}else{
+				self.processUrl(pin);
+			}
+		})
+	},
+	processUrl: function (pin) {
+		var self = this;
+		utils.traverseUrl(pin, this.url, function (err, args) {
 			if(err){
 				return callback(err);
 			}
 			if(!args){
-				$$.interact.say("Invalid Url");
-				return;
+				self.swarm("interaction", "printError");
 			}
 			var parentCsb = args.shift();
 			utils.getChildCsb(parentCsb, args.shift(), function (err, csb) {
 				if(err){
-					return callback(err);
+					throw err;
 				}
 				args.unshift(csb);
 				self.readStructure(...args);
@@ -36,67 +43,41 @@ $$.flow.describe("setUrl", {
 
 
 	},
-	readStructure: function (csb, recordType, key, field, callback) {
+	readStructure: function (csb, recordType, key, field) {
 		var self = this;
 		utils.getRecordStructure(recordType, function (err, recordStructure) {
 			if(err){
-				return callback(err);
+				throw err;
 			}
 			var fields = recordStructure["fields"];
-			self.checkInputValidity(csb, recordType, key, field, fields, callback);
+			self.checkInputValidity(csb, recordType, key, field, fields);
 		});
 	},
-	checkInputValidity: function (csb, recordType, key, field, fields, callback) {
+	checkInputValidity: function (csb, recordType, key, field, fields) {
 		var self = this;
 		if(key){
 			var indexRecord = utils.indexOfRecord(csb.Data, recordType, key);
 			if(indexRecord >= 0){
-				var prompt = "Do you want to continue?";
 				if(!field){
-					$$.interact.say("You are about to overwrite the following record:");
-					$$.interact.say($$.flow.start("flows.getUrl").__getRecord(csb, recordType, key));
-					utils.confirmOperation(prompt, null, function(err, rl){
-						utils.enterRecord(fields, 0, null, rl, function (err, record) {
-							if(err){
-								return callback(err);
-							}
-							self.addRecord(record, csb, recordType, key, field, callback)
-						});
-					});
+					self.swarm("interaction", "confirmOverwriteRecord", csb, recordType, key, field, fields);
 				}
 				else {
 					var indexField = utils.indexOfKey(fields, "fieldName", field);
 					if (indexField < 0) {
-						$$.interact.say("The record type", recordType, "does not have a field", field);
+						self.swarm("interaction", "printError");
 					} else {
-						$$.interact.say("You are about to overwrite the following field:");
-						$$.interact.say($$.flow.start("flows.getUrl").__getRecord(csb, recordType, key, field));
-						utils.confirmOperation(prompt, function(err, rl){
-							if(err){
-								return callback(err);
-							}
-							utils.enterField(field, rl, function(err, answer){
-								if(err){
-									return callback(err);
-								}
-								self.addRecord(answer, csb, recordType, key, field, callback);
-							})
-						});
+						self.swarm("interaction", "confirmOverwriteField", csb, recordType, key, field, fields);
 					}
 				}
 			}else {
-				$$.interact.say("No record of type", recordType, "having the key", key, "could be found in", csb.Title);
+				self.swarm("interaction", "printError");
 			}
 		}else if(!key && !field) {
-			utils.enterRecord(fields, 0, null, null, function (err, record) {
-				if(err){
-					return callback(err);
-				}
-				self.addRecord(record, csb, recordType, key, field, callback);
-			});
+			self.swarm("interaction", "enterRecord", csb, recordType, key, field, fields);
 		}
 	},
-	addRecord: function (record, csb, recordType, key, field, callback) {
+	addRecord: function (record, csb, recordType, key, field) {
+		var self = this;
 		if (!csb.Data["records"]) {
 			csb.Data["records"] = {};
 		}
@@ -117,9 +98,9 @@ $$.flow.describe("setUrl", {
 		}
 		utils.writeCsbToFile(csb.Path, csb.Data, csb.Dseed, function (err) {
 			if(err){
-				return callback(err);
+				throw err;
 			}
-			console.log("Done");
+			self.swarm("interaction", "onComplete");
 		});
 	}
 });

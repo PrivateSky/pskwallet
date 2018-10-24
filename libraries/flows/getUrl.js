@@ -3,48 +3,59 @@ var path = require("path");
 const utils = require(path.resolve(__dirname + "/../utils/utils"));
 const crypto = require("pskcrypto");
 
-$$.flow.describe("getUrl", {
+$$.swarm.describe("getUrl", {
 	start: function (url, callback) {
-		var self = this;
-		utils.requirePin(null, function (err, pin) {
-			self.processUrl(pin, url, function(err, record){
-				if (record) {
-					if(!callback) {
-						console.log(record);
-					}else{
-						callback(null, record);
-					}
-				}
-			});
-		});
+		this.url = url;
+		this.callback = callback;
+		this.swarm("interaction", "readPin", 3);
 	},
-	processUrl: function (pin, url, callback) {
+	readPin: "interaction",
+
+	validatePin: function (pin, noTries) {
 		var self = this;
-		utils.traverseUrl(pin, url, function (err, args) {
+		utils.checkPinIsValid(pin, function (err, status) {
+			if(err){
+				console.log("Pin is invalid");
+				console.log("Try again");
+				self.swarm("interaction", "readPin", noTries-1);
+			}else{
+				self.processUrl(pin);
+			}
+		})
+	},
+	processUrl: function (pin) {
+		var self = this;
+		utils.traverseUrl(pin, this.url, function (err, args) {
 			if(!err) {
 				if (!args) {
-					console.log("Invalid Url");
-					return;
+					self.swarm("interaction", "printError");
 				}
 				var parentCsb = args.shift();
 				utils.getChildCsb(parentCsb, args.shift(), function (err, csb) {
 					if(!err){
 						args.unshift(csb);
 						var record = self.__getRecord(...args);
-						// console.log("Record", record);
-						callback(null, record);
+						self.swarm("interaction", "printRecord", record);
 					}
 				});
 			}
 		});
 	},
+	printError: "interaction",
+	printRecord: "interaction",
+
+	checkoutResult: function (record) {
+		if(this.callback){
+			this.callback(null, record);
+		}
+	},
+
 	__getRecord: function (csb, recordType, key, field) {
-		// console.log("Csb", csb);
 		var indexKey = utils.indexOfKey(csb.Data["records"][recordType], "Title", key);
 		if (indexKey >= 0) {
 			if (!field) {
 				return csb.Data["records"][recordType][indexKey];
-			} else if (csb["records"][recordType][indexKey][field]) {
+			} else if (csb.Data["records"][recordType][indexKey][field]) {
 				return csb.Data["records"][recordType][indexKey][field];
 			} else {
 				return undefined;

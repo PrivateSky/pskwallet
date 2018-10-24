@@ -15,15 +15,14 @@ $$.swarm.describe("setPin", {
 				console.log("Try again");
 				self.swarm("interaction", "enterOldPin", oldPin, noTries-1);
 			}else {
-				self.swarm("interaction", "enterNewPin", oldPin);
+				self.oldPin = oldPin;
+				self.swarm("interaction", "enterNewPin");
 			}
 		})
 	},
 	enterNewPin: "interaction",
-
-	actualizePin: function (oldPin, newPin, callback) {
-			oldPin = oldPin || utils.defaultPin;
-			crypto.loadDseed(oldPin, utils.Paths.Dseed, function (err, dseed) {
+	actualizePin: function (newPin, callback) {
+			crypto.loadDseed(this.oldPin, utils.Paths.Dseed, function (err, dseed) {
 				if(err){
 					callback(err);
 					return;

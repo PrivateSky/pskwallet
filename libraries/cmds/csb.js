@@ -10,11 +10,10 @@ function doSetPin() {
 				self.swarm("validatePin", oldPin, noTries);
 				});
 		},
-		enterNewPin: function (oldPin) {
-			oldPin = oldPin || utils.defaultPin;
+		enterNewPin: function () {
 			var self = this;
 			utils.insertPassword("Insert new pin:",3 , function(err, newPin){
-				self.swarm("actualizePin", oldPin, newPin);
+				self.swarm("actualizePin", newPin);
 			});
 		},
 
@@ -23,10 +22,10 @@ function doSetPin() {
 
 function doAddCsb(aliasCSB) {
 	is.startSwarm("createCsb", "start", aliasCSB).on({
-		readPin:function(aliasCsb, noTries){
+		readPin:function(noTries){
 			var self = this;
 			utils.insertPassword(null, noTries, function (err, pin) {
-				self.swarm("validatePin", pin, aliasCSB, noTries);
+				self.swarm("validatePin", pin, noTries);
 			});
 		}
 	});
@@ -35,7 +34,6 @@ function doAddCsb(aliasCSB) {
 function doSetKey(aliasCsb, recordType, key, field) {
 	is.startSwarm("setKey", "start", aliasCsb, recordType, key, field).on({
 		readPin: function(aliasCsb, recordType, key, field, noTries){
-			console.log("interaction - read pin", arguments);
 			var self = this;
 			utils.insertPassword(null, noTries, function (err, pin) {
 				self.swarm("validatePin", pin, aliasCsb, recordType, key, field, noTries);
@@ -43,16 +41,17 @@ function doSetKey(aliasCsb, recordType, key, field) {
 		},
 		readStructure: function (pin, aliasCsb, recordType, key, field) {
 			var self = this;
-			console.log("arguments", arguments);
 			utils.getRecordStructure(recordType, function (err, recordStructure) {
 				if(err){
 					throw err;
 				}
-				console.log("recordStructure", recordStructure);
 				var fields = recordStructure["fields"];
 				self.swarm("checkInputValidity", pin, aliasCsb, recordType, key, field, fields);
 			});
 		},
+		printError: function () {
+			console.log("Invalid input");
+		}
 	});
 }
 
@@ -64,10 +63,10 @@ function doResetPin(){
 				self.swarm("checkSeedValidity", seed);
 			});
 		},
-		readPin: function (seed) {
+		readPin: function () {
 			var self = this;
 			utils.insertPassword("Enter a new pin: ", 3, function (err, pin) {
-				self.swarm("updateData", seed, pin);
+				self.swarm("updateData", pin);
 			});
 		}
 	})
@@ -85,13 +84,81 @@ doRestore = function (aliasCsb) {
 	$$.flow.start("flows.restore").start(aliasCsb);
 };
 
-doSetUrl = function (url) {
-	$$.flow.start("flows.setUrl").start(url);
-};
+function doSetUrl(url) {
+	is.startSwarm("setUrl", "start", url).on({
+		readPin: function (noTries) {
+			var self = this;
+			utils.insertPassword("Insert pin:", noTries, function (err, pin) {
+				self.swarm("validatePin", pin, noTries);
+			})
+		},
+		printError: function () {
+			console.log("InvalidUrl");
+		},
+		confirmOverwriteRecord: function (csb, recordType, key, field, fields) {
+			var self = this;
+			console.log("You are about to overwrite the following record:");
+			console.log($$.swarm.start("getUrl").__getRecord(csb, recordType, key));
+			utils.confirmOperation("Do you want to continue?", null, function(err, rl){
+				utils.enterRecord(fields, 0, null, rl, function (err, record) {
+					if(err){
+						throw err;
+					}
+					self.swarm("addRecord", record, csb, recordType, key, field);
+				});
+			});
+		},
 
-doGetUrl = function (url) {
-	$$.flow.start("flows.getUrl").start(url);
-};
+		confirmOverwriteField: function (csb, recordType, key, field) {
+			var self = this;
+			console.log("You are about to overwrite the following field:");
+			console.log($$.swarm.start("getUrl").__getRecord(csb, recordType, key, field));
+			utils.confirmOperation(null, null, function(err, rl){
+				if(err){
+					throw err;
+				}
+				utils.enterField(field, rl, function(err, answer){
+					if(err){
+						throw err;
+					}
+					self.swarm("addRecord", answer, csb, recordType, key, field);
+				})
+			});
+		},
+		enterRecord: function (csb, recordType, key, field, fields) {
+			var self = this;
+			utils.enterRecord(fields, 0, null, null, function (err, record) {
+				if(err){
+					throw err;
+				}
+				self.swarm("addRecord", record, csb, recordType, key, field);
+			});
+		},
+		onComplete: function () {
+			console.log("Done");
+		}
+	});
+}
+
+function doGetUrl(url) {
+	is.startSwarm("getUrl", "start", url, function(err, result){
+		console.log(result);
+	}).on({
+		readPin: function (noTries) {
+			var self = this;
+			utils.insertPassword("Insert pin:", noTries, function (err, pin) {
+				self.swarm("validatePin", pin, noTries);
+			})
+		},
+		printError: function () {
+			console.log("InvalidUrl");
+		},
+		printRecord: function (record) {
+			console.log(record);
+			this.swarm("checkoutResult", record);
+		}
+	});
+}
 
 doAddFile = function(csbUrl, filePath){
 	$$.flow.start("flows.addFile").start(csbUrl, filePath);

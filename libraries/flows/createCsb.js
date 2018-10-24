@@ -5,6 +5,7 @@ const crypto = require("pskcrypto");
 $$.swarm.describe("createCsb", {
 	start: function (aliasCsb) {
 		var self = this;
+		self.aliasCsb = aliasCsb;
 		utils.masterCsbExists(function (err, status) {
 			if(err){
 				utils.createMasterCsb(null, null, function (err) {
@@ -14,31 +15,32 @@ $$.swarm.describe("createCsb", {
 					self.createCsb(null, aliasCsb);
 				});
 			}else{
-				self.swarm("interaction", "readPin", aliasCsb, 3);
+				self.swarm("interaction", "readPin", 3);
 			}
 		});
 	},
 	readPin:"interaction",
 
-	validatePin: function (pin, aliasCsb, noTries) {
+	validatePin: function (pin, noTries) {
 		var self = this;
 		utils.checkPinIsValid(pin, function (err) {
 			if(err){
 				console.log("Invalid pin");
 				console.log("Try again");
-				self.swarm("interaction", "readPin", aliasCsb, noTries-1);
+				self.swarm("interaction", "readPin", noTries-1);
 			}else {
-				self.createCsb(pin, aliasCsb);
+				self.createCsb(pin);
 			}
 		})
 	},
 
-	createCsb: function (pin, aliasCsb) {
+	createCsb: function (pin) {
+		var self = this;
 		var csbData   = utils.defaultCSB();
 		var seed      = crypto.generateSeed(utils.defaultBackup);
 		utils.loadMasterCsb(pin, null, function (err, masterCsb) {
 			var pathCsb   = crypto.generateSafeUid(crypto.deriveSeed(seed));
-			if(utils.indexOfRecord(masterCsb.Data, "Csb", aliasCsb) >= 0){
+			if(utils.indexOfRecord(masterCsb.Data, "Csb", self.aliasCsb) >= 0){
 				return;
 			}
 			if(!masterCsb.Data["records"]) {
@@ -48,7 +50,7 @@ $$.swarm.describe("createCsb", {
 				masterCsb.Data["records"]["Csb"] = []
 			}
 			var record = {
-				"Title": aliasCsb,
+				"Title": self.aliasCsb,
 				"Path" : pathCsb,
 				"Seed" : seed.toString("hex"),
 				"Dseed": crypto.deriveSeed(seed).toString("hex")
@@ -57,7 +59,7 @@ $$.swarm.describe("createCsb", {
 			utils.writeCsbToFile(masterCsb.Path, masterCsb.Data, masterCsb.Dseed, function (err) {
 				var dseed = crypto.deriveSeed(seed);
 				utils.writeCsbToFile(pathCsb, csbData, dseed, function (err) {
-					console.log("Csb", aliasCsb, "was successfully created.");
+					console.log("Csb", self.aliasCsb, "was successfully created.");
 				});
 
 			});

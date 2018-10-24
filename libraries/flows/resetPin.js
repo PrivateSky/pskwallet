@@ -11,21 +11,21 @@ $$.swarm.describe("resetPin", {
 
 	checkSeedValidity: function (seed) {
 		var self = this;
-
+		self.seed = seed;
 		fs.access(utils.Paths.auxFolder, function (err) {
 			if(err){
 				fs.mkdir(utils.Paths.auxFolder, function (err) {
 					if(err){
 						throw err;
 					}
-					self.swarm("interaction", "readPin", seed);
+					self.swarm("interaction", "readPin");
 				})
 			}else{
 				utils.checkSeedIsValid(seed, function (err, status) {
 					if(err) {
 						console.log("Seed is; invalid");
 					}else{
-						self.swarm("interaction", "readPin", seed);
+						self.swarm("interaction", "readPin");
 					}
 				})
 			}
@@ -35,8 +35,8 @@ $$.swarm.describe("resetPin", {
 	},
 	readPin: "interaction",
 
-	updateData: function (seed, pin) {
-		crypto.saveDSeed(crypto.deriveSeed(Buffer.from(seed, "base64")), pin, utils.Paths.Dseed, function (err) {
+	updateData: function (pin) {
+		crypto.saveDSeed(crypto.deriveSeed(Buffer.from(this.seed, "base64")), pin, utils.Paths.Dseed, function (err) {
 			if(err){
 				throw err;
 			}

@@ -242,29 +242,7 @@ exports.getMasterPath = function(dseed){
 exports.getMasterUid = function (dseed){
 	return crypto.generateSafeUid(dseed, exports.Paths.auxFolder)
 };
-var walk = function(dir, done) {
-	var results = [];
-	fs.readdir(dir, function(err, list) {
-		if (err) return done(err);
-		var i = 0;
-		(function next() {
-			var file = list[i++];
-			if (!file)  done(null, results);
-			file = dir + '/' + file;
-			fs.stat(file, function(err, stat) {
-				if (stat && stat.isDirectory()) {
-					walk(file, function(err, res) {
-						results = results.concat(res);
-						next();
-					});
-				} else {
-					results.push(file);
-					next();
-				}
-			});
-		})();
-	});
-};
+
 exports.findCsb = function (csbData, aliasCsb, callback) {
 	if(!csbData || !csbData["records"] || !csbData["records"]["Csb"] || csbData["records"]["Csb"].length === 0){
 		callback(new Error("Csb empty"));
