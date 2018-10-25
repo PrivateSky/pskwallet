@@ -98,7 +98,7 @@ doSaveBackup = function (url) {
 
 
 doRestore = function (aliasCsb) {
-	$$.flow.start("flows.restore").start(aliasCsb);
+
 };
 
 function doSetUrl(url) {
@@ -106,6 +106,10 @@ function doSetUrl(url) {
 		readPin: function (noTries) {
 			var self = this;
 			utils.insertPassword("Insert pin:", noTries, function (err, pin) {
+				if(noTries < 3){
+					console.log("Invalid pin");
+					console.log("Try again");
+				}
 				self.swarm("validatePin", pin, noTries);
 			})
 		},
@@ -164,6 +168,10 @@ function doGetUrl(url) {
 		readPin: function (noTries) {
 			var self = this;
 			utils.insertPassword("Insert pin:", noTries, function (err, pin) {
+				if(noTries < 3){
+					console.log("Invalid pin");
+					console.log("Try again");
+				}
 				self.swarm("validatePin", pin, noTries);
 			})
 		},
@@ -182,6 +190,10 @@ function doAddFile(csbUrl, filePath) {
 		readPin: function (noTries) {
 			var self = this;
 			utils.insertPassword("Insert pin:", noTries, function (err, pin) {
+				if(noTries < 3){
+					console.log("Invalid pin");
+					console.log("Try again");
+				}
 				self.swarm("validatePin", pin, noTries);
 			})
 		},
@@ -215,9 +227,32 @@ doAddFolder = function(csbUrl, folderPath){
 	$$.flow.start("flows.addFile").start(csbUrl, folderPath);
 };
 
-doExtract = function(url){
-	$$.flow.start("flows.extract").start(url);
-};
+function doExtract(url){
+	is.startSwarm("extract", "start", url).on({
+		readPin: function (noTries) {
+			var self = this;
+			utils.insertPassword("Insert pin:", noTries, function (err, pin) {
+				if(noTries < 3){
+					console.log("Invalid pin");
+					console.log("Try again");
+				}
+				self.swarm("validatePin", pin, noTries);
+			})
+		},
+		csbExtracted: function (alias) {
+			console.log("The csb", alias, "has been extracted");
+		},
+		archiveExtracted: function (aliasFile) {
+			console.log("The file", aliasFile, "has been extracted");
+		},
+		printError: function (err) {
+			throw err;
+		},
+		invalidUrl: function () {
+			console.log("Invalid url");
+		}
+	});
+}
 
 doListCsbs = function (aliasCsb) {
 	$$.flow.start("flows.listCsbs").start(aliasCsb);

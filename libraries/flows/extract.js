@@ -3,43 +3,50 @@ var path = require("path");
 const utils = require(path.resolve(__dirname + "/../utils/utils"));
 const fs = require("fs");
 const crypto = require("pskcrypto");
-$$.flow.describe("extract", {
+$$.swarm.describe("extract", {
 	start: function (url) {
-		var self = this;
-		utils.requirePin(null, function (err, pin) {
-			self.checkType(pin, url, function (err) {
-
-			});
-		});
+		this.url = url;
+		this.swarm("interaction", "readPin");
 	},
-	checkType: function (pin, url, callback) {
+	validatePin: function (pin, noTries) {
 		var self = this;
-		utils.traverseUrl(pin, url, function (err, args) {
+		utils.checkPinIsValid(pin, function (err) {
 			if(err){
-				return callback(err);
+				self.swarm("interaction", "readPin", noTries-1);
+			}else {
+				self.checkType(pin);
+			}
+		})
+	},
+	checkType: function (pin) {
+		var self = this;
+		utils.traverseUrl(pin, this.url, function (err, args) {
+			if(err){
+				self.swarm("interaction", "printError", err);
+				return;
 			}
 			if(args.length > 3 || args.length < 2){
-				$$.interact.say("Invalid url");
+				self.swarm("interaction", "invalidUrl");
 				return;
 			}
 
 			var parentCsb = args[0];
 			var aliasCsb = args[1];
 			if(!parentCsb || !parentCsb.Data || (!parentCsb.Data["records"]["Csb"] && !parentCsb.Data["records"]["Adiacent"])){
-				$$.interact.say("Invalid url");
+				self.swarm("interaction", "invalidUrl");
 				return;
 			}
 			if(parentCsb.Data["records"]["Csb"].length === 0 && parentCsb.Data["records"]["Adiacent"].length === 0) {
-				$$.interact.say("Nothing to extract");
+				self.swarm("interaction", "empty");
 				return;
 			}
 
 			utils.getChildCsb(parentCsb, aliasCsb, function (err, csb) {
 				if(err){
-					return callback(err);
+					self.swarm("interaction", "printError", err);
 				}
 				if(!csb){
-					$$.interact.say("invalid url");
+					self.swarm("interaction", "invalidUrl");
 					return;
 				}
 				if(args.length === 3) {
@@ -50,38 +57,37 @@ $$.flow.describe("extract", {
 
 						});
 					} else {
-						$$.interact.say("Invalid url.");
+						self.swarm("interaction", "invalidUrl");
 					}
 				}else {
 					self.extractCsb(csb, function (err) {
-
+						self.swarm("interaction", "printError", err);
 					});
 				}
 			});
 		});
 	},
-	extractCsb: function (csb, callback) {
-		$$.interact.say("Extract csb");
-		// var childCsb = utils.readCsb(csb.Data["records"]["Csb"][indexCsb]["Path"], csb.Data["records"]["Csb"][indexCsb]["Dseed"]);
+	extractCsb: function (csb) {
+		var self = this;
 		fs.writeFile(path.join(process.cwd(), csb.Title), JSON.stringify(csb.Data, null, "\t"), function (err) {
 			if(err){
-				return callback(err);
+				self.swarm("interaction", "printError", err);
+				return;
 			}
-			$$.interact.say("Csb", csb.Title, "was extracted");
+			self.swarm("interaction", "csbExtracted", csb.Title);
 		});
-		// fs.unlinkSync(csb.Data["records"]["Csb"][indexCsb]["Path"]);
-		// csb.Data["records"]["Csb"].splice(indexCsb, 1);
-		// utils.writeCsbToFile(csb.Path, csb.Data, csb.Dseed);
 	},
-	extractArchive: function (csb, aliasFile, indexAdiacent, callback) {
-		crypto.decryptStream(path.join(utils.Paths.Adiacent, csb.Data["records"]["Adiacent"][indexAdiacent]["Path"]), 
-			process.cwd(), Buffer.from(csb.Data["records"]["Adiacent"][indexAdiacent]["Dseed"], "hex"), function (err) {
+	extractArchive: function (csb, aliasFile, indexAdiacent) {
+		var self = this;
+		var inputPath = path.join(utils.Paths.Adiacent, csb.Data["records"]["Adiacent"][indexAdiacent]["Path"]);
+		var dseed = Buffer.from(csb.Data["records"]["Adiacent"][indexAdiacent]["Dseed"], "hex");
+		console.log("Adiacent", csb.Data["records"]["Adiacent"][indexAdiacent]);
+		crypto.decryptStream(inputPath, process.cwd(), dseed, function (err) {
 				if(err){
-					return callback(err);
+					self.swarm("interaction", "printError", err);
+					return;
 				}
-				$$.interact.say("File", aliasFile, "was extracted");
+				self.swarm("interaction", "archiveExtracted", aliasFile);
 			});
-		// csb.Data["records"]["Adiacent"].splice(indexAdiacent, 1);
-		// utils.writeCsbToFile(csb.Path, csb.Data, csb.Dseed);
 	}
 });
