@@ -51,7 +51,7 @@ exports.insertPassword = function(prompt, noTries, callback){
 	}else {
 		getPassword(prompt, function (err, pin) {
 			if(err) {
-				console.log("Pin is invalid");
+				console.log("You have inserted an invalid character");
 				console.log("Try again");
 				exports.insertPassword(prompt, noTries-1, callback);
 			}else{

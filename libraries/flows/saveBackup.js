@@ -4,18 +4,28 @@ const utils = require(path.resolve(__dirname + "/../utils/utils"));
 const crypto = require("pskcrypto");
 var fs = require("fs");
 const client = require('psk-http-client');
-$$.flow.describe("addBackup", {
+$$.swarm.describe("saveBackup", {
 	start: function (url) {
-		var self = this;
-		utils.requirePin(null, function (err, pin) {
-			self.backupMaster(pin, url, function (err) {
-				if(err){
-					throw err;
-				}
-			});
-		});
+		this.url = url;
+		this.swarm("interaction", "readPin", 3);
 	},
-	backupMaster: function (pin, url, callback) {
+
+	readPin: "interaction",
+
+	validatePin: function (pin, noTries) {
+		var self = this;
+		utils.checkPinIsValid(pin, function (err) {
+			if(err){
+				console.log("Invalid pin");
+				console.log("Try again");
+				self.swarm("interaction", "readPin", noTries-1);
+			}else {
+				self.backupMaster(pin);
+			}
+		})
+	},
+
+	backupMaster: function (pin) {
 		var self = this;
 		utils.loadMasterCsb(pin, null, function (err, masterCsb) {
 			// masterCsb.Data["backups"].push(url);
@@ -24,15 +34,15 @@ $$.flow.describe("addBackup", {
 			console.log(encryptedMaster.length);
 			utils.writeCsbToFile(masterCsb.Path, masterCsb.Data, masterCsb.Dseed, function (err) {
 				if(err){
-					return callback(err);
+					self.swarm("interaction", "printError", err);
 				}
-				$$.remote.doHttpPost(url + "/CSB/" + masterCsb.Uid, encryptedMaster, function (err) {
+				$$.remote.doHttpPost(self.url + "/CSB/" + masterCsb.Uid, encryptedMaster, function (err) {
 					if(err){
-						$$.interact.say("Failed to post master Csb on server");
+						self.swarm("interaction", "errorOnPost");
 					}else{
-						self.backupCsbs(url, csbs, 0, function (err) {
+						self.backupCsbs(csbs, 0, function (err) {
 							if(err){
-								return callback(err);
+								self.swarm("interaction", "printError", err);
 							}
 						});
 					}
@@ -41,25 +51,22 @@ $$.flow.describe("addBackup", {
 		});
 
 	},
-	backupCsbs: function(url, csbs, currentCsb, callback){
+	backupCsbs: function(csbs, currentCsb){
 		var self = this;
 		if(currentCsb == csbs.length){
-			$$.interact.say("All csbs are backed up");
+			self.swarm("interaction", "onComplete");
 		}else{
 			utils.readEncryptedCsb(csbs[currentCsb]["Path"], function (err, encryptedCsb) {
 				if(err){
-					return callback(err);
+					self.swarm("interaction", "printError", err);
 				}
-				console.log(Buffer.isBuffer(encryptedCsb));
-
 				var csb = crypto.decryptJson(encryptedCsb, Buffer.from(csbs[currentCsb]["Dseed"], "hex"));
 				function __backupCsb() {
-					$$.remote.doHttpPost(url + "/CSB/" + csbs[currentCsb]["Path"], encryptedCsb, function(err){
+					$$.remote.doHttpPost(self.url + "/CSB/" + csbs[currentCsb]["Path"], encryptedCsb, function(err){
 						if(err){
-							$$.interact.say("Failed to post csb", csbs[currentCsb]["Title"],"on server");
-							callback(err);
+							self.swarm("interaction", "errorOnPost");
 						}else{
-							self.backupCsbs(url, csbs, currentCsb + 1, callback);
+							self.backupCsbs(csbs, currentCsb + 1);
 						}
 					})
 				}
@@ -69,9 +76,9 @@ $$.flow.describe("addBackup", {
 						csbs = csbs.concat(csb["records"]["Csb"]);
 					}
 					if(csb["records"]["Adiacent"] && csb["records"]["Adiacent"].length > 0){
-						self.backupArchives(url, csb["records"]["Adiacent"], 0, function (err) {
+						self.backupArchives(csb["records"]["Adiacent"], 0, function (err) {
 							if(err){
-								return callback(err);
+								self.swarm("interaction", "printError", err);
 							}
 							__backupCsb();
 						})
@@ -82,22 +89,19 @@ $$.flow.describe("addBackup", {
 			});
 		}
 	},
-	backupArchives: function (url, archives, currentArchive, callback) {
-		console.log('backing up')
+	backupArchives: function (archives, currentArchive) {
 		var self = this;
 		if(currentArchive == archives.length){
-			return callback();
+			self.swarm("interaction", "onComplete");
+			return;
 		}
 		const stream = fs.createReadStream(path.join(utils.Paths.Adiacent, archives[currentArchive]["Path"]));
-		// stream.setEncoding('binary');
-		$$.remote.doHttpPost(url + "/CSB/" + archives[currentArchive]["Path"], stream, function(err){
+		$$.remote.doHttpPost(self.url + "/CSB/" + archives[currentArchive]["Path"], stream, function(err){
 			stream.close();
 			if(err){
-				console.log(err.statusCode);
-				$$.interact.say("Failed to post archive", archives[currentArchive]["Title"],"on server");
-				callback(err);
+				self.swarm("interaction", "errorOnPost");
 			}else{
-				self.backupArchives(url, archives, currentArchive + 1, callback);
+				self.backupArchives(archives, currentArchive + 1);
 			}
 		})
 	}

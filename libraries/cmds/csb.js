@@ -2,6 +2,7 @@ $$.loadLibrary("flows", require("../flows"));
 var is = require("interact").createInteractionSpace();
 const utils = require('../utils/utils');
 const getPassword = require("../utils/getPassword").readPassword;
+const path = require("path");
 function doSetPin() {
 	is.startSwarm("setPin", "start").on({
 		enterOldPin: function (noTries) {
@@ -75,13 +76,29 @@ doGetKey = function (aliasCsb, recordType, key, field) {
 	$$.flow.start("flows.getKey").start(aliasCsb, recordType, key, field);
 };
 
-doAddBackup = function (url) {
-	$$.flow.start("flows.addBackup").start(url);
+doSaveBackup = function (url) {
+	is.startSwarm("saveBackup", "start", url).on({
+		readPin: function (noTries) {
+			var self = this;
+			utils.insertPassword("Insert pin:", noTries, function (err, pin) {
+				self.swarm("validatePin", pin, noTries);
+			})
+		},
+		errorOnPost: function () {
+			console.log("Failed on post");
+		},
+		onComplete: function () {
+			console.log("All resources are backedUp");
+		},
+		printError: function (err) {
+			throw err;
+		}
+	});
 };
 
 
 doRestore = function (aliasCsb) {
-	$$.flow.start("flows.restore").start(aliasCsb);
+
 };
 
 function doSetUrl(url) {
@@ -89,6 +106,10 @@ function doSetUrl(url) {
 		readPin: function (noTries) {
 			var self = this;
 			utils.insertPassword("Insert pin:", noTries, function (err, pin) {
+				if(noTries < 3){
+					console.log("Invalid pin");
+					console.log("Try again");
+				}
 				self.swarm("validatePin", pin, noTries);
 			})
 		},
@@ -147,6 +168,10 @@ function doGetUrl(url) {
 		readPin: function (noTries) {
 			var self = this;
 			utils.insertPassword("Insert pin:", noTries, function (err, pin) {
+				if(noTries < 3){
+					console.log("Invalid pin");
+					console.log("Try again");
+				}
 				self.swarm("validatePin", pin, noTries);
 			})
 		},
@@ -160,17 +185,74 @@ function doGetUrl(url) {
 	});
 }
 
-doAddFile = function(csbUrl, filePath){
-	$$.flow.start("flows.addFile").start(csbUrl, filePath);
-};
+function doAddFile(csbUrl, filePath) {
+	is.startSwarm("addFile", "start", csbUrl, filePath).on({
+		readPin: function (noTries) {
+			var self = this;
+			utils.insertPassword("Insert pin:", noTries, function (err, pin) {
+				if(noTries < 3){
+					console.log("Invalid pin");
+					console.log("Try again");
+				}
+				self.swarm("validatePin", pin, noTries);
+			})
+		},
+		confirmOverwriteFile: function (filePath, csb, alias, indexAdiacent) {
+			var self = this;
+			console.log("A file with the name", path.basename(filePath), "already exists in the current csb");
+			var prompt = "Do you want to overwrite it ?";
+			utils.confirmOperation(prompt, null, function (err, rl) {
+				if(err){
+					throw err;
+				}
+				self.swarm("saveChildInCsb", filePath, csb, alias, indexAdiacent);
+			});
+		},
+		onComplete: function (filePath, aliasCsb) {
+			console.log(filePath, "was added in", aliasCsb);
+		},
+		invalidNoArguments: function () {
+			console.log("Invalid number of arguments");
+		},
+		invalidUrl: function () {
+			console.log("Invalid url");
+		},
+		printError: function (err) {
+			throw err;
+		}
+	});
+}
 
 doAddFolder = function(csbUrl, folderPath){
 	$$.flow.start("flows.addFile").start(csbUrl, folderPath);
 };
 
-doExtract = function(url){
-	$$.flow.start("flows.extract").start(url);
-};
+function doExtract(url){
+	is.startSwarm("extract", "start", url).on({
+		readPin: function (noTries) {
+			var self = this;
+			utils.insertPassword("Insert pin:", noTries, function (err, pin) {
+				if(noTries < 3){
+					console.log("Invalid pin");
+					console.log("Try again");
+				}
+				self.swarm("validatePin", pin, noTries);
+			})
+		},
+		csbExtracted: function (alias) {
+			console.log("The csb", alias, "has been extracted");
+		},
+		archiveExtracted: function (aliasFile) {
+			console.log("The file", aliasFile, "has been extracted");
+		},
+		printError: function (err) {
+			throw err;
+		},
+		invalidUrl: function () {
+			console.log("Invalid url");
+		}
+	});
+}
 
 doListCsbs = function (aliasCsb) {
 	$$.flow.start("flows.listCsbs").start(aliasCsb);
@@ -198,7 +280,7 @@ addCommand("create", "csb", doAddCsb, "<aliasCsb> \t\t\t\t |create a new CSB hav
 addCommand("print", "csb", doPrintCsb, "<aliasCsb>\t\t\t\t |print the CSB having the alias <aliasCsb>");
 addCommand("set", "key", doSetKey, "<aliasCsb> <recordType> <key> <field>   |set the key " ); //seteaza o cheie intr-un csb
 addCommand("get", "key", doGetKey, "<aliasCsb> <recordType> <key> <field>   |get the key " ); //citeste o cheie intr-un csb
-addCommand("add", "backup", doAddBackup,"<url>\t\t\t\t |save all csbs at address <url>");
+addCommand("save", "backup", doSaveBackup,"<url>\t\t\t\t |save all csbs at address <url>");
 addCommand("restore", null, doRestore, "<alias>\t\t\t\t |restore the csb  or archive having the name <alias> from one of the addresses stored\n\t\t\t\t\t\t\t  in backup\n");
 addCommand("reset", "pin", doResetPin, "\t\t\t\t\t |enter the seed in order to set the pin to a new value");
 addCommand("set", "url", doSetUrl, "<url> \t\t\t\t\t |set/update the record/field pointed by the provided <url>");
