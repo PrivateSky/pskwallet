@@ -4,162 +4,119 @@ const crypto = require("pskcrypto");
 var fs = require("fs");
 require('psk-http-client');
 
-$$.flow.describe("restore", {
+$$.swarm.describe("restore", {
 	start: function (alias) {
+		this.alias = alias;
+		this.swarm("interaction", "readSeed");
+
+	},
+	checkMasterExists: function (seed) {
 		var self = this;
+		self.seed = seed;
 		utils.masterCsbExists(function (err, status) {
 			if(!err){
-				utils.enterSeed(function (err, seed) {
-					self.readMaster(seed, alias, function (err) {
-						if(err){
-							throw err;
-						}
-					});
-				});
+				self.loadMaster();
 			}else{
-				utils.enterSeed(function (err, seed) {
-					self.restoreMaster(seed, alias, function (err) {
-						if(err) {
-							throw err;
-						}
-					});
-				});
+				self.restoreMaster();
 			}
 		});
 	},
-	readMaster: function (seed, alias, callback) {
-		var self = this;
-		utils.loadMasterCsb(null, seed, function (err, masterCsb) {
-			if(err){
-				return callback(err);
-			}
-			self.__getCsbsToRestore(masterCsb.Data, alias, function (err, csbs) {
-				if(err){
-					return callback(err);
-				}
-				$$.interact.say(masterCsb.Data["backups"]);
-				self.restoreCsbs(masterCsb.Data["backups"][0], csbs, 0, function (err) {
-					if(err){
-						callback(err);
-					}
-				});
-			});
-
-		});
-
+	loadMaster: function () {
+		utils.loadMasterCsb(null, this.seed, this.reportOrContinue("getCsbsToRestore", "Failed to load master"));
 	},
-	restoreMaster: function (seed, alias, callback) {
+	restoreMaster: function (seed) {
 		var obj = JSON.parse(seed.toString());
-		var url = obj.backup;
-		$$.interact.say(url);
-		var self = this;
-		console.log(url +"/CSB/" + utils.getMasterUid(crypto.deriveSeed(seed)));
-		$$.remote.doHttpGet(url +"/CSB/" + utils.getMasterUid(crypto.deriveSeed(seed)), function (err, encryptedMaster) {
-			if(err){
-				callback(err);
-			}else{
-				var dseed = crypto.deriveSeed(seed);
-				console.log("Typeee", typeof encryptedMaster);
-				// encryptedMaster = Buffer.from(encryptedMaster, 'binary');
-				// encryptedMaster = Buffer.from(encryptedMaster);
-				console.log(encryptedMaster.length);
-				fs.writeFile(utils.getMasterPath(dseed), encryptedMaster, function (err) {
-					if(err){
-						return callback(err);
-					}
-					crypto.saveDSeed(dseed, utils.defaultPin, utils.Paths.Dseed, function (err) {
-						if(err){
-							return callback(err);
-						}
-						var masterCsb = crypto.decryptJson(encryptedMaster, dseed);
-						self.__getCsbsToRestore(masterCsb, alias, function (err, csbs) {
-							if(err){
-								return callback(err);
-							}
-							self.restoreCsbs(url, csbs, 0, function (err) {
-								if(err) {
-									return callback(err);
-								}
-							});
-						});
-					});
-				});
-
-			}
-		});
+		this.url = obj.backup;
+		this.dseed = crypto.deriveSeed(seed);
+		$$.remote.doHttpGet(this.url +"/CSB/" + utils.getMasterUid(this.dseed), this.reportOrContinue("createAuxFolder", "Error at getting encryptedMaster"));
 	},
-	restoreCsbs: function(url, csbs, currentCsb, callback){
+
+	createAuxFolder: function (encryptedMaster) {
+		this.encryptedMaster = encryptedMaster;
+		$$.ensureFolderExists(utils.Paths.auxFolder, this.reportOrContinue("writeMaster", "Error at aux folder creation"));
+	},
+
+	writeMaster: function () {
+		fs.writeFile(utils.getMasterPath(this.dseed), this.encryptedMaster, this.reportOrContinue("saveDseed", "Error at writing masterCsb"));
+	},
+	saveDseed: function () {
+		this.masterCsbData = crypto.decryptJson(this.encryptedMaster, this.dseed);
+		crypto.saveDSeed(this.dseed, utils.defaultPin, utils.Paths.Dseed, this.reportOrContinue("getCsbsToRestore", "Failed at saving dseed"));
+
+	},
+	getCsbsToRestore: function (masterCsb) {
+
+		if(!this.masterCsbData && masterCsb) {
+			this.masterCsbData = masterCsb.Data;
+		}
+		console.log("masterCsbData", this.masterCsbData);
+		if(!this.url) {
+			this.url = this.masterCsbData["backups"][0];
+		}
+		console.log("this.url", this.url);
+		this.__getCsbsToRestore(this.masterCsbData, this.alias, this.reportOrContinue("restoreCsbs", "Failed to get csbs from master", 0));
+	},
+	restoreCsbs: function(csbs, currentCsb){
 		var self = this;
-		if(currentCsb == csbs.length){
-			if(csbs.length == 1){
-				$$.interact.say(csbs[0]["Title"], "has been restored");
-			}else {
-				$$.interact.say("All csbs have been restored");
+		this.csbs = csbs;
+		this.currentCsb = currentCsb;
+
+		if(currentCsb == csbs.length) {
+			self.swarm("interaction", "csbRestoration", csbs);
+			return;
+		}
+		$$.remote.doHttpGet(self.url + "/CSB/" + csbs[currentCsb]["Path"], this.reportOrContinue("saveCsb", "Failed to get csb from server"));
+
+		var csb = crypto.decryptJson(encryptedCsb, Buffer.from(csbs[currentCsb]["Dseed"], "hex"));
+		if(csb["records"] ){
+			if(csb["records"]["Csb"] && csb["records"]["Csb"].length > 0) {
+				csbs = csbs.concat(csb["records"]["Csb"]);
 			}
-		}else{
-			$$.remote.doHttpGet(url + "/CSB/" + csbs[currentCsb]["Path"], function(err, encryptedCsb){
-				if(err){
-					callback(err);
-				}else{
-					function __saveCsb() {
-						fs.writeFile(csbs[currentCsb]["Path"], encryptedCsb, function (err) {
-							if(err){
-								return callback(err);
-							}
-							self.restoreCsbs(url, csbs, currentCsb + 1, function (err) {
-								if(err){
-									return callback(err);
-								}
-							});
-						});
-					}
-					console.log("Typeee", typeof encryptedCsb);
-					// encryptedCsb = Buffer.from(encryptedCsb, 'binary');
-					// encryptedCsb = Buffer.from(encryptedCsb);
-					var csb = crypto.decryptJson(encryptedCsb, Buffer.from(csbs[currentCsb]["Dseed"], "hex"));
-					if(csb["records"] ){
-						if(csb["records"]["Csb"] && csb["records"]["Csb"].length > 0) {
-							csbs = csbs.concat(csb["records"]["Csb"]);
-						}
-						if(csb["records"]["Adiacent"] && csb["records"]["Adiacent"].length > 0){
-							self.restoreArchives(url, csb["records"]["Adiacent"], 0, function (err) {
-								if(err){
-									return callback(err);
-								}
-								__saveCsb();
-							})
-						}else{
-							__saveCsb();
-						}
+			if(csb["records"]["Adiacent"] && csb["records"]["Adiacent"].length > 0){
+				self.restoreArchives(self.url, csb["records"]["Adiacent"], 0, self.reportOrContinue("__saveCsb", this.csbs, this.currentCsb, this.encryptedCsb))
+			}else{
+				self.__saveCsb(this.csbs, this.currentCsb, this.encryptedCsb);
+			}
 
-					}
+		}
 
+	},
+	__saveCsb: function(csbs, currentCsb, encryptedCsb) {
+		fs.writeFile(csbs[currentCsb]["Path"], encryptedCsb, this.reportOrContinue("restoreCsbs", "Failed to save csb", currentCsb + 1));
+	},
+	reportOrContinue:function(phaseName, errorMessage, args){
+		var self = this;
+		return function(err,res) {
+			if (err) {
+				self.swarm("interaction", "handleError", err, errorMessage);
+			} else {
+				if (phaseName) {
+					self[phaseName](res, args);
 				}
-			})
+			}
 		}
 	},
-	restoreArchives: function (url, archives, currentArchive, callback) {
+	restoreArchives: function (url, archives, currentArchive) {
 		var self = this;
 		if(currentArchive == archives.length){
-			return callback(null);
+			self.swarm("interaction", "archiveRestoration", currentArchive, archives);
+			return;
 		}
 		$$.remote.doHttpGet(url + "/CSB/" + archives[currentArchive]["Path"], function(err, data){
 			if(err){
-				$$.interact.say("Failed to post archive", archives[currentArchive]["Title"],"on server");
-				callback(err);
+				self.swarm("interaction", "handleError", err, "Error at getting archives");
 			}else{
 				$$.ensureFolderExists(utils.Paths.Adiacent, function (err) {
 					if(err){
-						return callback(err);
+						self.swarm("interaction", "handleError", err, "Error in ensureFolderExists");
+						return;
 					}
-
-					// data = Buffer.from(data);
 					fs.writeFile(path.join(utils.Paths.Adiacent, archives[currentArchive]["Path"]), data, function (err) {
 						if(err){
-							return callback(err);
+							self.swarm("interaction", "handleError", err, "Error in writing archive"+archives[currentArchive]["Path"]);
 						}
 					});
-					self.restoreArchives(url, archives, currentArchive + 1, callback);
+					self.restoreArchives(url, archives, currentArchive + 1);
 				});
 			}
 		});
@@ -177,5 +134,6 @@ $$.flow.describe("restore", {
 			});
 		}
 	}
+
 });
 

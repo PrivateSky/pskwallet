@@ -16,8 +16,6 @@ $$.swarm.describe("saveBackup", {
 		var self = this;
 		utils.checkPinIsValid(pin, function (err) {
 			if(err){
-				console.log("Invalid pin");
-				console.log("Try again");
 				self.swarm("interaction", "readPin", noTries-1);
 			}else {
 				self.backupMaster(pin);
@@ -28,13 +26,13 @@ $$.swarm.describe("saveBackup", {
 	backupMaster: function (pin) {
 		var self = this;
 		utils.loadMasterCsb(pin, null, function (err, masterCsb) {
-			// masterCsb.Data["backups"].push(url);
+			masterCsb.Data["backups"].push(self.url);
 			var csbs = masterCsb.Data["records"]["Csb"];
 			var encryptedMaster = crypto.encryptJson(masterCsb.Data, masterCsb.Dseed);
 			console.log(encryptedMaster.length);
 			utils.writeCsbToFile(masterCsb.Path, masterCsb.Data, masterCsb.Dseed, function (err) {
 				if(err){
-					self.swarm("interaction", "printError", err);
+					self.swarm("interaction", "handleError", err);
 				}
 				$$.remote.doHttpPost(self.url + "/CSB/" + masterCsb.Uid, encryptedMaster, function (err) {
 					if(err){
@@ -42,7 +40,7 @@ $$.swarm.describe("saveBackup", {
 					}else{
 						self.backupCsbs(csbs, 0, function (err) {
 							if(err){
-								self.swarm("interaction", "printError", err);
+								self.swarm("interaction", "handleError", err);
 							}
 						});
 					}
@@ -58,7 +56,7 @@ $$.swarm.describe("saveBackup", {
 		}else{
 			utils.readEncryptedCsb(csbs[currentCsb]["Path"], function (err, encryptedCsb) {
 				if(err){
-					self.swarm("interaction", "printError", err);
+					self.swarm("interaction", "handleError", err);
 				}
 				var csb = crypto.decryptJson(encryptedCsb, Buffer.from(csbs[currentCsb]["Dseed"], "hex"));
 				function __backupCsb() {
@@ -78,7 +76,7 @@ $$.swarm.describe("saveBackup", {
 					if(csb["records"]["Adiacent"] && csb["records"]["Adiacent"].length > 0){
 						self.backupArchives(csb["records"]["Adiacent"], 0, function (err) {
 							if(err){
-								self.swarm("interaction", "printError", err);
+								self.swarm("interaction", "handleError", err);
 							}
 							__backupCsb();
 						})

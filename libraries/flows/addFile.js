@@ -28,10 +28,6 @@ $$.swarm.describe("addFile", {
 	addArchive: function (pin) {
 		this.filePath = path.resolve(this.filePath);
 		var self = this;
-		// if(!fs.existsSync(filePath)){
-		// 	$$.interact.say(filePath, "is invalid.");
-		// 	return;
-		// }
 		utils.traverseUrl(pin, this.url, function (err, args) {
 			if(err){
 				self.swarm("interaction", "printError", err);

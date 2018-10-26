@@ -26,13 +26,12 @@ $$.swarm.describe("setKey", {
 
 	checkInputValidity: function (pin, aliasCsb, recordType, key, field, fields) {
 		var self = this;
-		console.log("checking input validity");
 		utils.getCsb(pin, aliasCsb, function (err, csb) {
 			if (err) {
 				throw err;
 			}
 			if (!csb) {
-				console.log("No csb with the alias", aliasCsb, "exists");
+				self.swarm("interaction", "printError");
 				return;
 			}
 			if (key) {
@@ -97,6 +96,7 @@ $$.swarm.describe("setKey", {
 			}
 		});
 	},
+	printError: "interaction",
 	addRecord: function (pin, record, csb, recordType, key, field, callback) {
 		if (!csb.Data["records"]) {
 			csb.Data["records"] = {};

@@ -3,17 +3,39 @@ var is = require("interact").createInteractionSpace();
 const utils = require('../utils/utils');
 const getPassword = require("../utils/getPassword").readPassword;
 const path = require("path");
+
+function readPin(noTries) {
+	var self = this;
+	utils.insertPassword("Insert pin:", noTries, function (err, pin) {
+		if(noTries < 3 && noTries > 0){
+			console.log("Invalid pin");
+			console.log("Try again");
+		}
+		self.swarm("validatePin", pin, noTries);
+	})
+}
+
+function generateErrorHandler(){
+	return function(err,info, isWarning){
+		if(isWarning){
+			console.log("Warning", message, info);
+
+		} else{
+			var msg = message;
+			if(info){
+				msg = msg + " " + info;
+			}
+			console.log("Error", msg, err);
+		}
+	}
+}
+
 function doSetPin() {
 	is.startSwarm("setPin", "start").on({
-		enterOldPin: function (noTries) {
-			var self = this;
-			utils.insertPassword("Enter old pin:", noTries, function (err, oldPin) {
-				self.swarm("validatePin", oldPin, noTries);
-				});
-		},
+		enterOldPin: readPin,
 		enterNewPin: function () {
 			var self = this;
-			utils.insertPassword("Insert new pin:",3 , function(err, newPin){
+			utils.insertPassword("Insert new pin:", 3, function(err, newPin){
 				self.swarm("actualizePin", newPin);
 			});
 		},
@@ -23,23 +45,13 @@ function doSetPin() {
 
 function doAddCsb(aliasCSB) {
 	is.startSwarm("createCsb", "start", aliasCSB).on({
-		readPin:function(noTries){
-			var self = this;
-			utils.insertPassword(null, noTries, function (err, pin) {
-				self.swarm("validatePin", pin, noTries);
-			});
-		}
+		readPin: readPin
 	});
 }
 
 function doSetKey(aliasCsb, recordType, key, field) {
 	is.startSwarm("setKey", "start", aliasCsb, recordType, key, field).on({
-		readPin: function(aliasCsb, recordType, key, field, noTries){
-			var self = this;
-			utils.insertPassword(null, noTries, function (err, pin) {
-				self.swarm("validatePin", pin, aliasCsb, recordType, key, field, noTries);
-			});
-		},
+		readPin:readPin,
 		readStructure: function (pin, aliasCsb, recordType, key, field) {
 			var self = this;
 			utils.getRecordStructure(recordType, function (err, recordStructure) {
@@ -50,15 +62,13 @@ function doSetKey(aliasCsb, recordType, key, field) {
 				self.swarm("checkInputValidity", pin, aliasCsb, recordType, key, field, fields);
 			});
 		},
-		printError: function () {
-			console.log("Invalid input");
-		}
+		handleError: generateErrorHandler("Invalid input")
 	});
 }
 
 function doResetPin(){
 	is.startSwarm("resetPin", "start").on({
-		readSeed :function(){
+		readSeed:function(){
 			var self = this;
 			utils.insertPassword("Enter seed: ", 3, function (err, seed) {
 				self.swarm("checkSeedValidity", seed);
@@ -78,43 +88,54 @@ doGetKey = function (aliasCsb, recordType, key, field) {
 
 doSaveBackup = function (url) {
 	is.startSwarm("saveBackup", "start", url).on({
-		readPin: function (noTries) {
-			var self = this;
-			utils.insertPassword("Insert pin:", noTries, function (err, pin) {
-				self.swarm("validatePin", pin, noTries);
-			})
-		},
+		readPin: readPin,
 		errorOnPost: function () {
 			console.log("Failed on post");
 		},
 		onComplete: function () {
 			console.log("All resources are backedUp");
 		},
-		printError: function (err) {
+		handleError: function (err) {
 			throw err;
 		}
 	});
 };
 
 
-doRestore = function (aliasCsb) {
-
-};
+function doRestore(alias) {
+	is.startSwarm("restore", "start", alias).on({
+		readSeed: function () {
+			var self = this;
+			utils.insertPassword("Enter seed:", 3, function (err, seed) {
+				if (err) {
+					throw err;
+				}
+				self.swarm("checkMasterExists", Buffer.from(seed, "base64"));
+			});
+		},
+		csbRestoration: function (csbs) {
+			if(csbs.length == 1){
+				console.log("Csb", csbs[0]["Title"], "has been restored");
+			}else{
+				console.log("All csbs have been restored");
+			}
+		},
+		archiveRestoration: function (archives) {
+			if(archives.length == 1) {
+				console.log("The file", archives[0]["Title"], "has been restored");
+			}else{
+				console.log("All archives have been restored.");
+			}
+		},
+		handleError: generateErrorHandler
+	});
+}
 
 function doSetUrl(url) {
 	is.startSwarm("setUrl", "start", url).on({
-		readPin: function (noTries) {
-			var self = this;
-			utils.insertPassword("Insert pin:", noTries, function (err, pin) {
-				if(noTries < 3){
-					console.log("Invalid pin");
-					console.log("Try again");
-				}
-				self.swarm("validatePin", pin, noTries);
-			})
-		},
-		printError: function () {
-			console.log("InvalidUrl");
+		readPin: readPin,
+		handleError: function (err) {
+			console.log("InvalidUrl", err);
 		},
 		confirmOverwriteRecord: function (csb, recordType, key, field, fields) {
 			var self = this;
@@ -142,6 +163,7 @@ function doSetUrl(url) {
 					if(err){
 						throw err;
 					}
+					// $$.errorHandler.throwError(err)
 					self.swarm("addRecord", answer, csb, recordType, key, field);
 				})
 			});
@@ -165,17 +187,8 @@ function doGetUrl(url) {
 	is.startSwarm("getUrl", "start", url, function(err, result){
 		console.log(result);
 	}).on({
-		readPin: function (noTries) {
-			var self = this;
-			utils.insertPassword("Insert pin:", noTries, function (err, pin) {
-				if(noTries < 3){
-					console.log("Invalid pin");
-					console.log("Try again");
-				}
-				self.swarm("validatePin", pin, noTries);
-			})
-		},
-		printError: function () {
+		readPin: readPin,
+		handleError: function () {
 			console.log("InvalidUrl");
 		},
 		printRecord: function (record) {
@@ -187,16 +200,7 @@ function doGetUrl(url) {
 
 function doAddFile(csbUrl, filePath) {
 	is.startSwarm("addFile", "start", csbUrl, filePath).on({
-		readPin: function (noTries) {
-			var self = this;
-			utils.insertPassword("Insert pin:", noTries, function (err, pin) {
-				if(noTries < 3){
-					console.log("Invalid pin");
-					console.log("Try again");
-				}
-				self.swarm("validatePin", pin, noTries);
-			})
-		},
+		readPin: readPin,
 		confirmOverwriteFile: function (filePath, csb, alias, indexAdiacent) {
 			var self = this;
 			console.log("A file with the name", path.basename(filePath), "already exists in the current csb");
@@ -217,7 +221,7 @@ function doAddFile(csbUrl, filePath) {
 		invalidUrl: function () {
 			console.log("Invalid url");
 		},
-		printError: function (err) {
+		handleError: function (err) {
 			throw err;
 		}
 	});
@@ -232,7 +236,7 @@ function doExtract(url){
 		readPin: function (noTries) {
 			var self = this;
 			utils.insertPassword("Insert pin:", noTries, function (err, pin) {
-				if(noTries < 3){
+				if(noTries <= 3 && noTries > 1){
 					console.log("Invalid pin");
 					console.log("Try again");
 				}
@@ -245,7 +249,7 @@ function doExtract(url){
 		archiveExtracted: function (aliasFile) {
 			console.log("The file", aliasFile, "has been extracted");
 		},
-		printError: function (err) {
+		handleError: function (err) {
 			throw err;
 		},
 		invalidUrl: function () {

@@ -83,11 +83,11 @@ $$.swarm.describe("extract", {
 		var dseed = Buffer.from(csb.Data["records"]["Adiacent"][indexAdiacent]["Dseed"], "hex");
 		console.log("Adiacent", csb.Data["records"]["Adiacent"][indexAdiacent]);
 		crypto.decryptStream(inputPath, process.cwd(), dseed, function (err) {
-				if(err){
-					self.swarm("interaction", "printError", err);
-					return;
-				}
-				self.swarm("interaction", "archiveExtracted", aliasFile);
-			});
+			if(err){
+				self.swarm("interaction", "printError", err);
+				return;
+			}
+			self.swarm("interaction", "archiveExtracted", aliasFile);
+		});
 	}
 });

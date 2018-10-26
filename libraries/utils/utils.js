@@ -88,7 +88,7 @@ exports.createMasterCsb = function(pin, pathMaster, callback) {
 			callback(err);
 		}else {
 			var seed = crypto.generateSeed(exports.defaultBackup);
-			console.log("The following string represents the seed.Please save it.");
+			console.log("The following string represents the seed. Please save it.");
 			console.log();
 			console.log(seed.toString("base64"));
 			console.log();
@@ -245,16 +245,13 @@ exports.getMasterUid = function (dseed){
 
 exports.findCsb = function (csbData, aliasCsb, callback) {
 	if(!csbData || !csbData["records"] || !csbData["records"]["Csb"] || csbData["records"]["Csb"].length === 0){
-		callback(new Error("Csb empty"));
-		return;
+		return callback(new Error("Csb empty"));
 	}
 	var csbs = csbData["records"]["Csb"];
-
-	if(csbs.length > 0){
+	while(csbs.length > 0){
 		var csb = csbs.shift();
 		if(csb["Title"] === aliasCsb){
-			callback(null, csb);
-			return;
+			return callback(null, csb);
 		}else{
 			exports.readCsb(csb["Path"], Buffer.from(csb["Dseed"], "hex"), function (err, childCsb) {
 				if(!err){
@@ -263,7 +260,6 @@ exports.findCsb = function (csbData, aliasCsb, callback) {
 					}
 				}
 			});
-
 		}
 	}
 
