@@ -1,17 +1,21 @@
-const is = require("interact").createInteractionSpace();
-const is2 = require('interact').createRemoteInteractionSpace('testRemote', 'http://127.0.0.1:8080', 'localhost/agent/system');
+const interactionSpace = require("interact").createInteractionSpace();
 
 function doAddRemote(...args) {
-    console.error('args ', ...args);
-    is2.startSwarm('domain', 'initialize', args);
+    interactionSpace.startSwarm('remotes', 'set', ...args).onReturn(function (err) {
+        if (err) {
+            console.error(err);
+        }
+    });
 }
 
 function doGetRemotes(...args) {
-
-    is2.startSwarm('domain', 'initialize', args).on({
-        returnInfo: function(info) {
-            console.log(info);
+    interactionSpace.startSwarm('remotes', 'get', ...args).onReturn(function (err, result) {
+        if (err) {
+            console.error(err);
+            return;
         }
+
+        console.log(result);
     });
 }
 
