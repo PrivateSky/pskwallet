@@ -18,14 +18,11 @@ function readPin(noTries) {
 function generateErrorHandler(){
 	return function(err,info, isWarning){
 		if(isWarning){
-			console.log("Warning", message, info);
+			console.log("Warning", info);
 
 		} else{
-			var msg = message;
-			if(info){
-				msg = msg + " " + info;
-			}
-			console.log("Error", msg, err);
+
+			console.log("Error", info, err);
 		}
 	}
 }
@@ -54,6 +51,8 @@ function doSetKey(aliasCsb, recordType, key, field) {
 		readPin:readPin,
 		readStructure: function (pin, aliasCsb, recordType, key, field) {
 			var self = this;
+
+
 			utils.getRecordStructure(recordType, function (err, recordStructure) {
 				if(err){
 					throw err;
@@ -137,35 +136,31 @@ function doSetUrl(url) {
 		handleError: function (err) {
 			console.log("InvalidUrl", err);
 		},
-		confirmOverwriteRecord: function (csb, recordType, key, field, fields) {
+		confirmOverwrite: function (csb, recordType, key, field, fields) {
 			var self = this;
-			console.log("You are about to overwrite the following record:");
-			console.log($$.swarm.start("getUrl").__getRecord(csb, recordType, key));
-			utils.confirmOperation("Do you want to continue?", null, function(err, rl){
-				utils.enterRecord(fields, 0, null, rl, function (err, record) {
-					if(err){
-						throw err;
-					}
-					self.swarm("addRecord", record, csb, recordType, key, field);
-				});
-			});
-		},
 
-		confirmOverwriteField: function (csb, recordType, key, field) {
-			var self = this;
-			console.log("You are about to overwrite the following field:");
-			console.log($$.swarm.start("getUrl").__getRecord(csb, recordType, key, field));
-			utils.confirmOperation(null, null, function(err, rl){
-				if(err){
-					throw err;
-				}
-				utils.enterField(field, rl, function(err, answer){
+			function generateConfirmationCb(){
+				return function (err, record) {
 					if(err){
-						throw err;
+						$$.errorHandler.throwError(err);
+					}else{
+						self.swarm("addRecord", record, csb, recordType, key, field);
 					}
-					// $$.errorHandler.throwError(err)
-					self.swarm("addRecord", answer, csb, recordType, key, field);
-				})
+				}
+			}
+			if(field){
+				console.log("You are about to overwrite the following field:");
+			}else{
+				console.log("You are about to overwrite the following record:");
+			}
+			console.log($$.swarm.start("getUrl").__getRecord(csb, recordType, key, field));
+			utils.confirmOperation("Do you want to continue?", null, function(err, rl){
+				if(field){
+					utils.enterField(field, rl, generateConfirmationCb());
+				}else{
+					utils.enterRecord(fields, 0, null, rl, generateConfirmationCb());
+				}
+
 			});
 		},
 		enterRecord: function (csb, recordType, key, field, fields) {
@@ -233,16 +228,7 @@ doAddFolder = function(csbUrl, folderPath){
 
 function doExtract(url){
 	is.startSwarm("extract", "start", url).on({
-		readPin: function (noTries) {
-			var self = this;
-			utils.insertPassword("Insert pin:", noTries, function (err, pin) {
-				if(noTries <= 3 && noTries > 1){
-					console.log("Invalid pin");
-					console.log("Try again");
-				}
-				self.swarm("validatePin", pin, noTries);
-			})
-		},
+		readPin: readPin,
 		csbExtracted: function (alias) {
 			console.log("The csb", alias, "has been extracted");
 		},
