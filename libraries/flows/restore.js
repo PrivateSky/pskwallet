@@ -1,5 +1,5 @@
 var path = require("path");
-const utils = require(path.resolve(__dirname + "/../../utils/flowsUtils"));
+const utils = require("./../../utils/flowsUtils");
 const crypto = require("pskcrypto");
 var fs = require("fs");
 require('psk-http-client');

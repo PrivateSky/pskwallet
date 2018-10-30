@@ -1,6 +1,6 @@
 var path = require("path");
 
-const utils = require(path.resolve(__dirname + "/../../utils/flowsUtils"));
+const utils = require("./../../utils/flowsUtils");
 const fs = require("fs");
 const crypto = require("pskcrypto");
 $$.swarm.describe("addFile", {

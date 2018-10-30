@@ -1,6 +1,6 @@
 var path = require("path");
 
-const utils = require(path.resolve(__dirname + "/../../utils/flowsUtils"));
+const utils = require("./../../utils/flowsUtils");
 $$.swarm.describe("setKey", {
 	start: function (aliasCsb, recordType, key, field) {
 		console.log("start", arguments);

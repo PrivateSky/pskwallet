@@ -10,8 +10,7 @@ exports.defaultPin = "12345678";
 exports.Paths = {
 	"auxFolder"          : path.join(process.cwd(), ".privateSky"),
 	"Dseed"             : path.join(process.cwd(), ".privateSky", "Dseed"),
-	"Adiacent"          : path.join(process.cwd(), "Adiacent"),
-	"recordStructures"  : path.join(__dirname, path.normalize("../utils/recordStructures"))
+	"Adiacent"          : path.join(process.cwd(), "Adiacent")
 };
 
 exports.checkPinIsValid = function(pin, callback) {
@@ -132,17 +131,9 @@ exports.writeCsbToFile = function (csbPath, csbData, dseed, callback) {
 	})
 };
 
-
-
-
 exports.getRecordStructure = function (recordType, callback) {
-	fs.readFile(path.join(exports.Paths.recordStructures,"csb_record_structure_" + recordType +".json"), null, function (err, data) {
-		if(err){
-			callback(err);
-		}else{
-			callback(null, JSON.parse(data));
-		}
-	});
+    let recordTypeData = require("./recordStructures/index")[recordType];
+    callback(null, JSON.parse(recordTypeData));
 };
 
 exports.readEncryptedCsb = function (pathCsb, callback) {
