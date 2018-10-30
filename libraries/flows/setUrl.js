@@ -1,6 +1,6 @@
 var path = require("path");
 
-const utils = require(path.resolve(__dirname + "/../utils/utils"));
+const utils = require(path.resolve(__dirname + "/../../utils/flowsUtils"));
 const crypto = require("pskcrypto");
 
 $$.swarm.describe("setUrl", {
@@ -29,7 +29,7 @@ $$.swarm.describe("setUrl", {
 				return callback(err);
 			}
 			if(!args){
-				self.swarm("interaction", "printError");
+				self.swarm("interaction", "handleError");
 			}
 			var parentCsb = args.shift();
 			utils.getChildCsb(parentCsb, args.shift(), function (err, csb) {
@@ -59,18 +59,18 @@ $$.swarm.describe("setUrl", {
 			var indexRecord = utils.indexOfRecord(csb.Data, recordType, key);
 			if(indexRecord >= 0){
 				if(!field){
-					self.swarm("interaction", "confirmOverwriteRecord", csb, recordType, key, field, fields);
+					self.swarm("interaction", "confirmOverwrite", csb, recordType, key, field, fields);
 				}
 				else {
 					var indexField = utils.indexOfKey(fields, "fieldName", field);
 					if (indexField < 0) {
-						self.swarm("interaction", "printError");
+						self.swarm("interaction", "handleError");
 					} else {
-						self.swarm("interaction", "confirmOverwriteField", csb, recordType, key, field, fields);
+						self.swarm("interaction", "confirmOverwrite", csb, recordType, key, field, fields);
 					}
 				}
 			}else {
-				self.swarm("interaction", "printError");
+				self.swarm("interaction", "handleError");
 			}
 		}else if(!key && !field) {
 			self.swarm("interaction", "enterRecord", csb, recordType, key, field, fields);

@@ -1,6 +1,6 @@
 var path = require("path");
 
-const utils = require(path.resolve(__dirname + "/../utils/utils"));
+const utils = require(path.resolve(__dirname + "/../../utils/flowsUtils"));
 
 
 $$.flow.describe("copyUrl", {

@@ -1,11 +1,12 @@
 var path = require("path");
 
-const utils = require(path.resolve(__dirname + "/../utils/utils"));
+const utils = require(path.resolve(__dirname + "/../../utils/flowsUtils"));
 const fs = require("fs");
 const crypto = require("pskcrypto");
 $$.swarm.describe("extract", {
 	start: function (url) {
 		this.url = url;
+		console.log(this.url);
 		this.swarm("interaction", "readPin");
 	},
 	validatePin: function (pin, noTries) {
@@ -22,9 +23,10 @@ $$.swarm.describe("extract", {
 		var self = this;
 		utils.traverseUrl(pin, this.url, function (err, args) {
 			if(err){
-				self.swarm("interaction", "printError", err);
+				self.swarm("interaction", "handleError", err);
 				return;
 			}
+			console.log("args", args);
 			if(args.length > 3 || args.length < 2){
 				self.swarm("interaction", "invalidUrl");
 				return;
@@ -43,7 +45,7 @@ $$.swarm.describe("extract", {
 
 			utils.getChildCsb(parentCsb, aliasCsb, function (err, csb) {
 				if(err){
-					self.swarm("interaction", "printError", err);
+					self.swarm("interaction", "handleError", err);
 				}
 				if(!csb){
 					self.swarm("interaction", "invalidUrl");
@@ -61,7 +63,7 @@ $$.swarm.describe("extract", {
 					}
 				}else {
 					self.extractCsb(csb, function (err) {
-						self.swarm("interaction", "printError", err);
+						self.swarm("interaction", "handleError", err);
 					});
 				}
 			});
@@ -71,7 +73,7 @@ $$.swarm.describe("extract", {
 		var self = this;
 		fs.writeFile(path.join(process.cwd(), csb.Title), JSON.stringify(csb.Data, null, "\t"), function (err) {
 			if(err){
-				self.swarm("interaction", "printError", err);
+				self.swarm("interaction", "handleError", err);
 				return;
 			}
 			self.swarm("interaction", "csbExtracted", csb.Title);
@@ -84,7 +86,7 @@ $$.swarm.describe("extract", {
 		console.log("Adiacent", csb.Data["records"]["Adiacent"][indexAdiacent]);
 		crypto.decryptStream(inputPath, process.cwd(), dseed, function (err) {
 			if(err){
-				self.swarm("interaction", "printError", err);
+				self.swarm("interaction", "handleError", err);
 				return;
 			}
 			self.swarm("interaction", "archiveExtracted", aliasFile);

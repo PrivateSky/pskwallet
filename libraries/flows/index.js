@@ -3,7 +3,6 @@ module.exports = $$.library(function () {
     require('./addFile');
     require('./copyUrl');
     require('./createCsb');
-    require('./CSBhandler');
     require('./deleteUrl');
     require('./extract');
     require('./getKey');

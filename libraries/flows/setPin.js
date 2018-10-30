@@ -1,5 +1,5 @@
 var path = require("path");
-const utils = require(path.resolve(__dirname + "/../utils/utils"));
+const utils = require(path.resolve(__dirname + "/../../utils/flowsUtils"));
 const crypto = require("pskcrypto");
 $$.swarm.describe("setPin", {
 	start: function () {
