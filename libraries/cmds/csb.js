@@ -1,7 +1,6 @@
 $$.loadLibrary("flows", require("../flows"));
 var is = require("interact").createInteractionSpace();
-const utils = require('../utils/utils');
-const getPassword = require("../utils/getPassword").readPassword;
+const utils = require('../../utils/flowsUtils');
 const path = require("path");
 
 function readPin(noTries) {
