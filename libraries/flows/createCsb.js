@@ -12,7 +12,7 @@ $$.swarm.describe("createCsb", {
 					if(err){
 						throw err;
 					}
-					self.createCsb(null, aliasCsb);
+                    self.swarm("interaction", "readPin", 3);
 				});
 			}else{
 				self.swarm("interaction", "readPin", 3);
