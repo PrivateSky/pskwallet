@@ -1,21 +1,46 @@
-var path = require("path");
-
 const utils = require("./../../utils/flowsUtils");
 const crypto = require("pskcrypto");
+const fs = require("fs");
+
 $$.swarm.describe("createCsb", {
 	start: function (aliasCsb) {
 		var self = this;
 		self.aliasCsb = aliasCsb;
 		utils.masterCsbExists(function (err, status) {
 			if(err){
-				utils.createMasterCsb(null, null, function (err) {
-					if(err){
-						throw err;
-					}
-                    self.swarm("interaction", "readPin", 3);
-				});
+				self.swarm("interaction", "readPin", 3, utils.defaultPin, true);
 			}else{
 				self.swarm("interaction", "readPin", 3);
+			}
+		});
+	},
+	
+	createMasterCsb: function(pin, pathMaster) {
+		var self = this;
+		pin = pin || utils.defaultPin;
+		fs.mkdir(utils.Paths.auxFolder, function (err) {
+			if(err){
+				self.swarm("interaction", "handleError", err, "Failed to create .privateSky folder");
+			}else {
+				var seed = crypto.generateSeed(utils.defaultBackup);
+				var dseed = crypto.deriveSeed(seed);
+				self.swarm("interaction", "printSensitiveInfo", seed, utils.defaultPin);
+				pathMaster = pathMaster || utils.getMasterPath(dseed);
+				crypto.saveDSeed(dseed, pin, utils.Paths.Dseed, function (err) {
+					if(err){
+						self.swarm("interaction", "handleError", err, "Failed to write dseed");
+						return;
+					}
+					var masterCsb = utils.defaultCSB();
+					fs.writeFile(pathMaster, crypto.encryptJson(masterCsb, dseed), function (err) {
+						if (err) {
+							self.swarm("interaction", "handleError", err, "Failed to write master csb");
+						} else {
+							self.swarm("interaction", "printInfo", "Master csb has been created");
+							self.createCsb();
+						}
+					});
+				});
 			}
 		});
 	},
@@ -55,14 +80,21 @@ $$.swarm.describe("createCsb", {
 			};
 			masterCsb.Data["records"]["Csb"].push(record);
 			utils.writeCsbToFile(masterCsb.Path, masterCsb.Data, masterCsb.Dseed, function (err) {
+				if(err){
+					self.swarm("interaction", "handleError", err, "Failed to write master csb");
+					return;
+				}
 				var dseed = crypto.deriveSeed(seed);
 				utils.writeCsbToFile(pathCsb, csbData, dseed, function (err) {
-					console.log("Csb", self.aliasCsb, "was successfully created.");
+					if(err){
+						self.swarm("interaction", "handleError", err, "Failed to write csb" + self.aliasCsb);
+						return;
+					}
+					self.swarm("interaction", "printInfo", "Csb " + self.aliasCsb + " was successfully created.");
 				});
 
 			});
 
 		});
-
 	}
 });

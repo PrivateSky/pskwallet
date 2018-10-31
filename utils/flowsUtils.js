@@ -59,39 +59,6 @@ exports.masterCsbExists = function (callback) {
 	});
 };
 
-exports.createMasterCsb = function(pin, pathMaster, callback) {
-	console.log("Creating master csb");
-	pin = pin || exports.defaultPin;
-	fs.mkdir(exports.Paths.auxFolder, function (err) {
-		if(err){
-			callback(err);
-		}else {
-			var seed = crypto.generateSeed(exports.defaultBackup);
-			console.log("The following string represents the seed. Please save it.");
-			console.log();
-			console.log(seed.toString("base64"));
-			console.log();
-			console.log("The default pin is:", exports.defaultPin);
-			console.log();
-			var dseed = crypto.deriveSeed(seed);
-			pathMaster = pathMaster || exports.getMasterPath(dseed);
-			crypto.saveDSeed(dseed, pin, exports.Paths.Dseed, function (err) {
-				if (!err) {
-					var masterCsb = exports.defaultCSB();
-					fs.writeFile(pathMaster, crypto.encryptJson(masterCsb, dseed), function (err) {
-						if (err) {
-							callback(err);
-						} else {
-							console.log("Master csb has been created");
-							callback();
-						}
-					});
-				}
-			});
-		}
-	});
-};
-
 exports.loadMasterCsb = function(pin, seed, callback){
 	pin = pin || exports.defaultPin;
 	var readMaster = function (dseed, callback) {
@@ -133,7 +100,7 @@ exports.writeCsbToFile = function (csbPath, csbData, dseed, callback) {
 
 exports.getRecordStructure = function (recordType, callback) {
     let recordTypeData = require("./recordStructures/index")[recordType];
-    callback(null, JSON.parse(recordTypeData));
+    callback(null, recordTypeData);
 };
 
 exports.readEncryptedCsb = function (pathCsb, callback) {
@@ -142,7 +109,7 @@ exports.readEncryptedCsb = function (pathCsb, callback) {
 	});
 };
 
-exports.readCsb = function (pathCsb, dseed, callback) {
+exports.readDecryptedCsb = function (pathCsb, dseed, callback) {
 	if(typeof dseed === "string"){
 		dseed = Buffer.from(dseed, "hex");
 	}
@@ -176,7 +143,7 @@ exports.findCsb = function (csbData, aliasCsb, callback) {
 		if(csb["Title"] === aliasCsb){
 			return callback(null, csb);
 		}else{
-			exports.readCsb(csb["Path"], Buffer.from(csb["Dseed"], "hex"), function (err, childCsb) {
+			exports.readDecryptedCsb(csb["Path"], Buffer.from(csb["Dseed"], "hex"), function (err, childCsb) {
 				if(!err){
 					if(childCsb && childCsb["records"] && childCsb["records"]["Csb"]){
 						csbs = csbs.concat(childCsb["records"]["Csb"]);
@@ -242,12 +209,27 @@ exports.indexOfKey = function(arr, property, key){
 	return -1;
 };
 
+exports.getRecord = function (csb, recordType, key, field) {
+	var indexKey = exports.indexOfKey(csb.Data["records"][recordType], "Title", key);
+	if (indexKey >= 0) {
+		if (!field) {
+			return csb.Data["records"][recordType][indexKey];
+		} else if (csb.Data["records"][recordType][indexKey][field]) {
+			return csb.Data["records"][recordType][indexKey][field];
+		} else {
+			return undefined;
+		}
+	} else {
+		return undefined;
+	}
+};
+
 exports.getChildCsb = function (parentCsb, aliasChildCsb, callback) {
 	var indexChild = exports.indexOfRecord(parentCsb.Data, "Csb", aliasChildCsb);
 	if(indexChild >= 0){
 		let childCsbPath = parentCsb.Data["records"]["Csb"][indexChild]["Path"];
 		let childCsbDseed = Buffer.from(parentCsb.Data["records"]["Csb"][indexChild]["Dseed"], "hex");
-		exports.readCsb(childCsbPath, childCsbDseed, function (err, csbData) {
+		exports.readDecryptedCsb(childCsbPath, childCsbDseed, function (err, csbData) {
 			if(err){
 				callback(err);
 			}else{
@@ -274,7 +256,7 @@ function traverseUrlRecursively(pin, csb, splitUrl, lastAlias, parentCsb, callba
 		if (csb.Data["records"]) {
 			let childCsbDseed = Buffer.from(csb.Data["records"]["Csb"][index]["Dseed"], "hex");
 			let childCsbPath  = csb.Data["records"]["Csb"][index]["Path"];
-			exports.readCsb(childCsbPath, childCsbDseed, function (err, childCsbData) {
+			exports.readDecryptedCsb(childCsbPath, childCsbDseed, function (err, childCsbData) {
 				if(err){
 					callback(err);
 				}else{
