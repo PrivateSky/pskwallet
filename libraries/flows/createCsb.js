@@ -8,9 +8,9 @@ $$.swarm.describe("createCsb", {
 		self.aliasCsb = aliasCsb;
 		utils.masterCsbExists(function (err, status) {
 			if(err){
-				self.swarm("interaction", "readPin", 3, utils.defaultPin, true);
+				self.swarm("interaction", "readPin", utils.noTries, utils.defaultPin, true);
 			}else{
-				self.swarm("interaction", "readPin", 3);
+				self.swarm("interaction", "readPin", utils.noTries);
 			}
 		});
 	},
