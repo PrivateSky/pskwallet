@@ -80,7 +80,7 @@ function doSetKey(aliasCsb, recordType, key, field) {
 			var self = this;
 			utils.getRecordStructure(recordType, function (err, recordStructure) {
 				if(err){
-					throw err;
+					throw err;``
 				}
 				var fields = recordStructure["fields"];
 				self.swarm("checkInputValidity", pin, aliasCsb, recordType, key, field, fields);
@@ -140,9 +140,7 @@ function doRestore(alias) {
 function doSetUrl(url) {
 	is.startSwarm("setUrl", "start", url).on({
 		readPin: readPin,
-		handleError: function (err) {
-			console.log("InvalidUrl", err);
-		},
+		handleError: generateErrorHandler(),
 		confirmOverwrite: function (csb, recordType, key, field, fields, getRecord) {
 			var self = this;
 
@@ -188,9 +186,7 @@ function doGetUrl(url) {
 		console.log(result);
 	}).on({
 		readPin: readPin,
-		handleError: function () {
-			console.log("InvalidUrl");
-		},
+		handleError:generateErrorHandler(),
 		printRecord: function (record) {
 			console.log(record);
 			this.swarm("checkoutResult", record);
@@ -226,12 +222,7 @@ doAddFolder = function(csbUrl, folderPath){
 function doExtract(url){
 	is.startSwarm("extract", "start", url).on({
 		readPin: readPin,
-		csbExtracted: function (alias) {
-			console.log("The csb", alias, "has been extracted");
-		},
-		archiveExtracted: function (aliasFile) {
-			console.log("The file", aliasFile, "has been extracted");
-		},
+		printInfo: generateMessagePrinter(),
 		handleError:generateErrorHandler()
 	});
 }
@@ -246,12 +237,21 @@ doPrintCsb = function (aliasCsb) {
 
 doCopy = function (sourceUrl, destUrl) {
 	is.startSwarm("copy", "start", sourceUrl, destUrl).on({
-		readPin: readPin
+		readPin: readPin,
+		printInfo: generateMessagePrinter(),
+		handleError: generateErrorHandler()
 	})
 };
 
-doDeleteUrl = function (url) {
-	$$.flow.start("flows.deleteUrl").start(url);
+doDelete = function (url) {
+	is.startSwarm("copy", "start", url).on({
+		readPin: readPin,
+		confirmDeletion: function () {
+
+		},
+		printInfo: generateMessagePrinter(),
+		handleError: generateErrorHandler()
+	})
 };
 
 doMoveUrl = function (sourceUrl, destUrl) {
@@ -274,5 +274,5 @@ addCommand("add", "folder", doAddFile, "<csbUrl> <folderPath> \t\t |add a folder
 addCommand("extract", null, doExtract, "<csbUrl> <alias> \t\t\t |decrypt file/folder/csb having the alias <alias>, contained\n\t\t\t\t\t\t\t   by the csb pointed to by <csbUrl>\n");
 addCommand("list", "csbs", doListCsbs, "<aliasCsb> \t\t\t\t |show all child csbs in the csb <aliasCsb>; if <aliasCsb> \n\t\t\t\t\t\t\t  is not provided, the command will print all the csbs \n\t\t\t\t\t\t\t  in the current folder\n");
 addCommand("copy", null, doCopy, "<srcUrl> <destUrl> \t |copy the csb <srcAlias> to <destAlias>");
-addCommand("delete", "url", doDeleteUrl, "<url>");
+addCommand("delete", null, doDelete, "<url>");
 addCommand("move", "url", doMoveUrl, "<srcUrl> <destUrl>");

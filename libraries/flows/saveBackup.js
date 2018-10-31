@@ -33,6 +33,7 @@ $$.swarm.describe("saveBackup", {
 			utils.writeCsbToFile(masterCsb.Path, masterCsb.Data, masterCsb.Dseed, function (err) {
 				if(err){
 					self.swarm("interaction", "handleError", err);
+					return;
 				}
 				$$.remote.doHttpPost(self.url + "/CSB/" + masterCsb.Uid, encryptedMaster, function (err) {
 					if(err){
@@ -56,13 +57,14 @@ $$.swarm.describe("saveBackup", {
 		}else{
 			utils.readEncryptedCsb(csbs[currentCsb]["Path"], function (err, encryptedCsb) {
 				if(err){
-					self.swarm("interaction", "handleError", err);
+					self.swarm("interaction", "handleError", err, "Failed to read encrypted csb");
+					return;
 				}
 				var csb = crypto.decryptJson(encryptedCsb, Buffer.from(csbs[currentCsb]["Dseed"], "hex"));
 				function __backupCsb() {
 					$$.remote.doHttpPost(self.url + "/CSB/" + csbs[currentCsb]["Path"], encryptedCsb, function(err){
 						if(err){
-							self.swarm("interaction", "errorOnPost");
+							self.swarm("interaction", "handleError", err, "Failed to post csb");
 						}else{
 							self.backupCsbs(csbs, currentCsb + 1);
 						}
@@ -76,7 +78,8 @@ $$.swarm.describe("saveBackup", {
 					if(csb["records"]["Adiacent"] && csb["records"]["Adiacent"].length > 0){
 						self.backupArchives(csb["records"]["Adiacent"], 0, function (err) {
 							if(err){
-								self.swarm("interaction", "handleError", err);
+								self.swarm("interaction", "handleError", err, "Failed to backup archives");
+								return;
 							}
 							__backupCsb();
 						})
@@ -87,7 +90,7 @@ $$.swarm.describe("saveBackup", {
 			});
 		}
 	},
-	backupArchives: function (archives, currentArchive) {
+	backupArchives: function (archives, currentArchive, callback) {
 		var self = this;
 		if(currentArchive == archives.length){
 			self.swarm("interaction", "onComplete");
@@ -97,9 +100,9 @@ $$.swarm.describe("saveBackup", {
 		$$.remote.doHttpPost(self.url + "/CSB/" + archives[currentArchive]["Path"], stream, function(err){
 			stream.close();
 			if(err){
-				self.swarm("interaction", "errorOnPost");
+				callback(err);
 			}else{
-				self.backupArchives(archives, currentArchive + 1);
+				self.backupArchives(archives, currentArchive + 1, callback);
 			}
 		})
 	}

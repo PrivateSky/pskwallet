@@ -224,6 +224,30 @@ exports.getRecord = function (csb, recordType, key, field) {
 	}
 };
 
+exports.addRecord = function(record, csb, recordType, key, field, callback) {
+	if (!csb.Data["records"]) {
+		csb.Data["records"] = {};
+	}
+	if (!csb.Data["records"][recordType]) {
+		csb.Data["records"][recordType] = [];
+		csb.Data["records"][recordType].push(record);
+	} else {
+		if (key) {
+			var indexKey = exports.indexOfRecord(csb.Data, recordType, key);
+			if(field){
+				csb.Data["records"][recordType][indexKey][field] = record;
+			}else{
+				csb.Data["records"][recordType][indexKey] = record;
+			}
+		} else {
+			csb.Data["records"][recordType].push(record);
+		}
+	}
+	exports.writeCsbToFile(csb.Path, csb.Data, csb.Dseed, function (err) {
+		callback(err);
+	});
+};
+
 exports.getChildCsb = function (parentCsb, aliasChildCsb, callback) {
 	var indexChild = exports.indexOfRecord(parentCsb.Data, "Csb", aliasChildCsb);
 	if(indexChild >= 0){
