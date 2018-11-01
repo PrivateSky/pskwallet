@@ -5,11 +5,12 @@ const path = require("path");
 
 function readPin(noTries) {
 	var self = this;
+	// console.log("readPin", noTries);
+	if(noTries < 3 && noTries > 0){
+		console.log("Invalid pin");
+		console.log("Try again");
+	}
 	utils.insertPassword("Insert pin:", noTries, function (err, pin) {
-		if(noTries < 3 && noTries > 0){
-			console.log("Invalid pin");
-			console.log("Try again");
-		}
 		self.swarm("validatePin", pin, noTries);
 	})
 }
@@ -18,7 +19,6 @@ function generateErrorHandler(){
 	return function(err,info, isWarning){
 		if(isWarning){
 			console.log("Warning", info);
-
 		} else{
 
 			console.log("Error", info, err);
@@ -105,7 +105,8 @@ function doResetPin(){
 				self.swarm("updateData", pin);
 			});
 		},
-		printInfo: generateMessagePrinter()
+		printInfo: generateMessagePrinter(),
+		handleError: generateErrorHandler()
 	})
 }
 doGetKey = function (aliasCsb, recordType, key, field) {
@@ -216,7 +217,7 @@ function doAddFile(csbUrl, filePath) {
 }
 
 doAddFolder = function(csbUrl, folderPath){
-	$$.flow.start("flows.addFile").start(csbUrl, folderPath);
+	doAddFile(csbUrl, folderPath);
 };
 
 function doExtract(url){
@@ -228,7 +229,17 @@ function doExtract(url){
 }
 
 doListCsbs = function (aliasCsb) {
-	$$.flow.start("flows.listCsbs").start(aliasCsb);
+	is.startSwarm("listCsbs", "start", aliasCsb).on({
+		readPin: readPin,
+		printCsb: function (csbs, currentCsb) {
+			console.log(csbs[currentCsb].Title);
+			if(currentCsb < csbs.length - 1){
+				this.swarm("listCsbs", csbs, currentCsb + 1)
+			}
+		},
+		printInfo: generateMessagePrinter(),
+		handleError: generateErrorHandler()
+	})
 };
 
 doPrintCsb = function (aliasCsb) {
@@ -273,7 +284,6 @@ doMove = function (sourceUrl, destUrl) {
 
 addCommand("set", "pin", doSetPin,  "\t\t\t\t\t |change the pin"); //seteaza la csb-ul master
 addCommand("create", "csb", doCreateCsb, "<aliasCsb> \t\t\t\t |create a new CSB having the alias <aliasCsb>"); //creaza un nou CSB si il adaugi in csb-ul master
-addCommand("print", "csb", doPrintCsb, "<aliasCsb>\t\t\t\t |print the CSB having the alias <aliasCsb>");
 addCommand("set", "key", doSetKey, "<aliasCsb> <recordType> <key> <field>   |set the key " ); //seteaza o cheie intr-un csb
 addCommand("get", "key", doGetKey, "<aliasCsb> <recordType> <key> <field>   |get the key " ); //citeste o cheie intr-un csb
 addCommand("save", "backup", doSaveBackup,"<url>\t\t\t\t |save all csbs at address <url>");

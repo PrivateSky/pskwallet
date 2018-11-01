@@ -176,6 +176,7 @@ exports.getCsb = function (pin, aliasCsb, callback) {
 						var dseed = crypto.deriveSeed(Buffer.from(csbInMaster["Seed"], 'hex'));
 						var csbData = crypto.decryptJson(encryptedCsb, dseed);
 						var csb = {
+							"Title": aliasCsb,
 							"Data": csbData,
 							"Dseed": dseed,
 							"Path": csbInMaster["Path"]

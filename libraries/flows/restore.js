@@ -55,9 +55,8 @@ $$.swarm.describe("restore", {
 		this.__getCsbsToRestore(this.masterCsbData, this.alias, this.reportOrContinue("restoreCsbs", "Failed to get csbs from master", 0));
 	},
 	restoreCsbs: function(csbs, currentCsb){
-		console.log("RestoreCSBS", csbs, currentCsb);
 		if(currentCsb == csbs.length) {
-			this.swarm("interaction", "csbRestoration", csbs);
+			this.swarm("interaction", "printInfo", "All csbs have been restored");
 			return;
 		}
 		$$.remote.doHttpGet(this.url + "/CSB/" + csbs[currentCsb]["Path"], this.reportOrContinue("decryptCsb", "Failed to get csb from server", csbs, currentCsb));
@@ -66,8 +65,6 @@ $$.swarm.describe("restore", {
 
 	},
 	decryptCsb: function (encryptedCsb, csbs, currentCsb) {
-		console.log('DecryptCsb', csbs);
-		console.log("CurrentCSB", currentCsb);
 		var csb = crypto.decryptJson(encryptedCsb, Buffer.from(csbs[currentCsb]["Dseed"], "hex"));
 		if(csb["records"] ){
 			if(csb["records"]["Csb"] && csb["records"]["Csb"].length > 0) {
@@ -82,7 +79,6 @@ $$.swarm.describe("restore", {
 		}
 	},
 	__saveCsb: function(csbs, currentCsb, encryptedCsb) {
-		console.log("csbs", csbs, currentCsb);
 		fs.writeFile(csbs[currentCsb]["Path"], encryptedCsb, this.reportOrContinue("restoreCsbs", "Failed to save csb", csbs, currentCsb + 1));
 	},
 	reportOrContinue:function(phaseName, errorMessage, ...args){
@@ -92,9 +88,6 @@ $$.swarm.describe("restore", {
 				self.swarm("interaction", "handleError", err, errorMessage);
 			} else {
 				if (phaseName) {
-					if(phaseName == "restoreCsbs"){
-						console.log(...args);
-					}
 					if(res) {
 						self[phaseName](res, ...args);
 					}else{
@@ -107,7 +100,7 @@ $$.swarm.describe("restore", {
 	restoreArchives: function (url, archives, currentArchive) {
 		var self = this;
 		if(currentArchive == archives.length){
-			self.swarm("interaction", "archiveRestoration", currentArchive, archives);
+			self.swarm("interaction", "printInfo", "All archives were restored ");
 			return;
 		}
 		$$.remote.doHttpGet(url + "/CSB/" + archives[currentArchive]["Path"], this.reportOrContinue("createAdiacentFolder", "Failed to get archive from server", url, archives, currentArchive));

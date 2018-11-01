@@ -9,9 +9,6 @@ $$.swarm.describe("saveBackup", {
 		this.url = url;
 		this.swarm("interaction", "readPin", 3);
 	},
-
-	readPin: "interaction",
-
 	validatePin: function (pin, noTries) {
 		var self = this;
 		utils.checkPinIsValid(pin, function (err) {
@@ -29,21 +26,16 @@ $$.swarm.describe("saveBackup", {
 			masterCsb.Data["backups"].push(self.url);
 			var csbs = masterCsb.Data["records"]["Csb"];
 			var encryptedMaster = crypto.encryptJson(masterCsb.Data, masterCsb.Dseed);
-			console.log(encryptedMaster.length);
 			utils.writeCsbToFile(masterCsb.Path, masterCsb.Data, masterCsb.Dseed, function (err) {
 				if(err){
-					self.swarm("interaction", "handleError", err);
+					self.swarm("interaction", "handleError", err, "Failed to save master csb");
 					return;
 				}
 				$$.remote.doHttpPost(self.url + "/CSB/" + masterCsb.Uid, encryptedMaster, function (err) {
 					if(err){
-						self.swarm("interaction", "errorOnPost");
+						self.swarm("interaction", "handleError", err, "Failed to post master csb");
 					}else{
-						self.backupCsbs(csbs, 0, function (err) {
-							if(err){
-								self.swarm("interaction", "handleError", err);
-							}
-						});
+						self.backupCsbs(csbs, 0);
 					}
 				});
 			});
@@ -53,7 +45,7 @@ $$.swarm.describe("saveBackup", {
 	backupCsbs: function(csbs, currentCsb){
 		var self = this;
 		if(currentCsb == csbs.length){
-			self.swarm("interaction", "onComplete");
+			self.swarm("interaction", "printInfo", "All csbs have been backed up");
 		}else{
 			utils.readEncryptedCsb(csbs[currentCsb]["Path"], function (err, encryptedCsb) {
 				if(err){
@@ -64,7 +56,7 @@ $$.swarm.describe("saveBackup", {
 				function __backupCsb() {
 					$$.remote.doHttpPost(self.url + "/CSB/" + csbs[currentCsb]["Path"], encryptedCsb, function(err){
 						if(err){
-							self.swarm("interaction", "handleError", err, "Failed to post csb");
+							self.swarm("interaction", "handleError", err, "Failed to post csb " +csbs[currentCsb].Title);
 						}else{
 							self.backupCsbs(csbs, currentCsb + 1);
 						}
