@@ -12,12 +12,10 @@ $$.swarm.describe("setUrl", {
 
 	validatePin: function (pin, noTries) {
 		var self = this;
-		utils.checkPinIsValid(pin, function (err, status) {
+		utils.checkPinIsValid(pin, function (err) {
 			if(err){
-				console.log("Pin is invalid");
-				console.log("Try again");
 				self.swarm("interaction", "readPin", noTries-1);
-			}else{
+			}else {
 				self.processUrl(pin);
 			}
 		})
@@ -88,7 +86,6 @@ $$.swarm.describe("setUrl", {
 				self.swarm("interaction", "handleError", err, "Failed to add record");
 				return;
 			}
-			console.log("Record", record);
 			self.swarm("interaction", "printInfo", "The record was successfully added to csb " + csb.Title);
 		})
 	}

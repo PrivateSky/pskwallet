@@ -244,10 +244,18 @@ doCopy = function (sourceUrl, destUrl) {
 };
 
 doDelete = function (url) {
-	is.startSwarm("copy", "start", url).on({
+	is.startSwarm("delete", "start", url).on({
 		readPin: readPin,
-		confirmDeletion: function () {
-
+		confirmDeletion: function (recordType) {
+			var self = this;
+			console.log("You are about to delete all records of type", recordType);
+			var prompt = "Do you want to proceed?";
+			utils.confirmOperation(prompt, null, function (err) {
+				if(err){
+					throw err;
+				}
+				self.swarm("deleteMultipleRecords");
+			});
 		},
 		printInfo: generateMessagePrinter(),
 		handleError: generateErrorHandler()

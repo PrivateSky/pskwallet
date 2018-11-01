@@ -13,18 +13,17 @@ $$.swarm.describe("getUrl", {
 
 	validatePin: function (pin, noTries) {
 		var self = this;
-		utils.checkPinIsValid(pin, function (err, status) {
+		utils.checkPinIsValid(pin, function (err) {
 			if(err){
-				console.log("Pin is invalid");
-				console.log("Try again");
 				self.swarm("interaction", "readPin", noTries-1);
-			}else{
+			}else {
 				self.processUrl(pin, self.url, function (err, record) {
 					if(err){
 						self.swarm("interaction", "handleError", err, "Failed to process url");
 						return;
 					}
-					self.swarm("interaction", "printRecord", record);
+					self.checkoutResult(record);
+
 				});
 			}
 		})
@@ -46,6 +45,10 @@ $$.swarm.describe("getUrl", {
 				}
 				args.unshift(csb);
 				var record = utils.getRecord(...args);
+				if(!record){
+					self.swarm("interaction", "handleError", null, "The provided record does not exist", true);
+					return;
+				}
 				callback(null, record);
 
 			});

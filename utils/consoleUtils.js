@@ -59,7 +59,8 @@ exports.confirmOperation = function (prompt, rl, callback) {
 	prompt = prompt || "Do you want to continue?";
 	rl.question(prompt + "[y/n]", (answer) => {
 		if (answer === "y") {
-			callback(null, rl);
+			rl.close();
+			callback(null);
 		} else if (answer !== "n") {
 			console.log("Invalid option");
 			exports.confirmOperation(prompt, rl, callback);
