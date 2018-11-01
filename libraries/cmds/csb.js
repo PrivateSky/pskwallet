@@ -262,8 +262,12 @@ doDelete = function (url) {
 	})
 };
 
-doMoveUrl = function (sourceUrl, destUrl) {
-	$$.flow.start("flows.moveUrl").start(sourceUrl, destUrl);
+doMove = function (sourceUrl, destUrl) {
+	is.startSwarm("move", "start", sourceUrl, destUrl).on({
+		readPin: readPin,
+		printInfo: generateMessagePrinter(),
+		handleError: generateErrorHandler()
+	})
 };
 
 
@@ -283,4 +287,4 @@ addCommand("extract", null, doExtract, "<csbUrl> <alias> \t\t\t |decrypt file/fo
 addCommand("list", "csbs", doListCsbs, "<aliasCsb> \t\t\t\t |show all child csbs in the csb <aliasCsb>; if <aliasCsb> \n\t\t\t\t\t\t\t  is not provided, the command will print all the csbs \n\t\t\t\t\t\t\t  in the current folder\n");
 addCommand("copy", null, doCopy, "<srcUrl> <destUrl> \t |copy the csb <srcAlias> to <destAlias>");
 addCommand("delete", null, doDelete, "<url>");
-addCommand("move", "url", doMoveUrl, "<srcUrl> <destUrl>");
+addCommand("move", null, doMove, "<srcUrl> <destUrl>");

@@ -12,20 +12,20 @@ $$.swarm.describe("copy", {
 			if(err){
 				self.swarm("interaction", "readPin", noTries-1);
 			}else {
-				self.processUrl(pin);
+				self.processUrl(pin, self.sourceUrl, self.destUrl);
 			}
 		})
 	},
-	processUrl: function (pin) {
+	processUrl: function (pin, sourceUrl, destUrl) {
 		var self = this;
-		$$.swarm.start("flows.getUrl").processUrl(pin, this.sourceUrl, function (err, srcRecord) {
+		$$.swarm.start("flows.getUrl").processUrl(pin, sourceUrl, function (err, srcRecord) {
 			if(err){
 				self.swarm("interaction", "handleError", err, "Failed in get url");
 				return;
 			}
-			utils.traverseUrl(pin, self.destUrl, function (err, destArgs) {
+			utils.traverseUrl(pin, destUrl, function (err, destArgs) {
 				if(err){
-					self.swarm("interaction", "handleError", err, "Failed to traverse url "+self.destUrl);
+					self.swarm("interaction", "handleError", err, "Failed to traverse url " + destUrl);
 					return;
 				}
 				var parentCsb = destArgs.shift();
