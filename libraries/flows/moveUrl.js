@@ -1,17 +1,25 @@
-var path = require("path");
-
-const utils = require(path.resolve(__dirname + "/../utils/utils"));
+const utils = require("./../../utils/flowsUtils");
 
 
-$$.flow.describe("moveUrl", {
+$$.swarm.describe("move", {
 	start: function (sourceUrl, destUrl) {
+		this.sourceUrl = sourceUrl;
+		this.destUrl = destUrl;
+		this.swarm("interaction", "readPin", 3);
+	},
+	validatePin: function (pin, noTries) {
 		var self = this;
-		utils.requirePin(null, function (err, pin) {
-			self.moveRecord(pin, sourceUrl, destUrl);
+		utils.checkPinIsValid(pin, function (err) {
+			if(err){
+				self.swarm("interaction", "readPin", noTries-1);
+			}else {
+				self.moveRecord(pin, self.sourceUrl, self.destUrl);
+			}
 		})
 	},
 	moveRecord: function (pin, sourceUrl, destUrl) {
-		$$.flow.describe("flows.copyUrl").processUrl(pin, sourceUrl, destUrl);
-		$$.flow.describe("flows.deleteUrl").processUrl(pin, sourceUrl);
+		$$.swarm.start("flows.copy").processUrl(pin, sourceUrl, destUrl);
+		$$.swarm.start("flows.delete").processUrl(pin, sourceUrl);
+		this.swarm("interaction", "printInfo", "Success");
 	}
 });

@@ -1,6 +1,6 @@
 var path = require("path");
 
-const utils = require(path.resolve(__dirname + "/../utils/utils"));
+const utils = require("./../../utils/flowsUtils");
 const crypto = require("pskcrypto");
 
 $$.swarm.describe("getUrl", {
@@ -13,55 +13,51 @@ $$.swarm.describe("getUrl", {
 
 	validatePin: function (pin, noTries) {
 		var self = this;
-		utils.checkPinIsValid(pin, function (err, status) {
+		utils.checkPinIsValid(pin, function (err) {
 			if(err){
-				console.log("Pin is invalid");
-				console.log("Try again");
 				self.swarm("interaction", "readPin", noTries-1);
-			}else{
-				self.processUrl(pin);
+			}else {
+				self.processUrl(pin, self.url, function (err, record) {
+					if(err){
+						self.swarm("interaction", "handleError", err, "Failed to process url");
+						return;
+					}
+					self.checkoutResult(record);
+
+				});
 			}
 		})
 	},
-	processUrl: function (pin) {
+	processUrl: function (pin, url, callback) {
 		var self = this;
-		utils.traverseUrl(pin, this.url, function (err, args) {
-			if(!err) {
-				if (!args) {
-					self.swarm("interaction", "printError");
-				}
-				var parentCsb = args.shift();
-				utils.getChildCsb(parentCsb, args.shift(), function (err, csb) {
-					if(!err){
-						args.unshift(csb);
-						var record = self.__getRecord(...args);
-						self.swarm("interaction", "printRecord", record);
-					}
-				});
+		utils.traverseUrl(pin, url, function (err, args) {
+			if(err){
+				return callback(err);
 			}
+			if (!args) {
+				self.swarm("interaction", "handleError", null, "Invalid url", true);
+				return;
+			}
+			var parentCsb = args.shift();
+			utils.getChildCsb(parentCsb, args.shift(), function (err, csb) {
+				if(err){
+					return callback(err);
+				}
+				args.unshift(csb);
+				var record = utils.getRecord(...args);
+				if(!record){
+					self.swarm("interaction", "handleError", null, "The provided record does not exist", true);
+					return;
+				}
+				callback(null, record);
+
+			});
 		});
 	},
-	printError: "interaction",
-	printRecord: "interaction",
 
 	checkoutResult: function (record) {
 		if(this.callback){
 			this.callback(null, record);
-		}
-	},
-
-	__getRecord: function (csb, recordType, key, field) {
-		var indexKey = utils.indexOfKey(csb.Data["records"][recordType], "Title", key);
-		if (indexKey >= 0) {
-			if (!field) {
-				return csb.Data["records"][recordType][indexKey];
-			} else if (csb.Data["records"][recordType][indexKey][field]) {
-				return csb.Data["records"][recordType][indexKey][field];
-			} else {
-				return undefined;
-			}
-		} else {
-			return undefined;
 		}
 	}
 });

@@ -1,16 +1,16 @@
 $$.loadLibrary("flows", require("../flows"));
 var is = require("interact").createInteractionSpace();
-const utils = require('../utils/utils');
-const getPassword = require("../utils/getPassword").readPassword;
+const utils = require('../../utils/consoleUtils');
 const path = require("path");
 
 function readPin(noTries) {
 	var self = this;
+	// console.log("readPin", noTries);
+	if(noTries < 3 && noTries > 0){
+		console.log("Invalid pin");
+		console.log("Try again");
+	}
 	utils.insertPassword("Insert pin:", noTries, function (err, pin) {
-		if(noTries < 3 && noTries > 0){
-			console.log("Invalid pin");
-			console.log("Try again");
-		}
 		self.swarm("validatePin", pin, noTries);
 	})
 }
@@ -18,15 +18,17 @@ function readPin(noTries) {
 function generateErrorHandler(){
 	return function(err,info, isWarning){
 		if(isWarning){
-			console.log("Warning", message, info);
-
+			console.log("Warning", info);
 		} else{
-			var msg = message;
-			if(info){
-				msg = msg + " " + info;
-			}
-			console.log("Error", msg, err);
+
+			console.log("Error", info, err);
 		}
+	}
+}
+
+function generateMessagePrinter(){
+	return function(message){
+		console.log(message);
 	}
 }
 
@@ -43,9 +45,31 @@ function doSetPin() {
 	})
 }
 
-function doAddCsb(aliasCSB) {
+function doCreateCsb(aliasCSB) {
 	is.startSwarm("createCsb", "start", aliasCSB).on({
-		readPin: readPin
+		readPin: function (noTries, defaultPin, isFirstCall) {
+			var self = this;
+			if(isFirstCall){
+				self.swarm("createMasterCsb", defaultPin,);
+			}else {
+				utils.insertPassword("Insert pin:", noTries, function (err, pin) {
+					if (noTries < 3 && noTries > 0) {
+						console.log("Invalid pin");
+						console.log("Try again");
+					}
+					self.swarm("validatePin", pin, noTries);
+				})
+			}
+		},
+		printInfo: generateMessagePrinter(),
+		printSensitiveInfo: function (seed, defaultPin) {
+			console.log("The following string represents the seed. Please save it.");
+			console.log();
+			console.log(seed.toString("base64"));
+			console.log();
+			console.log("The default pin is:", defaultPin);
+			console.log();
+		}
 	});
 }
 
@@ -56,13 +80,14 @@ function doSetKey(aliasCsb, recordType, key, field) {
 			var self = this;
 			utils.getRecordStructure(recordType, function (err, recordStructure) {
 				if(err){
-					throw err;
+					throw err;``
 				}
 				var fields = recordStructure["fields"];
 				self.swarm("checkInputValidity", pin, aliasCsb, recordType, key, field, fields);
 			});
 		},
-		handleError: generateErrorHandler("Invalid input")
+		printInfo: generateMessagePrinter(),
+		handleError: generateErrorHandler()
 	});
 }
 
@@ -79,7 +104,9 @@ function doResetPin(){
 			utils.insertPassword("Enter a new pin: ", 3, function (err, pin) {
 				self.swarm("updateData", pin);
 			});
-		}
+		},
+		printInfo: generateMessagePrinter(),
+		handleError: generateErrorHandler()
 	})
 }
 doGetKey = function (aliasCsb, recordType, key, field) {
@@ -89,15 +116,8 @@ doGetKey = function (aliasCsb, recordType, key, field) {
 doSaveBackup = function (url) {
 	is.startSwarm("saveBackup", "start", url).on({
 		readPin: readPin,
-		errorOnPost: function () {
-			console.log("Failed on post");
-		},
-		onComplete: function () {
-			console.log("All resources are backedUp");
-		},
-		handleError: function (err) {
-			throw err;
-		}
+		printInfo: generateMessagePrinter(),
+		handleError: generateErrorHandler()
 	});
 };
 
@@ -113,20 +133,7 @@ function doRestore(alias) {
 				self.swarm("checkMasterExists", Buffer.from(seed, "base64"));
 			});
 		},
-		csbRestoration: function (csbs) {
-			if(csbs.length == 1){
-				console.log("Csb", csbs[0]["Title"], "has been restored");
-			}else{
-				console.log("All csbs have been restored");
-			}
-		},
-		archiveRestoration: function (archives) {
-			if(archives.length == 1) {
-				console.log("The file", archives[0]["Title"], "has been restored");
-			}else{
-				console.log("All archives have been restored.");
-			}
-		},
+		printInfo: generateMessagePrinter(),
 		handleError: generateErrorHandler
 	});
 }
@@ -134,38 +141,32 @@ function doRestore(alias) {
 function doSetUrl(url) {
 	is.startSwarm("setUrl", "start", url).on({
 		readPin: readPin,
-		handleError: function (err) {
-			console.log("InvalidUrl", err);
-		},
-		confirmOverwriteRecord: function (csb, recordType, key, field, fields) {
+		handleError: generateErrorHandler(),
+		confirmOverwrite: function (csb, recordType, key, field, fields, getRecord) {
 			var self = this;
-			console.log("You are about to overwrite the following record:");
-			console.log($$.swarm.start("getUrl").__getRecord(csb, recordType, key));
-			utils.confirmOperation("Do you want to continue?", null, function(err, rl){
-				utils.enterRecord(fields, 0, null, rl, function (err, record) {
-					if(err){
-						throw err;
-					}
-					self.swarm("addRecord", record, csb, recordType, key, field);
-				});
-			});
-		},
 
-		confirmOverwriteField: function (csb, recordType, key, field) {
-			var self = this;
-			console.log("You are about to overwrite the following field:");
-			console.log($$.swarm.start("getUrl").__getRecord(csb, recordType, key, field));
-			utils.confirmOperation(null, null, function(err, rl){
-				if(err){
-					throw err;
-				}
-				utils.enterField(field, rl, function(err, answer){
+			function generateConfirmationCb(){
+				return function (err, record) {
 					if(err){
-						throw err;
+						$$.errorHandler.throwError(err);
+					}else{
+						self.swarm("addRecord", record, csb, recordType, key, field);
 					}
-					// $$.errorHandler.throwError(err)
-					self.swarm("addRecord", answer, csb, recordType, key, field);
-				})
+				}
+			}
+			if(field){
+				console.log("You are about to overwrite the following field:");
+			}else{
+				console.log("You are about to overwrite the following record:");
+			}
+			console.log(getRecord(csb, recordType, key, field));
+			utils.confirmOperation("Do you want to continue?", null, function(err, rl){
+				if(field){
+					utils.enterField(field, rl, generateConfirmationCb());
+				}else{
+					utils.enterRecord(fields, 0, null, rl, generateConfirmationCb());
+				}
+
 			});
 		},
 		enterRecord: function (csb, recordType, key, field, fields) {
@@ -177,9 +178,7 @@ function doSetUrl(url) {
 				self.swarm("addRecord", record, csb, recordType, key, field);
 			});
 		},
-		onComplete: function () {
-			console.log("Done");
-		}
+		printInfo: generateMessagePrinter()
 	});
 }
 
@@ -188,9 +187,7 @@ function doGetUrl(url) {
 		console.log(result);
 	}).on({
 		readPin: readPin,
-		handleError: function () {
-			console.log("InvalidUrl");
-		},
+		handleError:generateErrorHandler(),
 		printRecord: function (record) {
 			console.log(record);
 			this.swarm("checkoutResult", record);
@@ -215,73 +212,78 @@ function doAddFile(csbUrl, filePath) {
 		onComplete: function (filePath, aliasCsb) {
 			console.log(filePath, "was added in", aliasCsb);
 		},
-		invalidNoArguments: function () {
-			console.log("Invalid number of arguments");
-		},
-		invalidUrl: function () {
-			console.log("Invalid url");
-		},
-		handleError: function (err) {
-			throw err;
-		}
+		handleError: generateErrorHandler()
 	});
 }
 
 doAddFolder = function(csbUrl, folderPath){
-	$$.flow.start("flows.addFile").start(csbUrl, folderPath);
+	doAddFile(csbUrl, folderPath);
 };
 
 function doExtract(url){
 	is.startSwarm("extract", "start", url).on({
-		readPin: function (noTries) {
-			var self = this;
-			utils.insertPassword("Insert pin:", noTries, function (err, pin) {
-				if(noTries <= 3 && noTries > 1){
-					console.log("Invalid pin");
-					console.log("Try again");
-				}
-				self.swarm("validatePin", pin, noTries);
-			})
-		},
-		csbExtracted: function (alias) {
-			console.log("The csb", alias, "has been extracted");
-		},
-		archiveExtracted: function (aliasFile) {
-			console.log("The file", aliasFile, "has been extracted");
-		},
-		handleError: function (err) {
-			throw err;
-		},
-		invalidUrl: function () {
-			console.log("Invalid url");
-		}
+		readPin: readPin,
+		printInfo: generateMessagePrinter(),
+		handleError:generateErrorHandler()
 	});
 }
 
 doListCsbs = function (aliasCsb) {
-	$$.flow.start("flows.listCsbs").start(aliasCsb);
+	is.startSwarm("listCsbs", "start", aliasCsb).on({
+		readPin: readPin,
+		printCsb: function (csbs, currentCsb) {
+			console.log(csbs[currentCsb].Title);
+			if(currentCsb < csbs.length - 1){
+				this.swarm("listCsbs", csbs, currentCsb + 1)
+			}
+		},
+		printInfo: generateMessagePrinter(),
+		handleError: generateErrorHandler()
+	})
 };
 
 doPrintCsb = function (aliasCsb) {
 	$$.flow.start("flows.printCsb").start(aliasCsb);
 };
 
-doCopyUrl = function (sourceUrl, destUrl) {
-	$$.flow.start("flows.copyUrl").start(sourceUrl, destUrl);
+doCopy = function (sourceUrl, destUrl) {
+	is.startSwarm("copy", "start", sourceUrl, destUrl).on({
+		readPin: readPin,
+		printInfo: generateMessagePrinter(),
+		handleError: generateErrorHandler()
+	})
 };
 
-doDeleteUrl = function (url) {
-	$$.flow.start("flows.deleteUrl").start(url);
+doDelete = function (url) {
+	is.startSwarm("delete", "start", url).on({
+		readPin: readPin,
+		confirmDeletion: function (recordType) {
+			var self = this;
+			console.log("You are about to delete all records of type", recordType);
+			var prompt = "Do you want to proceed?";
+			utils.confirmOperation(prompt, null, function (err) {
+				if(err){
+					throw err;
+				}
+				self.swarm("deleteMultipleRecords");
+			});
+		},
+		printInfo: generateMessagePrinter(),
+		handleError: generateErrorHandler()
+	})
 };
 
-doMoveUrl = function (sourceUrl, destUrl) {
-	$$.flow.start("flows.moveUrl").start(sourceUrl, destUrl);
+doMove = function (sourceUrl, destUrl) {
+	is.startSwarm("move", "start", sourceUrl, destUrl).on({
+		readPin: readPin,
+		printInfo: generateMessagePrinter(),
+		handleError: generateErrorHandler()
+	})
 };
 
 
 addCommand("set", "pin", doSetPin,  "\t\t\t\t\t |change the pin"); //seteaza la csb-ul master
-addCommand("create", "csb", doAddCsb, "<aliasCsb> \t\t\t\t |create a new CSB having the alias <aliasCsb>"); //creaza un nou CSB si il adaugi in csb-ul master
-addCommand("print", "csb", doPrintCsb, "<aliasCsb>\t\t\t\t |print the CSB having the alias <aliasCsb>");
+addCommand("create", "csb", doCreateCsb, "<aliasCsb> \t\t\t\t |create a new CSB having the alias <aliasCsb>"); //creaza un nou CSB si il adaugi in csb-ul master
 addCommand("set", "key", doSetKey, "<aliasCsb> <recordType> <key> <field>   |set the key " ); //seteaza o cheie intr-un csb
 addCommand("get", "key", doGetKey, "<aliasCsb> <recordType> <key> <field>   |get the key " ); //citeste o cheie intr-un csb
 addCommand("save", "backup", doSaveBackup,"<url>\t\t\t\t |save all csbs at address <url>");
@@ -293,6 +295,6 @@ addCommand("add", "file", doAddFile, "<csbUrl> <filePath> \t\t\t |add a file to 
 addCommand("add", "folder", doAddFile, "<csbUrl> <folderPath> \t\t |add a folder to the csb pointed by <csbUrl>");
 addCommand("extract", null, doExtract, "<csbUrl> <alias> \t\t\t |decrypt file/folder/csb having the alias <alias>, contained\n\t\t\t\t\t\t\t   by the csb pointed to by <csbUrl>\n");
 addCommand("list", "csbs", doListCsbs, "<aliasCsb> \t\t\t\t |show all child csbs in the csb <aliasCsb>; if <aliasCsb> \n\t\t\t\t\t\t\t  is not provided, the command will print all the csbs \n\t\t\t\t\t\t\t  in the current folder\n");
-addCommand("copy", "url", doCopyUrl, "<srcUrl> <destUrl> \t |move the csb <aliasCsb> from <srcAlias> to <destAlias>");
-addCommand("delete", "url", doDeleteUrl, "<url>");
-addCommand("move", "url", doMoveUrl, "<srcUrl> <destUrl>");
+addCommand("copy", null, doCopy, "<srcUrl> <destUrl> \t |copy the csb <srcAlias> to <destAlias>");
+addCommand("delete", null, doDelete, "<url>");
+addCommand("move", null, doMove, "<srcUrl> <destUrl>");

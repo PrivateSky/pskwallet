@@ -1,71 +1,93 @@
 var path = require("path");
 
-const utils = require(path.resolve(__dirname + "/../utils/utils"));
+const utils = require("./../../utils/flowsUtils");
 
 
-$$.flow.describe("deleteUrl", {
+$$.swarm.describe("delete", {
 	start: function (url) {
+		this.url = url;
+		this.swarm("interaction", "readPin", 3);
+	},
+	validatePin: function (pin, noTries) {
 		var self = this;
-		utils.requirePin(null, function (err, pin) {
-			self.processUrl(pin, url, function (err) {
-				if(err) throw err;
-			});
+		utils.checkPinIsValid(pin, function (err) {
+			if(err){
+				self.swarm("interaction", "readPin", noTries-1);
+			}else {
+				self.processUrl(pin, self.url);
+			}
 		})
 	},
-	processUrl: function (pin, url, callback) {
+	processUrl: function (pin, url) {
 		var self = this;
+
 		utils.traverseUrl(pin, url, function (err, args) {
 			if(err){
-				return callback(err);
+				self.swarm("interaction", "handleError", err, "Failed to traverse url");
+				return;
 			}
 			var parentCsb = args.shift();
 			utils.getChildCsb(parentCsb, args.shift(), function (err, csb) {
 				if(err){
-					return callback(err);
+					self.swarm("interaction", "handleError", err, "Failed to get child csb");
+					return;
 				}
-				args.unshift(csb);
-				args.push(callback);
-				self.deleteRecord(...args);
+				self.csb = csb;
+				self.recordType = args.shift();
+				self.key = args.shift();
+				self.field = args.shift();
+
+				self.prepareDeletion();
 			});
 		});
 	},
-	deleteRecord: function (csb, recordType, key, field, callback) {
-		if (!recordType) {
-			$$.interact.say("Nothing to remove");
+	prepareDeletion: function () {
+		var self = this;
+		if (!self.recordType) {
+			this.swarm("interaction", "handleError", null, "The provided record type could not be found", true);
 			return;
 		}
-		if (!key) {
-			var prompt = "You are  about to delete all records of type " + recordType + " from csb " + csb.Title;
-			utils.confirmOperation(prompt, null, function (err, rl) {
-				if(err){
-					return callback(err);
-				}
-				if (csb && csb.Data && csb.Data["records"] && csb.Data["records"][recordType]) {
-					csb.Data["records"][recordType] = [];
-				}
-			})
-		} else {
-			var indexRecord = utils.indexOfRecord(csb.Data, recordType, key);
-			if(indexRecord < 0){
-				$$.interact.say("The provided record does not exist");
-				return;
-			}
-			var record = csb.Data["records"][recordType][indexRecord];
-			if(field){
-				if(record[field]){
-					record[field] = "";
-				}else{
-					$$.interact.say("The provided field does not exist");
-					return;
-				}
-			}else{
-				csb.Data["records"][recordType].splice(indexRecord, 1);
-			}
+		if (!(this.csb && this.csb.Data && this.csb.Data["records"] && this.csb.Data["records"][this.recordType] && this.csb.Data["records"][this.recordType].length>0)) {
+			this.swarm("interaction", "handleError", null, "No records of type "+ this.recordType + " exist ", true);
+			return;
 		}
+		if (!this.key) {
+			this.swarm("interaction", "confirmDeletion", this.recordType);
+		} else {
+			this.deleteRecord();
+		}
+
+	},
+	deleteRecord: function () {
+		var indexRecord = utils.indexOfRecord(this.csb.Data, this.recordType, this.key);
+		if(indexRecord < 0){
+			this.swarm("interaction", "handleError", null, "The provided record type could not be found", true);
+			return;
+		}
+		var record = this.csb.Data["records"][this.recordType][indexRecord];
+		if(this.field){
+			if(record[this.field]){
+				record[this.field] = "";
+			}else{
+				this.swarm("interaction", "handleError", null, "The provided field could not be found", true);
+			}
+		}else{
+			this.csb.Data["records"][this.recordType].splice(indexRecord, 1);
+		}
+		this.saveModifiedCsb(this.csb);
+	},
+	deleteMultipleRecords: function () {
+		this.csb.Data["records"][this.recordType] = [];
+		this.saveModifiedCsb(this.csb);
+	},
+	saveModifiedCsb: function (csb) {
+		var self = this;
 		utils.writeCsbToFile(csb.Path, csb.Data, csb.Dseed, function (err) {
 			if(err) {
-				return callback(err);
+				self.swarm("interaction", "handleError", err, "Failed to write csb " + csb.Title);
+				return;
 			}
+			self.swarm("interaction", "printInfo", "Deleted successfully");
 		});
 	}
 });

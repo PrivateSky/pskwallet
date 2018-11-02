@@ -1,20 +1,16 @@
-
 const crypto = require("pskcrypto");
 const fs = require("fs");
 const path = require("path");
-const readline = require("readline");
-const getPassword = require("./getPassword").readPassword;
 
 
 exports.defaultBackup = "http://localhost:8080";
-
 exports.defaultPin = "12345678";
+exports.noTries = 3;
 
 exports.Paths = {
 	"auxFolder"          : path.join(process.cwd(), ".privateSky"),
 	"Dseed"             : path.join(process.cwd(), ".privateSky", "Dseed"),
-	"Adiacent"          : path.join(process.cwd(), "Adiacent"),
-	"recordStructures"  : path.join(__dirname, path.normalize("../utils/recordStructures"))
+	"Adiacent"          : path.join(process.cwd(), "Adiacent")
 };
 
 exports.checkPinIsValid = function(pin, callback) {
@@ -27,7 +23,7 @@ exports.checkPinIsValid = function(pin, callback) {
 		}
 	});
 
-}
+};
 
 exports.checkSeedIsValid = function(seed, callback) {
 	var dseed = crypto.deriveSeed(Buffer.from(seed, "base64"));
@@ -42,24 +38,7 @@ exports.checkSeedIsValid = function(seed, callback) {
 
 };
 
-exports.insertPassword = function(prompt, noTries, callback){
-	prompt = prompt || "Insert pin:";
-	if(noTries == 0){
-		console.log("You have inserted an invalid character 3 times");
-		console.log("Preparing to exit");
 
-	}else {
-		getPassword(prompt, function (err, pin) {
-			if(err) {
-				console.log("You have inserted an invalid character");
-				console.log("Try again");
-				exports.insertPassword(prompt, noTries-1, callback);
-			}else{
-				callback(null, pin);
-			}
-		});
-	}
-};
 
 exports.defaultCSB = function() {
 	return {
@@ -76,39 +55,6 @@ exports.masterCsbExists = function (callback) {
 			callback(err, false);
 		}else{
 			callback(null, true);
-		}
-	});
-};
-
-exports.createMasterCsb = function(pin, pathMaster, callback) {
-	console.log("Creating master csb");
-	pin = pin || exports.defaultPin;
-	fs.mkdir(exports.Paths.auxFolder, function (err) {
-		if(err){
-			callback(err);
-		}else {
-			var seed = crypto.generateSeed(exports.defaultBackup);
-			console.log("The following string represents the seed. Please save it.");
-			console.log();
-			console.log(seed.toString("base64"));
-			console.log();
-			console.log("The default pin is:", exports.defaultPin);
-			console.log();
-			var dseed = crypto.deriveSeed(seed);
-			pathMaster = pathMaster || exports.getMasterPath(dseed);
-			crypto.saveDSeed(dseed, pin, exports.Paths.Dseed, function (err) {
-				if (!err) {
-					var masterCsb = exports.defaultCSB();
-					fs.writeFile(pathMaster, crypto.encryptJson(masterCsb, dseed), function (err) {
-						if (err) {
-							callback(err);
-						} else {
-							console.log("Master csb has been created");
-							callback();
-						}
-					});
-				}
-			});
 		}
 	});
 };
@@ -152,65 +98,9 @@ exports.writeCsbToFile = function (csbPath, csbData, dseed, callback) {
 	})
 };
 
-exports.enterRecord = function(fields, currentField, record, rl, callback){
-	record = record || {};
-	rl = rl || readline.createInterface({
-		input: process.stdin,
-		output: process.stdout
-	});
-	if(currentField == fields.length){
-		rl.close();
-		callback(null, record);
-	}else {
-		var field = fields[currentField];
-		rl.question("Insert " + field["fieldName"] + ":", (answer) => {
-			record[field["fieldName"]] = answer;
-			exports.enterRecord(fields, currentField + 1, record, rl, callback);
-		});
-	}
-};
-
-exports.enterField = function(field, rl, callback){
-	rl = rl || readline.createInterface({
-		input: process.stdin,
-		output: process.stdout
-	});
-
-	rl.question("Insert " + field + ":", (answer) => {
-		rl.close();
-		callback(null, answer);
-	});
-};
-
-
-exports.confirmOperation = function (prompt, rl, callback) {
-	rl = rl || readline.createInterface({
-		input: process.stdin,
-		output: process.stdout
-	});
-	prompt = prompt || "Do you want to continue?";
-	rl.question(prompt + "[y/n]", (answer) => {
-		if (answer === "y") {
-			callback(null, rl);
-		} else if (answer !== "n") {
-			console.log("Invalid option");
-			exports.confirmOperation(prompt, rl, callback);
-		}else{
-			rl.close();
-		}
-	});
-
-};
-
-
 exports.getRecordStructure = function (recordType, callback) {
-	fs.readFile(path.join(exports.Paths.recordStructures,"csb_record_structure_" + recordType +".json"), null, function (err, data) {
-		if(err){
-			callback(err);
-		}else{
-			callback(null, JSON.parse(data));
-		}
-	});
+    let recordTypeData = require("./recordStructures/index")[recordType];
+    callback(null, recordTypeData);
 };
 
 exports.readEncryptedCsb = function (pathCsb, callback) {
@@ -219,7 +109,7 @@ exports.readEncryptedCsb = function (pathCsb, callback) {
 	});
 };
 
-exports.readCsb = function (pathCsb, dseed, callback) {
+exports.readDecryptedCsb = function (pathCsb, dseed, callback) {
 	if(typeof dseed === "string"){
 		dseed = Buffer.from(dseed, "hex");
 	}
@@ -253,7 +143,7 @@ exports.findCsb = function (csbData, aliasCsb, callback) {
 		if(csb["Title"] === aliasCsb){
 			return callback(null, csb);
 		}else{
-			exports.readCsb(csb["Path"], Buffer.from(csb["Dseed"], "hex"), function (err, childCsb) {
+			exports.readDecryptedCsb(csb["Path"], Buffer.from(csb["Dseed"], "hex"), function (err, childCsb) {
 				if(!err){
 					if(childCsb && childCsb["records"] && childCsb["records"]["Csb"]){
 						csbs = csbs.concat(childCsb["records"]["Csb"]);
@@ -286,6 +176,7 @@ exports.getCsb = function (pin, aliasCsb, callback) {
 						var dseed = crypto.deriveSeed(Buffer.from(csbInMaster["Seed"], 'hex'));
 						var csbData = crypto.decryptJson(encryptedCsb, dseed);
 						var csb = {
+							"Title": aliasCsb,
 							"Data": csbData,
 							"Dseed": dseed,
 							"Path": csbInMaster["Path"]
@@ -319,12 +210,51 @@ exports.indexOfKey = function(arr, property, key){
 	return -1;
 };
 
+exports.getRecord = function (csb, recordType, key, field) {
+	var indexKey = exports.indexOfKey(csb.Data["records"][recordType], "Title", key);
+	if (indexKey >= 0) {
+		if (!field) {
+			return csb.Data["records"][recordType][indexKey];
+		} else if (csb.Data["records"][recordType][indexKey][field]) {
+			return csb.Data["records"][recordType][indexKey][field];
+		} else {
+			return undefined;
+		}
+	} else {
+		return undefined;
+	}
+};
+
+exports.addRecord = function(record, csb, recordType, key, field, callback) {
+	if (!csb.Data["records"]) {
+		csb.Data["records"] = {};
+	}
+	if (!csb.Data["records"][recordType]) {
+		csb.Data["records"][recordType] = [];
+		csb.Data["records"][recordType].push(record);
+	} else {
+		if (key) {
+			var indexKey = exports.indexOfRecord(csb.Data, recordType, key);
+			if(field){
+				csb.Data["records"][recordType][indexKey][field] = record;
+			}else{
+				csb.Data["records"][recordType][indexKey] = record;
+			}
+		} else {
+			csb.Data["records"][recordType].push(record);
+		}
+	}
+	exports.writeCsbToFile(csb.Path, csb.Data, csb.Dseed, function (err) {
+		callback(err);
+	});
+};
+
 exports.getChildCsb = function (parentCsb, aliasChildCsb, callback) {
 	var indexChild = exports.indexOfRecord(parentCsb.Data, "Csb", aliasChildCsb);
 	if(indexChild >= 0){
 		let childCsbPath = parentCsb.Data["records"]["Csb"][indexChild]["Path"];
 		let childCsbDseed = Buffer.from(parentCsb.Data["records"]["Csb"][indexChild]["Dseed"], "hex");
-		exports.readCsb(childCsbPath, childCsbDseed, function (err, csbData) {
+		exports.readDecryptedCsb(childCsbPath, childCsbDseed, function (err, csbData) {
 			if(err){
 				callback(err);
 			}else{
@@ -351,7 +281,7 @@ function traverseUrlRecursively(pin, csb, splitUrl, lastAlias, parentCsb, callba
 		if (csb.Data["records"]) {
 			let childCsbDseed = Buffer.from(csb.Data["records"]["Csb"][index]["Dseed"], "hex");
 			let childCsbPath  = csb.Data["records"]["Csb"][index]["Path"];
-			exports.readCsb(childCsbPath, childCsbDseed, function (err, childCsbData) {
+			exports.readDecryptedCsb(childCsbPath, childCsbDseed, function (err, childCsbData) {
 				if(err){
 					callback(err);
 				}else{
