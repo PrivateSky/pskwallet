@@ -8,36 +8,40 @@ const configTransactionSwarm = {
 
 $$.swarm.describe('remotes', {
     set: function (alias, endpoint) {
+        const transaction  = $$.blockchain.beginTransaction(configTransactionSwarm);
+        const remotesSwarm = transaction.lookup('global.remote', alias);
 
-        const transaction = $$.blockchain.beginTransaction(configTransactionSwarm);
-
-        const remotesSwarm = transaction.lookup('global.remote', 'remotes');
         if (!remotesSwarm) {
             this.swarm('interaction', '__return__', new Error('Could not find swarm named "global.remote"'));
             return;
         }
 
-        remotesSwarm.init('remotes');
-        remotesSwarm.addRemote(alias, endpoint);
+        remotesSwarm.init(alias, endpoint);
         transaction.add(remotesSwarm);
 
         $$.blockchain.commit(transaction);
         this.swarm('interaction', '__return__');
     },
-    get: function (alias) {
+    getRemote: function (alias) {
         const transaction = $$.blockchain.beginTransaction(configTransactionSwarm);
 
-        const swarm = transaction.lookup('global.remote', 'remotes');
-
-        if(!swarm) {
-            this.swarm('interaction', '__return__', new Error('Could not find swarm named "global.remote"'));
+        if (!alias) {
+            this.swarm('interaction', '__return__', new Error('Missing alias'));
             return;
         }
 
-        if(alias) {
-            this.swarm('interaction', '__return__', undefined, swarm.remotes[alias]);
+        const remote = transaction.lookup('global.remote', alias);
+
+        if (!remote) {
+            this.swarm('interaction', '__return__', undefined, undefined);
         } else {
-            this.swarm('interaction', '__return__', undefined, swarm.remotes);
+            this.swarm('interaction', '__return__', undefined, remote.endpoint);
         }
+    },
+    getRemotes: function () {
+        const transaction = $$.blockchain.beginTransaction(configTransactionSwarm);
+        const remotes     = transaction.loadAssets('global.remote') || [];
+
+        this.swarm('interaction', '__return__', undefined, remotes.map(remote => remote.getRawData()));
     }
 });

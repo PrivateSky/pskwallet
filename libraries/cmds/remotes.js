@@ -1,6 +1,6 @@
 const interactionSpace = require("interact").createInteractionSpace();
 
-function doAddRemote(...args) {
+function addRemote(...args) {
     interactionSpace.startSwarm('remotes', 'set', ...args).onReturn(function (err) {
         if (err) {
             console.error(err);
@@ -8,8 +8,8 @@ function doAddRemote(...args) {
     });
 }
 
-function doGetRemotes(...args) {
-    interactionSpace.startSwarm('remotes', 'get', ...args).onReturn(function (err, result) {
+function getRemotes(...args) {
+    interactionSpace.startSwarm('remotes', 'getRemotes', ...args).onReturn(function (err, result) {
         if (err) {
             console.error(err);
             return;
@@ -19,6 +19,17 @@ function doGetRemotes(...args) {
     });
 }
 
+function getRemote(...args) {
+    interactionSpace.startSwarm('remotes', 'getRemote', ...args).onReturn(function (err, result) {
+        if (err) {
+            console.error(err);
+            return;
+        }
 
-addCommand("add", "remote", doAddRemote, "<alias> <endpoint>\t\t\t\t |add a new endpoint to local domain with alias");
-addCommand("get", "remotes", doGetRemotes, "<endpoint>\t\t\t\t |get current endpoint for domain</endpoint>");
+        console.log(result);
+    });
+}
+
+addCommand("add", "remote", addRemote, "<alias> <endpoint>\t\t\t\t |add a new remote to local domain with alias");
+addCommand("get", "remote", getRemote, "<endpoint>\t\t\t\t |get endpoints for local domain");
+addCommand("get", "remotes", getRemotes, "\t\t\t\t |get endpoints for local domain");
