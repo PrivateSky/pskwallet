@@ -44,23 +44,21 @@ $$.swarm.describe("addFile", {
 				}
 				var alias = args[2];
 
-				if(!csb.Data["records"]["Adiacent"]){
+				if(!csb.Data["records"]["Adiacent"]) {
 					csb.Data["records"]["Adiacent"] = [];
-					$$.ensureFolderExists(utils.Paths.Adiacent, function (err) {
-						if(err){
-							self.swarm("interaction", "printError", err);
-							return;
-						}
-						var indexAdiacent = utils.indexOfRecord(csb.Data, "Adiacent", alias);
-						if(indexAdiacent >= 0){
-							self.swarm("interaction", "confirmOverwriteFile", self.filePath);
-						}else{
-							self.saveChildInCsb(csb, alias, indexAdiacent);
-						}
-
-					})
 				}
-
+				$$.ensureFolderExists(utils.Paths.Adiacent, function (err) {
+					if (err) {
+						self.swarm("interaction", "printError", err);
+						return;
+					}
+					var indexAdiacent = utils.indexOfRecord(csb.Data, "Adiacent", alias);
+					if (indexAdiacent >= 0) {
+						self.swarm("interaction", "confirmOverwriteFile", self.filePath);
+					} else {
+						self.saveChildInCsb(csb, alias, indexAdiacent);
+					}
+				})
 			});
 		});
 	},
