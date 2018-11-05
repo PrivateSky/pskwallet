@@ -11,7 +11,7 @@ $$.swarm.describe("addFile", {
 			this.swarm("interaction", "invalidNoArguments");
 			return;
 		}
-		this.swarm("interaction", "readPin", 3);
+		this.swarm("interaction", "readPin", utils.noTries);
 	},
 	validatePin: function (pin, noTries) {
 		var self = this;
