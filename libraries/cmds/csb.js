@@ -5,7 +5,6 @@ const path = require("path");
 
 function readPin(noTries) {
 	var self = this;
-	// console.log("readPin", noTries);
 	if(noTries < 3 && noTries > 0){
 		console.log("Invalid pin");
 		console.log("Try again");
@@ -52,11 +51,11 @@ function doCreateCsb(aliasCSB) {
 			if(isFirstCall){
 				self.swarm("createMasterCsb", defaultPin,);
 			}else {
+				if (noTries < 3 && noTries > 0) {
+					console.log("Invalid pin");
+					console.log("Try again");
+				}
 				utils.insertPassword("Insert pin:", noTries, function (err, pin) {
-					if (noTries < 3 && noTries > 0) {
-						console.log("Invalid pin");
-						console.log("Try again");
-					}
 					self.swarm("validatePin", pin, noTries);
 				})
 			}
@@ -73,6 +72,9 @@ function doCreateCsb(aliasCSB) {
 	});
 }
 
+function doAddCsb(){
+
+}
 function doSetKey(aliasCsb, recordType, key, field) {
 	is.startSwarm("setKey", "start", aliasCsb, recordType, key, field).on({
 		readPin:readPin,
@@ -209,9 +211,7 @@ function doAddFile(csbUrl, filePath) {
 				self.swarm("saveChildInCsb", filePath, csb, alias, indexAdiacent);
 			});
 		},
-		onComplete: function (filePath, aliasCsb) {
-			console.log(filePath, "was added in", aliasCsb);
-		},
+		printInfo: generateMessagePrinter(),
 		handleError: generateErrorHandler()
 	});
 }
@@ -242,9 +242,6 @@ doListCsbs = function (aliasCsb) {
 	})
 };
 
-doPrintCsb = function (aliasCsb) {
-	$$.flow.start("flows.printCsb").start(aliasCsb);
-};
 
 doCopy = function (sourceUrl, destUrl) {
 	is.startSwarm("copy", "start", sourceUrl, destUrl).on({
