@@ -143,8 +143,7 @@ function doRestore(alias) {
 function doSetUrl(url) {
 	is.startSwarm("setUrl", "start", url).on({
 		readPin: readPin,
-		handleError: generateErrorHandler(),
-		confirmOverwrite: function (csb, recordType, key, field, fields, getRecord) {
+		confirmOverwrite: function (recordType, key, field, fields, overWrittenRecord) {
 			var self = this;
 
 			function generateConfirmationCb(){
@@ -152,7 +151,7 @@ function doSetUrl(url) {
 					if(err){
 						$$.errorHandler.throwError(err);
 					}else{
-						self.swarm("addRecord", record, csb, recordType, key, field);
+						self.swarm("addRecord", record, recordType, key, field);
 					}
 				}
 			}
@@ -161,7 +160,7 @@ function doSetUrl(url) {
 			}else{
 				console.log("You are about to overwrite the following record:");
 			}
-			console.log(getRecord(csb, recordType, key, field));
+			console.log(overWrittenRecord);
 			utils.confirmOperation("Do you want to continue?", null, function(err, rl){
 				if(field){
 					utils.enterField(field, rl, generateConfirmationCb());
@@ -171,16 +170,17 @@ function doSetUrl(url) {
 
 			});
 		},
-		enterRecord: function (csb, recordType, key, field, fields) {
+		enterRecord: function (recordType, key, field, fields) {
 			var self = this;
 			utils.enterRecord(fields, 0, null, null, function (err, record) {
 				if(err){
 					throw err;
 				}
-				self.swarm("addRecord", record, csb, recordType, key, field);
+				self.swarm("addRecord", record, recordType, key, field);
 			});
 		},
-		printInfo: generateMessagePrinter()
+		printInfo: generateMessagePrinter(),
+		handleError: generateErrorHandler()
 	});
 }
 
