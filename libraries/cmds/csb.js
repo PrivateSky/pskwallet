@@ -78,16 +78,6 @@ function doAddCsb(){
 function doSetKey(aliasCsb, recordType, key, field) {
 	is.startSwarm("setKey", "start", aliasCsb, recordType, key, field).on({
 		readPin:readPin,
-		readStructure: function (pin, aliasCsb, recordType, key, field) {
-			var self = this;
-			utils.getRecordStructure(recordType, function (err, recordStructure) {
-				if(err){
-					throw err;``
-				}
-				var fields = recordStructure["fields"];
-				self.swarm("checkInputValidity", pin, aliasCsb, recordType, key, field, fields);
-			});
-		},
 		printInfo: generateMessagePrinter(),
 		handleError: generateErrorHandler()
 	});
@@ -284,7 +274,7 @@ addCommand("create", "csb", doCreateCsb, "<aliasCsb> \t\t\t\t |create a new CSB 
 addCommand("set", "key", doSetKey, "<aliasCsb> <recordType> <key> <field>   |set the key " ); //seteaza o cheie intr-un csb
 addCommand("get", "key", doGetKey, "<aliasCsb> <recordType> <key> <field>   |get the key " ); //citeste o cheie intr-un csb
 addCommand("save", "backup", doSaveBackup,"<url>\t\t\t\t |save all csbs at address <url>");
-addCommand("restore", null, doRestore, "<alias>\t\t\t\t |restore the csb  or archive having the name <alias> from one of the addresses stored\n\t\t\t\t\t\t\t  in backup\n");
+addCommand("restore", null, doRestore, "<alias>\t\t\t\t |restore the csb  or archive having the name <alias> from one \n\t\t\t\t\t\t\t  of the addresses stored in backup\n");
 addCommand("reset", "pin", doResetPin, "\t\t\t\t\t |enter the seed in order to set the pin to a new value");
 addCommand("set", "url", doSetUrl, "<url> \t\t\t\t\t |set/update the record/field pointed by the provided <url>");
 addCommand("get", "url", doGetUrl, "<url> \t\t\t\t\t |print the record/field indicated by te provided <url>");
@@ -292,6 +282,6 @@ addCommand("add", "file", doAddFile, "<csbUrl> <filePath> \t\t\t |add a file to 
 addCommand("add", "folder", doAddFile, "<csbUrl> <folderPath> \t\t |add a folder to the csb pointed by <csbUrl>");
 addCommand("extract", null, doExtract, "<csbUrl> <alias> \t\t\t |decrypt file/folder/csb having the alias <alias>, contained\n\t\t\t\t\t\t\t   by the csb pointed to by <csbUrl>\n");
 addCommand("list", "csbs", doListCsbs, "<aliasCsb> \t\t\t\t |show all child csbs in the csb <aliasCsb>; if <aliasCsb> \n\t\t\t\t\t\t\t  is not provided, the command will print all the csbs \n\t\t\t\t\t\t\t  in the current folder\n");
-addCommand("copy", null, doCopy, "<srcUrl> <destUrl> \t |copy the csb <srcAlias> to <destAlias>");
-addCommand("delete", null, doDelete, "<url>");
-addCommand("move", null, doMove, "<srcUrl> <destUrl>");
+addCommand("copy", null, doCopy, "<srcUrl> <destUrl> \t\t\t |copy the csb/record/field from <srcUrl> to <destUrl>");
+addCommand("delete", null, doDelete, "<url>\t\t\t\t\t |delete the csb/record/field pointed to by <url>");
+addCommand("move", null, doMove, "<srcUrl> <destUrl>\t\t\t |move the csb/record/field from <srcUrl> to <destUrl>");
