@@ -3,6 +3,7 @@ var commands_help = {};
 
 require("../../builds/devel/pskruntime");
 require("callflow");
+require("pskdb").startDB('./config');
 
 //global function addCommand
 addCommand = function addCommand(verb, adverbe, funct, helpLine){
