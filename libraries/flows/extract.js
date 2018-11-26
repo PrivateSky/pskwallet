@@ -7,7 +7,7 @@ $$.swarm.describe("extract", {
 	start: function (url) {
 		this.url = url;
 		console.log(this.url);
-		this.swarm("interaction", "readPin");
+		this.swarm("interaction", "readPin", utils.noTries);
 	},
 	validatePin: function (pin, noTries) {
 		var self = this;

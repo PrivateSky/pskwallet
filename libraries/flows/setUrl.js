@@ -1,15 +1,11 @@
-var path = require("path");
 
 const utils = require("./../../utils/flowsUtils");
-const crypto = require("pskcrypto");
 
 $$.swarm.describe("setUrl", {
 	start: function (url) {
 		this.url = url;
 		this.swarm("interaction", "readPin", 3);
 	},
-	readPin: "interaction",
-
 	validatePin: function (pin, noTries) {
 		var self = this;
 		utils.checkPinIsValid(pin, function (err) {
@@ -37,14 +33,14 @@ $$.swarm.describe("setUrl", {
 					self.swarm("interaction", "handleError", err, "Failed to obtain child csb");
 					return;
 				}
-				args.unshift(csb);
+				self.csb = csb;
 				self.readStructure(...args);
 			});
 		});
 
 
 	},
-	readStructure: function (csb, recordType, key, field) {
+	readStructure: function (recordType, key, field) {
 		var self = this;
 		utils.getRecordStructure(recordType, function (err, recordStructure) {
 			if(err){
@@ -52,41 +48,43 @@ $$.swarm.describe("setUrl", {
 				return;
 			}
 			var fields = recordStructure["fields"];
-			self.checkInputValidity(csb, recordType, key, field, fields);
+			self.checkInputValidity(recordType, key, field, fields);
 		});
 	},
-	checkInputValidity: function (csb, recordType, key, field, fields) {
+	checkInputValidity: function (recordType, key, field, fields) {
 		var self = this;
+
 		if(key){
-			var indexRecord = utils.indexOfRecord(csb.Data, recordType, key);
+			var indexRecord = utils.indexOfRecord(self.csb.Data, recordType, key);
+			var owRecord = utils.getRecord(self.csb, recordType, key, field);
 			if(indexRecord >= 0){
 				if(!field){
-					self.swarm("interaction", "confirmOverwrite", csb, recordType, key, field, fields, utils.getRecord);
+					self.swarm("interaction", "confirmOverwrite", recordType, key, field, fields, owRecord);
 				}
 				else {
 					var indexField = utils.indexOfKey(fields, "fieldName", field);
 					if (indexField < 0) {
 						self.swarm("interaction", "handleError", null, "The field "+ field + " could not be found", true);
 					} else {
-						self.swarm("interaction", "confirmOverwrite", csb, recordType, key, field, fields, utils.getRecord);
+						self.swarm("interaction", "confirmOverwrite", recordType, key, field, fields, owRecord);
 					}
 				}
 			}else {
 				self.swarm("interaction", "handleError", null, "The record "+ recordType + " could not be found", true);
 			}
 		}else if(!key && !field) {
-			self.swarm("interaction", "enterRecord", csb, recordType, key, field, fields);
+			self.swarm("interaction", "enterRecord", recordType, key, field, fields);
 		}
 	},
 
-	addRecord: function (record, csb, recordType, key, field) {
+	addRecord: function (record, recordType, key, field) {
 		var self = this;
-		utils.addRecord(record, csb, recordType, key, field, function (err) {
+		utils.addRecord(record, this.csb, recordType, key, field, function (err) {
 			if(err){
 				self.swarm("interaction", "handleError", err, "Failed to add record");
 				return;
 			}
-			self.swarm("interaction", "printInfo", "The record was successfully added to csb " + csb.Title);
+			self.swarm("interaction", "printInfo", "The record was successfully added to csb " + self.csb.Title);
 		})
 	}
 

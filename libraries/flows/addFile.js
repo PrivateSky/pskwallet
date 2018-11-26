@@ -8,7 +8,7 @@ $$.swarm.describe("addFile", {
 		this.url = url;
 		this.filePath = filePath;
 		if(!filePath){
-			this.swarm("interaction", "invalidNoArguments");
+			this.swarm("interaction", "handleError", null, "A file path should be specified", true);
 			return;
 		}
 		this.swarm("interaction", "readPin", 3);
@@ -17,8 +17,6 @@ $$.swarm.describe("addFile", {
 		var self = this;
 		utils.checkPinIsValid(pin, function (err) {
 			if(err){
-				console.log("Invalid pin");
-				console.log("Try again");
 				self.swarm("interaction", "readPin", noTries-1);
 			}else {
 				self.addArchive(pin);
@@ -30,37 +28,35 @@ $$.swarm.describe("addFile", {
 		var self = this;
 		utils.traverseUrl(pin, this.url, function (err, args) {
 			if(err){
-				self.swarm("interaction", "printError", err);
+				self.swarm("interaction", "handleError", err, "Failed to traverse url");
 				return;
 			}
 			if(args.length !== 3){
-				self.swarm("interaction", "invalidUrl");
+				self.swarm("interaction", "handleError", null, "Invalid number of arguments", true);
 				return;
 			}
 			utils.getChildCsb(args[0], args[1], function (err, csb) {
 				if(err){
-					self.swarm("interaction", "printError", err);
+					self.swarm("interaction", "handleError", err, "Failed to get child csb");
 					return;
 				}
 				var alias = args[2];
 
-				if(!csb.Data["records"]["Adiacent"]){
+				if(!csb.Data["records"]["Adiacent"]) {
 					csb.Data["records"]["Adiacent"] = [];
-					$$.ensureFolderExists(utils.Paths.Adiacent, function (err) {
-						if(err){
-							self.swarm("interaction", "printError", err);
-							return;
-						}
-						var indexAdiacent = utils.indexOfRecord(csb.Data, "Adiacent", alias);
-						if(indexAdiacent >= 0){
-							self.swarm("interaction", "confirmOverwriteFile", self.filePath);
-						}else{
-							self.saveChildInCsb(csb, alias, indexAdiacent);
-						}
-
-					})
 				}
-
+				$$.ensureFolderExists(utils.Paths.Adiacent, function (err) {
+					if (err) {
+						self.swarm("interaction", "handleError", err, "Failed to create Adiacent folder");
+						return;
+					}
+					var indexAdiacent = utils.indexOfRecord(csb.Data, "Adiacent", alias);
+					if (indexAdiacent >= 0) {
+						self.swarm("interaction", "confirmOverwriteFile", self.filePath);
+					} else {
+						self.saveChildInCsb(csb, alias, indexAdiacent);
+					}
+				})
 			});
 		});
 	},
@@ -77,7 +73,7 @@ $$.swarm.describe("addFile", {
 		};
 		crypto.encryptStream(this.filePath,path.join(utils.Paths.Adiacent, pth), dseed, function (err) {
 			if(err){
-				self.swarm("interaction", "printError", err);
+				self.swarm("interaction", "handleError", err, "Failed to encrypt stream");
 				return;
 			}
 			if(indexAdiacent >= 0){
@@ -86,10 +82,10 @@ $$.swarm.describe("addFile", {
 			csb.Data["records"]["Adiacent"].push(fileRecord);
 			utils.writeCsbToFile(csb.Path, csb.Data, csb.Dseed, function (err) {
 				if(err){
-					self.swarm("interaction", "printError", err);
+					self.swarm("interaction", "handleError", err, "Failed to write csb to file");
 					return;
 				}
-				self.swarm("interaction", "onComplete", self.filePath, csb.Title);
+				self.swarm("interaction", "printInfo", self.filePath + " has been successfully added to " + csb.Title);
 			});
 		});
 

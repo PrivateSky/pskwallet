@@ -28,7 +28,7 @@ $$.swarm.describe("createCsb", {
 				pathMaster = pathMaster || utils.getMasterPath(dseed);
 				crypto.saveDSeed(dseed, pin, utils.Paths.Dseed, function (err) {
 					if(err){
-						self.swarm("interaction", "handleError", err, "Failed to write dseed");
+						self.swarm("interaction", "handleError", err, "Failed to save dseed");
 						return;
 					}
 					var masterCsb = utils.defaultCSB();
@@ -64,6 +64,7 @@ $$.swarm.describe("createCsb", {
 		utils.loadMasterCsb(pin, null, function (err, masterCsb) {
 			var pathCsb   = crypto.generateSafeUid(crypto.deriveSeed(seed));
 			if(utils.indexOfRecord(masterCsb.Data, "Csb", self.aliasCsb) >= 0){
+				self.swarm("interaction", "handleError", null, "Failed to write csb" + self.aliasCsb);
 				return;
 			}
 			if(!masterCsb.Data["records"]) {
