@@ -17,7 +17,6 @@ module.exports = $$.library(function () {
     require('./setKey');
     require('./setPin');
     require('./setUrl');
-    require('./remotes');
 });
 
 
