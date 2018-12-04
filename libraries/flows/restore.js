@@ -3,7 +3,7 @@ const utils = require("./../../utils/flowsUtils");
 const crypto = require("pskcrypto");
 var fs = require("fs");
 require('psk-http-client');
-
+require("../../../../engine/core")
 $$.swarm.describe("restore", {
 	start: function (alias) {
 		this.alias = alias;
@@ -37,11 +37,14 @@ $$.swarm.describe("restore", {
 	},
 
 	writeMaster: function () {
-		fs.writeFile(utils.getMasterPath(this.dseed), this.encryptedMaster, this.reportOrContinue("saveDseed", "Error at writing masterCsb"));
+		fs.writeFile(utils.getMasterPath(this.dseed), this.encryptedMaster, this.reportOrContinue("decryptMaster", "Error at writing masterCsb"));
 	},
-	saveDseed: function () {
-		this.masterCsbData = crypto.decryptJson(this.encryptedMaster, this.dseed);
-		crypto.saveDSeed(this.dseed, utils.defaultPin, utils.Paths.Dseed, this.reportOrContinue("getCsbsToRestore", "Failed at saving dseed"));
+
+	decryptMaster: function () {
+		utils.loadMasterCsb(null, this.seed, this.reportOrContinue("saveDseed", "Failed to decrypt the master CSB"));
+	},
+	saveDseed: function (masterCsb) {
+		crypto.saveDSeed(this.dseed, utils.defaultPin, utils.Paths.Dseed, this.reportOrContinue("getCsbsToRestore", "Failed at saving dseed", masterCsb));
 
 	},
 	getCsbsToRestore: function (masterCsb) {
@@ -60,12 +63,12 @@ $$.swarm.describe("restore", {
 			return;
 		}
 		$$.remote.doHttpGet(this.url + "/CSB/" + csbs[currentCsb]["Path"], this.reportOrContinue("decryptCsb", "Failed to get csb from server", csbs, currentCsb));
-
-
-
 	},
 	decryptCsb: function (encryptedCsb, csbs, currentCsb) {
-		var csb = crypto.decryptJson(encryptedCsb, Buffer.from(csbs[currentCsb]["Dseed"], "hex"));
+		crypto.decryptJson(encryptedCsb, Buffer.from(csbs[currentCsb]["Dseed"], "hex"), this.reportOrContinue("saveData", "Failed to decrypt " +
+			" the csb " + csbs[currentCsb].Title, encryptedCsb, csbs, currentCsb));
+	},
+	saveData: function (csb, encryptedCsb, csbs, currentCsb) {
 		if(csb["records"] ){
 			if(csb["records"]["Csb"] && csb["records"]["Csb"].length > 0) {
 				csbs = csbs.concat(csb["records"]["Csb"]);
@@ -75,7 +78,6 @@ $$.swarm.describe("restore", {
 			}else{
 				this.__saveCsb(csbs, currentCsb, encryptedCsb);
 			}
-
 		}
 	},
 	__saveCsb: function(csbs, currentCsb, encryptedCsb) {

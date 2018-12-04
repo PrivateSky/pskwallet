@@ -69,9 +69,9 @@ $$.swarm.describe("addFile", {
 			"Title": alias,
 			"Path" : pth,
 			"Seed" : seed.toString("hex"),
-			"Dseed": crypto.deriveSeed(seed).toString("hex")
+			"Dseed": dseed.toString("hex")
 		};
-		crypto.encryptStream(this.filePath,path.join(utils.Paths.Adiacent, pth), dseed, function (err) {
+		crypto.encryptStream(this.filePath, path.join(utils.Paths.Adiacent, pth), dseed, function (err) {
 			if(err){
 				self.swarm("interaction", "handleError", err, "Failed to encrypt stream");
 				return;
@@ -80,6 +80,7 @@ $$.swarm.describe("addFile", {
 				csb.Data["records"]["Adiacent"].splice(indexAdiacent, 1);
 			}
 			csb.Data["records"]["Adiacent"].push(fileRecord);
+
 			utils.writeCsbToFile(csb.Path, csb.Data, csb.Dseed, function (err) {
 				if(err){
 					self.swarm("interaction", "handleError", err, "Failed to write csb to file");

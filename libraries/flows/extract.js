@@ -6,7 +6,6 @@ const crypto = require("pskcrypto");
 $$.swarm.describe("extract", {
 	start: function (url) {
 		this.url = url;
-		console.log(this.url);
 		this.swarm("interaction", "readPin", utils.noTries);
 	},
 	validatePin: function (pin, noTries) {
@@ -34,7 +33,7 @@ $$.swarm.describe("extract", {
 			var parentCsb = args[0];
 			var aliasCsb = args[1];
 			if(!parentCsb || !parentCsb.Data || (!parentCsb.Data["records"]["Csb"] && !parentCsb.Data["records"]["Adiacent"])){
-				self.swarm("interaction", "handleError", null, "Invalid url", true);
+				self.swarm("interaction", "handleError", null, "Failed No records ", true);
 				return;
 			}
 			if(parentCsb.Data["records"]["Csb"].length === 0 && parentCsb.Data["records"]["Adiacent"].length === 0) {
@@ -48,7 +47,7 @@ $$.swarm.describe("extract", {
 					return;
 				}
 				if(!csb){
-					self.swarm("interaction", "handleError", null, "Invalid url", true);
+					self.swarm("interaction", "handleError", null, "Csb" + aliasCsb +"could not be found", true);
 					return;
 				}
 				if(args.length === 3) {
@@ -57,7 +56,7 @@ $$.swarm.describe("extract", {
 					if (indexAdiacent >= 0) {
 						self.extractArchive(csb, aliasFile, indexAdiacent);
 					} else {
-						self.swarm("interaction", "handleError", null, "Invalid url", true);
+						self.swarm("interaction", "handleError", null, "Archive" + aliasFile + "could not be found", true);
 					}
 				}else {
 					self.extractCsb(csb);

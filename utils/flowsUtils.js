@@ -44,7 +44,6 @@ exports.defaultCSB = function() {
 	return {
 		"version": 1,
 		"protocolVersion": 1,
-		"backups": [],
 		"records": {}
 	};
 };
@@ -65,9 +64,13 @@ exports.loadMasterCsb = function(pin, seed, callback){
 		var masterPath = exports.getMasterPath(dseed);
 		fs.readFile(masterPath, function (err, encryptedCsb) {
 			if(err){
-				callback(err);
-			}else{
-				var csbData = crypto.decryptJson(encryptedCsb, dseed);
+				return callback(err);
+			}
+			crypto.decryptJson(encryptedCsb, dseed, function (err, csbData) {
+				if(err){
+					return callback(err);
+				}
+
 				var csb = {
 					"Dseed" : dseed,
 					"Data"	: csbData,
@@ -75,15 +78,28 @@ exports.loadMasterCsb = function(pin, seed, callback){
 					"Uid"   : exports.getMasterUid(dseed)
 				};
 				callback(null, csb);
-			}
+			});
 		})
 	};
 	if(seed){
 		var dseed = crypto.deriveSeed(seed);
-		readMaster(dseed, callback);
+		readMaster(dseed, function (err, masterCb) {
+			if(err){
+				return callback(err);
+			}
+			callback(null, masterCb);
+		});
 	}else {
 		crypto.loadDseed(pin, exports.Paths.Dseed, function (err, dseed) {
-			readMaster(dseed, callback);
+			if(err){
+				return callback(err);
+			}
+			readMaster(dseed, function (err, masterCb) {
+				if(err){
+					return callback(err);
+				}
+				callback(null, masterCb);
+			});
 		});
 	}
 
@@ -93,9 +109,17 @@ exports.writeCsbToFile = function (csbPath, csbData, dseed, callback) {
 	if(typeof dseed === "string"){
 		dseed = Buffer.from(dseed, "hex");
 	}
-	fs.writeFile(csbPath, crypto.encryptJson(csbData, dseed), function (err) {
-		callback(err);
-	})
+	crypto.encryptJson(csbData, dseed, function (err, encryptedCsb) {
+		if(err){
+			return callback(err);
+		}
+		fs.writeFile(csbPath, encryptedCsb, function (err) {
+			if(err) {
+				return callback(err);
+			}
+			callback(null);
+		})
+	});
 };
 
 exports.getRecordStructure = function (recordType, callback) {
@@ -117,7 +141,12 @@ exports.readDecryptedCsb = function (pathCsb, dseed, callback) {
 		if(err){
 			callback(err);
 		}else{
-			callback(null, crypto.decryptJson(encryptedCsb, dseed));
+			crypto.decryptJson(encryptedCsb, dseed, function (err, csbData) {
+				if(err){
+					return callback(err);
+				}
+				callback(null, csbData);
+			});
 		}
 	});
 };
@@ -136,9 +165,7 @@ exports.getMasterUid = function (dseed){
 exports.findCsb = function (startCsb, aliasCsb, callback) {
 	if(!startCsb || !startCsb.Data || !startCsb["records"] || !startCsb["records"]["Csb"] || startCsb["records"]["Csb"].length === 0){
 		return callback(new Error("Csb empty"));
-	}
-	var parentCsb = startCsb;
-	var csbs = startCsb.Data["records"]["Csb"];
+	}var csbs = startCsb.Data["records"]["Csb"];
 	while(csbs.length > 0){
 		var csb = csbs.shift();
 		if(csb["Title"] === aliasCsb){
@@ -160,8 +187,7 @@ exports.getCsb = function (pin, aliasCsb, callback) {
 	exports.loadMasterCsb(pin, null, function (err, masterCsb) {
 		if(!err){
 			if(!masterCsb.Data || !masterCsb.Data["records"]){
-				callback(new Error("Master csb is empty"));
-				return;
+				return callback(new Error("Master csb is empty"));
 			}
 			exports.findCsb(masterCsb.Data, aliasCsb, function (err, csbInMaster) {
 				if(err){
@@ -175,14 +201,18 @@ exports.getCsb = function (pin, aliasCsb, callback) {
 							return;
 						}
 						var dseed = crypto.deriveSeed(Buffer.from(csbInMaster["Seed"], 'hex'));
-						var csbData = crypto.decryptJson(encryptedCsb, dseed);
-						var csb = {
-							"Title": aliasCsb,
-							"Data": csbData,
-							"Dseed": dseed,
-							"Path": csbInMaster["Path"]
-						};
-						callback(null, csb);
+						crypto.decryptJson(encryptedCsb, dseed, function (err, csbData) {
+							if(err){
+								return callback(err);
+							}
+							var csb = {
+								"Title": aliasCsb,
+								"Data": csbData,
+								"Dseed": dseed,
+								"Path": csbInMaster["Path"]
+							};
+							callback(null, csb);
+						});
 					});
 
 				}

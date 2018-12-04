@@ -23,20 +23,25 @@ $$.swarm.describe("saveBackup", {
 	backupMaster: function (pin) {
 		var self = this;
 		utils.loadMasterCsb(pin, null, function (err, masterCsb) {
-			masterCsb.Data["backups"].push(self.url);
+			// masterCsb.Data["backups"].push(self.url);
 			var csbs = masterCsb.Data["records"]["Csb"];
-			var encryptedMaster = crypto.encryptJson(masterCsb.Data, masterCsb.Dseed);
-			utils.writeCsbToFile(masterCsb.Path, masterCsb.Data, masterCsb.Dseed, function (err) {
+			crypto.encryptJson(masterCsb.Data, masterCsb.Dseed, function (err, encryptedMaster) {
 				if(err){
-					self.swarm("interaction", "handleError", err, "Failed to save master csb");
+					self.swarm("interaction", "handleError", err, "Failed to encrypt master csb");
 					return;
 				}
-				$$.remote.doHttpPost(self.url + "/CSB/" + masterCsb.Uid, encryptedMaster, function (err) {
+				utils.writeCsbToFile(masterCsb.Path, masterCsb.Data, masterCsb.Dseed, function (err) {
 					if(err){
-						self.swarm("interaction", "handleError", err, "Failed to post master csb");
-					}else{
-						self.backupCsbs(csbs, 0);
+						self.swarm("interaction", "handleError", err, "Failed to save master csb");
+						return;
 					}
+					$$.remote.doHttpPost(self.url + "/CSB/" + masterCsb.Uid, encryptedMaster, function (err) {
+						if(err){
+							self.swarm("interaction", "handleError", err, "Failed to post master csb");
+						}else{
+							self.backupCsbs(csbs, 0);
+						}
+					});
 				});
 			});
 		});
@@ -52,33 +57,38 @@ $$.swarm.describe("saveBackup", {
 					self.swarm("interaction", "handleError", err, "Failed to read encrypted csb");
 					return;
 				}
-				var csb = crypto.decryptJson(encryptedCsb, Buffer.from(csbs[currentCsb]["Dseed"], "hex"));
+
 				function __backupCsb() {
 					$$.remote.doHttpPost(self.url + "/CSB/" + csbs[currentCsb]["Path"], encryptedCsb, function(err){
 						if(err){
-							self.swarm("interaction", "handleError", err, "Failed to post csb " +csbs[currentCsb].Title);
+							self.swarm("interaction", "handleError", err, "Failed to post csb " + csbs[currentCsb].Title);
 						}else{
 							self.backupCsbs(csbs, currentCsb + 1);
 						}
 					})
 				}
-
-				if(csb["records"]){
-					if(csb["records"]["Csb"] && csb["records"]["Csb"].length > 0) {
-						csbs = csbs.concat(csb["records"]["Csb"]);
+				crypto.decryptJson(encryptedCsb, Buffer.from(csbs[currentCsb]["Dseed"], "hex"), function (err, csb) {
+					if(err){
+						self.swarm("interaction", "handleError", err, "Failed to decrypt the csb " + csbs[currentCsb].Title);
+						return;
 					}
-					if(csb["records"]["Adiacent"] && csb["records"]["Adiacent"].length > 0){
-						self.backupArchives(csb["records"]["Adiacent"], 0, function (err) {
-							if(err){
-								self.swarm("interaction", "handleError", err, "Failed to backup archives");
-								return;
-							}
+					if(csb["records"]){
+						if(csb["records"]["Csb"] && csb["records"]["Csb"].length > 0) {
+							csbs = csbs.concat(csb["records"]["Csb"]);
+						}
+						if(csb["records"]["Adiacent"] && csb["records"]["Adiacent"].length > 0){
+							self.backupArchives(csb["records"]["Adiacent"], 0, function (err) {
+								if(err){
+									self.swarm("interaction", "handleError", err, "Failed to backup archives");
+									return;
+								}
+								__backupCsb();
+							})
+						}else{
 							__backupCsb();
-						})
-					}else{
-						__backupCsb();
+						}
 					}
-				}
+				});
 			});
 		}
 	},

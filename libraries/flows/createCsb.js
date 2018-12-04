@@ -32,19 +32,20 @@ $$.swarm.describe("createCsb", {
 						return;
 					}
 					var masterCsb = utils.defaultCSB();
-					fs.writeFile(pathMaster, crypto.encryptJson(masterCsb, dseed), function (err) {
+					utils.writeCsbToFile(pathMaster, masterCsb, dseed, function (err) {
 						if (err) {
 							self.swarm("interaction", "handleError", err, "Failed to write master csb");
-						} else {
-							self.swarm("interaction", "printInfo", "Master csb has been created");
-							self.createCsb();
+							return;
 						}
-					});
+						self.swarm("interaction", "printInfo", "Master csb has been created");
+						self.createCsb(pin);
+
+					})
+
 				});
 			}
 		});
 	},
-	readPin:"interaction",
 
 	validatePin: function (pin, noTries) {
 		var self = this;
