@@ -3,6 +3,8 @@ require("callflow");
 module.exports = $$.library(function () {
     require('./addCsb');
     require('./addFile');
+    require('./addTemp');
+    require('./addPskdb');
     require('./copyUrl');
     require('./createCsb');
     require('./deleteUrl');

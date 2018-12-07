@@ -101,11 +101,11 @@ function doResetPin(){
 		handleError: generateErrorHandler()
 	})
 }
-doGetKey = function (aliasCsb, recordType, key, field) {
+function doGetKey(aliasCsb, recordType, key, field) {
 	$$.flow.start("flows.getKey").start(aliasCsb, recordType, key, field);
 };
 
-doSaveBackup = function (url) {
+function doSaveBackup(url) {
 	is.startSwarm("saveBackup", "start", url).on({
 		readPin: readPin,
 		printInfo: generateMessagePrinter(),
@@ -206,9 +206,9 @@ function doAddFile(csbUrl, filePath) {
 	});
 }
 
-doAddFolder = function(csbUrl, folderPath){
+function doAddFolder(csbUrl, folderPath){
 	doAddFile(csbUrl, folderPath);
-};
+}
 
 function doExtract(url){
 	is.startSwarm("extract", "start", url).on({
@@ -218,7 +218,7 @@ function doExtract(url){
 	});
 }
 
-doListCsbs = function (aliasCsb) {
+function doListCsbs(aliasCsb) {
 	is.startSwarm("listCsbs", "start", aliasCsb).on({
 		readPin: readPin,
 		printCsb: function (csbs, currentCsb) {
@@ -233,15 +233,15 @@ doListCsbs = function (aliasCsb) {
 };
 
 
-doCopy = function (sourceUrl, destUrl) {
+function doCopy(sourceUrl, destUrl) {
 	is.startSwarm("copy", "start", sourceUrl, destUrl).on({
 		readPin: readPin,
 		printInfo: generateMessagePrinter(),
 		handleError: generateErrorHandler()
 	})
-};
+}
 
-doDelete = function (url) {
+function doDelete(url) {
 	is.startSwarm("delete", "start", url).on({
 		readPin: readPin,
 		confirmDeletion: function (recordType) {
@@ -258,16 +258,31 @@ doDelete = function (url) {
 		printInfo: generateMessagePrinter(),
 		handleError: generateErrorHandler()
 	})
-};
+}
 
-doMove = function (sourceUrl, destUrl) {
+function doMove(sourceUrl, destUrl) {
 	is.startSwarm("move", "start", sourceUrl, destUrl).on({
 		readPin: readPin,
 		printInfo: generateMessagePrinter(),
 		handleError: generateErrorHandler()
 	})
-};
+}
 
+function doAddPskdb(url) {
+	is.startSwarm("addPskdb", "start", url).on({
+		readPin: readPin,
+		printInfo: generateMessagePrinter(),
+		handleError: generateErrorHandler()
+	});
+}
+
+function doAddFileToPskdb(url, filePath) {
+	is.startSwarm("addTemp", "start", url, filePath).on({
+		readPin: readPin,
+		printInfo: generateMessagePrinter(),
+		handleError: generateErrorHandler()
+	})
+}
 
 addCommand("set", "pin", doSetPin,  "\t\t\t\t\t |change the pin"); //seteaza la csb-ul master
 addCommand("create", "csb", doCreateCsb, "<aliasCsb> \t\t\t\t |create a new CSB having the alias <aliasCsb>"); //creaza un nou CSB si il adaugi in csb-ul master
@@ -285,3 +300,5 @@ addCommand("list", "csbs", doListCsbs, "<aliasCsb> \t\t\t\t |show all child csbs
 addCommand("copy", null, doCopy, "<srcUrl> <destUrl> \t\t\t |copy the csb/record/field from <srcUrl> to <destUrl>");
 addCommand("delete", null, doDelete, "<url>\t\t\t\t\t |delete the csb/record/field pointed to by <url>");
 addCommand("move", null, doMove, "<srcUrl> <destUrl>\t\t\t |move the csb/record/field from <srcUrl> to <destUrl>");
+addCommand("add", "pskdb", doAddPskdb, "<url> \t\t\t |add a pskdb to csb pointed by <url>");
+addCommand("add", "temp", doAddFileToPskdb, "<url> <filePath>\t\t\t |add file <filepath> to pskdb pointed by <url>");
