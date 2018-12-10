@@ -13,7 +13,13 @@ $$.swarm.describe("listCsbs", {
 		// console.log("validatePin", noTries);
 		utils.checkPinIsValid(pin, function (err) {
 			if(err){
-				self.swarm("interaction", "readPin", noTries-1);
+				if(err.code ==='ENOENT'){
+				//TODO add a wrapper to err in order to be able to post it through window.postMessage
+                self.swarm("interaction", "handleError", err.code, "No master csb");
+				}
+				else{
+                 self.swarm("interaction", "readPin", noTries-1);
+                }
 			}else {
 				self.getCsb(pin, self.aliasCsb);
 			}
