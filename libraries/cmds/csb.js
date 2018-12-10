@@ -72,9 +72,6 @@ function doCreateCsb(aliasCSB) {
 	});
 }
 
-function doAddCsb(){
-
-}
 function doSetKey(aliasCsb, recordType, key, field) {
 	is.startSwarm("setKey", "start", aliasCsb, recordType, key, field).on({
 		readPin:readPin,
@@ -284,6 +281,14 @@ function doAddFileToPskdb(url, filePath) {
 	})
 }
 
+function doExtractFromPskdb(url) {
+	is.startSwarm("extractTemp", "start", url).on({
+		readPin: readPin,
+		printInfo: generateMessagePrinter(),
+		handleError: generateErrorHandler()
+	})
+}
+
 addCommand("set", "pin", doSetPin,  "\t\t\t\t\t |change the pin"); //seteaza la csb-ul master
 addCommand("create", "csb", doCreateCsb, "<aliasCsb> \t\t\t\t |create a new CSB having the alias <aliasCsb>"); //creaza un nou CSB si il adaugi in csb-ul master
 addCommand("set", "key", doSetKey, "<aliasCsb> <recordType> <key> <field>   |set the key " ); //seteaza o cheie intr-un csb
@@ -302,3 +307,4 @@ addCommand("delete", null, doDelete, "<url>\t\t\t\t\t |delete the csb/record/fie
 addCommand("move", null, doMove, "<srcUrl> <destUrl>\t\t\t |move the csb/record/field from <srcUrl> to <destUrl>");
 addCommand("add", "pskdb", doAddPskdb, "<url> \t\t\t |add a pskdb to csb pointed by <url>");
 addCommand("add", "temp", doAddFileToPskdb, "<url> <filePath>\t\t\t |add file <filepath> to pskdb pointed by <url>");
+addCommand("extra", "temp", doExtractFromPskdb, "<url> \t\t\t |extract asset referenced by <url> from pskdb inside of csb");

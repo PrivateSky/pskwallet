@@ -49,34 +49,34 @@ $$.swarm.describe("addTemp", {
 
 					const file = transaction.lookup('global.FileReference', alias);
 
-					if(!file.isEmpty()) {
+					if (!file.isEmpty()) {
 						self.swarm("interaction", "handleError", err, "A file with the same alias " + alias + " already exists ");
 						return;
 					}
 
 
-					var pth = crypto.generateSafeUid(null, path.basename(self.filePath));
-					crypto.encryptStream(self.filePath, path.join(utils.Paths.PskdbFiles, pth), Buffer.from(csb.Dseed, "hex"), function (err) {
-						if(err){
+					var fileId = crypto.generateSafeUid(null, path.basename(self.filePath));
+					var pth = path.join(utils.Paths.PskdbFiles, fileId);
+					crypto.encryptStream(self.filePath, pth, Buffer.from(csb.Dseed, "hex"), function (err) {
+						if (err) {
 							self.swarm("interaction", "handleError", err, "Failed to encrypt stream");
 							return;
 						}
 
-						file.init(alias, self.filePath);
+						file.init(alias, pth);
 						transaction.add(file);
 						memoryBlockchain.commit(transaction);
 						csb.Data["pskdb"] = pskdbHandler.getInternalValues();
 
-
 						utils.writeCsbToFile(csb.Path, csb.Data, csb.Dseed, function (err) {
-							if(err){
+							if (err) {
 								self.swarm("interaction", "handleError", err, "Failed to write csb to file");
 								return;
 							}
 							self.swarm("interaction", "printInfo", self.filePath + " has been successfully added to " + csb.Title);
 						});
 					});
-				})
+				});
 			});
 		});
 	}

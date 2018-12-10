@@ -64,6 +64,7 @@ $$.swarm.describe("extract", {
 			});
 		});
 	},
+
 	extractCsb: function (csb) {
 		var self = this;
 		fs.writeFile(path.join(process.cwd(), csb.Title), JSON.stringify(csb.Data, null, "\t"), function (err) {

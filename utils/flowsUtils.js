@@ -110,7 +110,7 @@ exports.writeCsbToFile = function (csbPath, csbData, dseed, callback) {
 	if(typeof dseed === "string"){
 		dseed = Buffer.from(dseed, "hex");
 	}
-	crypto.encryptJson(csbData, dseed, function (err, encryptedCsb) {
+	crypto.encryptJson(csbData, dseed, 1, function (err, encryptedCsb) {
 		if(err){
 			return callback(err);
 		}

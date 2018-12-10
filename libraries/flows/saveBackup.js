@@ -25,7 +25,7 @@ $$.swarm.describe("saveBackup", {
 		utils.loadMasterCsb(pin, null, function (err, masterCsb) {
 			// masterCsb.Data["backups"].push(self.url);
 			var csbs = masterCsb.Data["records"]["Csb"];
-			crypto.encryptJson(masterCsb.Data, masterCsb.Dseed, function (err, encryptedMaster) {
+			crypto.encryptJson(masterCsb.Data, masterCsb.Dseed, null, function (err, encryptedMaster) {
 				if(err){
 					self.swarm("interaction", "handleError", err, "Failed to encrypt master csb");
 					return;
