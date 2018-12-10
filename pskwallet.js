@@ -1,4 +1,5 @@
 require('../../builds/devel/pskruntime');
+require('../../builds/devel/consoleTools');
 require("callflow");
 
 const pskConsole = require('swarmutils').createPskConsole();
