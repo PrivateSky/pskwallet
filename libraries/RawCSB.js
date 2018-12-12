@@ -5,16 +5,26 @@ function RawCSB(initData) {
 	const data = new OwM(initData);
 	let blockchain = null;
 
-	data.setInBlockchain = function () {
-		if(!blockchain){
-			blockchain = pskdb.startCsbDb( {getInitValues, persist});
-		}
+	data.embedFile = function (fileAlias, fileData) {
+		addInBlockchain("global.EmbeddedFile", fileAlias, (embeddedFile) => {
+			if (!embeddedFile.isEmpty()) {
+				console.log(`File with alias ${fileAlias} already exists`);
+				return;
+			}
 
-		const transaction = blockchain.beginTransaction({});
-		const asset = transaction.lookup(assetType, aid);
-		transaction.add(asset);
+			embeddedFile.init(fileAlias, fileData);
+		});
+	};
 
-		blockchain.commit(transaction);
+	data.attachFile = function (fileAlias, path, seed) {
+		addInBlockchain("global.FileReference", fileAlias, (file) => {
+			if (!file.isEmpty()) {
+				console.log(`File with alias ${fileAlias} already exists`);
+				return;
+			}
+
+			file.init(fileAlias, path, seed);
+		});
 	};
 
 	/* internal functions */
@@ -42,6 +52,20 @@ function RawCSB(initData) {
 
 	function mkSingleLine(str) {
 		return str.replace(/\n|\r/g, "");
+	}
+
+	function addInBlockchain(assetType, aid, assetModifier) {
+		if (!blockchain) {
+			blockchain = pskdb.startCsbDb({getInitValues, persist});
+		}
+
+		const transaction = blockchain.beginTransaction({});
+		const asset = transaction.lookup(assetType, aid);
+
+		assetModifier(asset);
+
+		transaction.add(asset);
+		blockchain.commit(transaction);
 	}
 
 	return data;
