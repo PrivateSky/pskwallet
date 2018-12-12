@@ -6,7 +6,7 @@ function RawCSB(initData) {
 	let blockchain = null;
 
 	data.embedFile = function (fileAlias, fileData) {
-		addInBlockchain("global.EmbeddedFile", fileAlias, (embeddedFile) => {
+		data.modifyAsset("global.EmbeddedFile", fileAlias, (embeddedFile) => {
 			if (!embeddedFile.isEmpty()) {
 				console.log(`File with alias ${fileAlias} already exists`);
 				return;
@@ -17,7 +17,7 @@ function RawCSB(initData) {
 	};
 
 	data.attachFile = function (fileAlias, path, seed) {
-		addInBlockchain("global.FileReference", fileAlias, (file) => {
+		data.modifyAsset("global.FileReference", fileAlias, (file) => {
 			if (!file.isEmpty()) {
 				console.log(`File with alias ${fileAlias} already exists`);
 				return;
@@ -25,6 +25,20 @@ function RawCSB(initData) {
 
 			file.init(fileAlias, path, seed);
 		});
+	};
+
+	data.modifyAsset = function(assetType, aid, assetModifier) {
+		if (!blockchain) {
+			blockchain = pskdb.startDb({getInitValues, persist});
+		}
+
+		const transaction = blockchain.beginTransaction({});
+		const asset = transaction.lookup(assetType, aid);
+
+		assetModifier(asset);
+
+		transaction.add(asset);
+		blockchain.commit(transaction);
 	};
 
 	/* internal functions */
@@ -54,19 +68,7 @@ function RawCSB(initData) {
 		return str.replace(/\n|\r/g, "");
 	}
 
-	function addInBlockchain(assetType, aid, assetModifier) {
-		if (!blockchain) {
-			blockchain = pskdb.startCsbDb({getInitValues, persist});
-		}
-
-		const transaction = blockchain.beginTransaction({});
-		const asset = transaction.lookup(assetType, aid);
-
-		assetModifier(asset);
-
-		transaction.add(asset);
-		blockchain.commit(transaction);
-	}
-
 	return data;
 }
+
+module.exports = RawCSB;
