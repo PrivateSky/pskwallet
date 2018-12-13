@@ -61,7 +61,30 @@ exports.masterCsbExists = function (callback) {
 
 exports.loadMasterCsb = function(pin, seed, callback){
 	pin = pin || exports.defaultPin;
-	var readMaster = function (dseed, callback) {
+
+	if(seed){
+		var dseed = crypto.deriveSeed(seed);
+		__readMaster(dseed, function (err, masterCb) {
+			if(err){
+				return callback(err);
+			}
+			callback(null, masterCb);
+		});
+	}else {
+		crypto.loadDseed(pin, exports.Paths.Dseed, function (err, dseed) {
+			if(err){
+				return callback(err);
+			}
+			__readMaster(dseed, function (err, masterCb) {
+				if(err){
+					return callback(err);
+				}
+				callback(null, masterCb);
+			});
+		});
+	}
+
+	 function __readMaster(dseed, callback) {
 		var masterPath = exports.getMasterPath(dseed);
 		fs.readFile(masterPath, function (err, encryptedCsb) {
 			if(err){
@@ -81,29 +104,7 @@ exports.loadMasterCsb = function(pin, seed, callback){
 				callback(null, csb);
 			});
 		})
-	};
-	if(seed){
-		var dseed = crypto.deriveSeed(seed);
-		readMaster(dseed, function (err, masterCb) {
-			if(err){
-				return callback(err);
-			}
-			callback(null, masterCb);
-		});
-	}else {
-		crypto.loadDseed(pin, exports.Paths.Dseed, function (err, dseed) {
-			if(err){
-				return callback(err);
-			}
-			readMaster(dseed, function (err, masterCb) {
-				if(err){
-					return callback(err);
-				}
-				callback(null, masterCb);
-			});
-		});
 	}
-
 };
 
 exports.writeCsbToFile = function (csbPath, csbData, dseed, callback) {

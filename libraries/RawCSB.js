@@ -41,9 +41,18 @@ function RawCSB(initData) {
 		blockchain.commit(transaction);
 	};
 
+	data.getAsset = function (assetType, aid) {
+		if (!blockchain) {
+			blockchain = pskdb.startDb({getInitValues, persist});
+		}
+
+		const transaction = blockchain.beginTransaction({});
+		return transaction.lookup(assetType, aid);
+	};
+
 	/* internal functions */
 
-	function persist(transactionLog, internalValues, currentPulse) {
+	function persist(transactionLog, currentValues, currentPulse) {
 		transactionLog.currentPulse = currentPulse;
 
 		if(!data.blockchain) {
@@ -52,7 +61,7 @@ function RawCSB(initData) {
 			};
 		}
 
-		data.blockchain.internalValues = JSON.stringify(internalValues, null, 1);
+		data.blockchain.currentValues = JSON.stringify(currentValues, null, 1);
 		data.blockchain.transactionLog += mkSingleLine(JSON.stringify(transactionLog)) + "\n";
 	}
 
