@@ -72,6 +72,35 @@ function doCreateCsb(aliasCSB) {
 	});
 }
 
+function doCreateBlockchainCSB(aliasCSB) {
+	is.startSwarm("createBlockchainCSB", "start", aliasCSB).on({
+		readPin: function (noTries, defaultPin, isFirstCall) {
+			var self = this;
+			if(isFirstCall){
+				self.swarm("createMasterCsb", defaultPin,);
+			}else {
+				if (noTries < 3 && noTries > 0) {
+					console.log("Invalid pin");
+					console.log("Try again");
+				}
+				utils.insertPassword("Insert pin:", noTries, function (err, pin) {
+					self.swarm("validatePin", pin, noTries);
+				})
+			}
+		},
+		printInfo: generateMessagePrinter(),
+		printSensitiveInfo: function (seed, defaultPin) {
+			console.log("The following string represents the seed. Please save it.");
+			console.log();
+			console.log(seed.toString("base64"));
+			console.log();
+			console.log("The default pin is:", defaultPin);
+			console.log();
+		}
+	});
+}
+
+
 function doSetKey(aliasCsb, recordType, key, field) {
 	is.startSwarm("setKey", "start", aliasCsb, recordType, key, field).on({
 		readPin:readPin,
