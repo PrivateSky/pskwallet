@@ -1,7 +1,7 @@
 const RawCSB = require('./RawCSB');
 const fs = require('fs');
 const path = require('path');
-
+const crypto = require('pskcrypto');
 /**
  *
  * @param localFolder  - required
@@ -11,7 +11,7 @@ const path = require('path');
  * @param pin		   - optional
  * @constructor
  */
-function RootCSB(localFolder, masterRawCSB, seed, dseed, pin ) {
+function RootCSB(localFolder, masterRawCSB, seed, dseed, pin) {
 
 	let config = {
 		backup : "http://localhost:8080",
@@ -19,27 +19,37 @@ function RootCSB(localFolder, masterRawCSB, seed, dseed, pin ) {
 		noTries: 3
 	};
 
-
 	this.loadRawCSB = function (CSBPath, callback) {
-		__readCSBData(dseed, function (err, CSBData) {
+		this.loadAssetFromPath(CSBPath,  (err, asset) => {
 			if(err){
 				return callback(err);
 			}
-			callback(null, new RawCSB(CSBData));
+			__loadRawCSB(asset.dseed, callback)
 		})
 	};
 
-	this.saveRawCSB = function (rawCSB, CSBPath, callback) {
-
+	this.saveRawCSB = function (callback) {
+		crypto.encryptJson(masterRawCSB.blockchain, dseed, null, (err, encryptedBlockchain) => {
+			if(err){
+				return callback(err);
+			}
+			fs.writeFile(path.join(localFolder, __generatePath(dseed)), encryptedBlockchain, (err) => {
+				if(err){
+					return callback(err);
+				}
+				callback(null);
+			})
+		});
 	};
+
 
 	this.loadMasterRawCSB = function (callback) {
 		if (!masterRawCSB) {
-			__readCSBData(dseed, function (err, masterCSBData) {
+			__loadRawCSB(dseed, function (err, newMasterRawCSB) {
 				if (err) {
 					return callback(err);
 				}
-				masterRawCSB = new RawCSB(masterCSBData);
+				masterRawCSB = newMasterRawCSB;
 				callback(null, masterRawCSB);
 			})
 		} else {
@@ -47,72 +57,29 @@ function RootCSB(localFolder, masterRawCSB, seed, dseed, pin ) {
 		}
 	};
 
-	this.getAssetFromPath = function(CSBPath, callback) {
-		__readCSBData(dseed, function (err, CSBData) {
-			if(err){
-				return callback(err);
-			}
-			let rawCSB = new RawCSB(CSBData);
-
-		})
+	this.loadAssetFromPath = function(CSBPath, callback) {
+		let processedPath = __splitPath(CSBPath);
+		__loadAssetFromPath(processedPath, dseed, 0, callback);
 	};
 
-	function splitPath(CSBPath){
-		let pathArr = CSBPath.split("/");
-		if(pathArr.length < 2){
-			throw new Error("Invalid CSBPath")
-		}
-		return {
-			CSBAids  : pathArr.slice(0, pathArr.length-2),
-			assetAid : pathArr.pop(),
-			assetType: pathArr.pop()
-		}
-	}
 
-	function traversePath(processedPath, dseed, currentIndex, callback) {
-
-		__readCSBData(dseed, function (err, CSBData) {
-			if (err) {
-				return callback(err);
-			}
-			let rawCSB = new RawCSB(CSBData);
-			if(currentIndex === processedPath.CSBAids.length-1){
-				let asset = rawCSB.getAsset('', )
-			}
-			let asset = rawCSB.getAsset('CSBReference', )
-
-		});
-
-		if (processedPath.CSBAids.length !== 0) {
-
-		}
-
-		if(processedPath.CSBAids.length === 0){
-
-			callback(null, )
-		}
-
-		__readCSBData(dseed, function (err, CSBData) {
-			if(err){
-				return callback(err);
-			}
-			let rawCSB = new RawCSB(CSBData);
-			let asset = rawCSB.getAsset()
-
-		});
-
-	}
 
 	//internal functions
-	function generatePath(dseed) {
+	function __generatePath(dseed) {
 		if (typeof dseed === "string") {
 			dseed = Buffer.from(dseed, "hex");
 		}
-		return path.join(process.cwd(), crypto.generateSafeUid(dseed, localFolder));
+		return path.join(localFolder, crypto.generateSafeUid(dseed, localFolder));
 	}
 
-	function __readCSBData(dseed, callback) {
-		let rootPath = generatePath(dseed);
+	function __loadRawCSB(dseed, callback) {
+		let dseedHash = crypto.generateSafeUid(dseed, localFolder);
+		let cachedRawCSB = rawCSBCache.load(dseedHash);
+		if(cachedRawCSB) {
+			return cachedRawCSB;
+		}
+
+		let rootPath = __generatePath(dseed);
 		fs.readFile(rootPath, function (err, encryptedCsb) {
 			if (err) {
 				return callback(err);
@@ -123,11 +90,45 @@ function RootCSB(localFolder, masterRawCSB, seed, dseed, pin ) {
 				}
 
 				let csb = new RawCSB(csbData);
+				cachedRawCSB.put(dseedHash, csb);
 				callback(null, csb);
 			});
 		})
 	}
+
+	function __splitPath(CSBPath){
+		let pathArr = CSBPath.split("/");
+		if(pathArr.length < 2){
+			throw new Error("Invalid CSBPath")
+		}
+		return {
+			CSBAliases  : pathArr.slice(0, pathArr.length-2),
+			assetAid : pathArr.pop(),
+			assetType: pathArr.pop()
+		}
+	}
+
+	function __loadAssetFromPath(processedPath, dseed, currentIndex, callback) {
+
+		__loadRawCSB(dseed, function (err, rawCSB) {
+			if (err) {
+				return callback(err);
+			}
+			if (currentIndex < processedPath.CSBAliases.length - 1) {
+				let asset = rawCSB.getAsset('CSBReference', processedPath.CSBAliases[currentIndex]);
+
+				__loadAssetFromPath(processedPath, asset.dseed, ++currentIndex, callback);
+				return;
+			}
+
+			let asset = rawCSB.getAsset(processedPath.assetType, processedPath.assetAid);
+			callback(null, asset);
+
+		});
+
+	}
 }
+
 
 function GenericCache(size) {
 
@@ -144,3 +145,4 @@ function GenericCache(size) {
 }
 
 let rawCSBCache = new GenericCache(10);
+module.exports = RootCSB;
