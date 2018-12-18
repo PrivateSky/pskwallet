@@ -20,7 +20,7 @@ function RootCSB(localFolder, masterRawCSB, seed, dseed, pin) {
 	};
 
 	this.loadRawCSB = function (CSBPath, callback) {
-		this.loadAssetFromPath(CSBPath,  (err, asset) => {
+		this.loadAssetFromPath(CSBPa111th,  (err, asset) => {
 			if(err){
 				return callback(err);
 			}
@@ -29,6 +29,7 @@ function RootCSB(localFolder, masterRawCSB, seed, dseed, pin) {
 	};
 
 	this.saveRawCSB = function (rawCSB, CSBPath, callback) {
+		console.log("CSBPath:", CSBPath);
 		const splitPath = CSBPath.split(':');
 		const parentPath = splitPath[0];
 		const assetType = splitPath[1];
@@ -190,38 +191,4 @@ function GenericCache(size) {
 }
 
 let rawCSBCache = new GenericCache(10);
-function __splitPath(CSBPath){
-	const pathSeparator = '/';
-
-	if(CSBPath.startsWith(pathSeparator)) {
-		CSBPath = CSBPath.substring(1);
-	}
-
-	const CSBAliases = CSBPath.split(pathSeparator);
-	if(CSBAliases.length < 1) {
-		throw new Error('CSBPath too short');
-	}
-
-	const lastIndex = CSBAliases.length - 1;
-	const optionalAssetSelector = CSBAliases[lastIndex].split(':');
-	CSBAliases[lastIndex] = optionalAssetSelector[0];
-
-	console.log(optionalAssetSelector);
-
-	if(!optionalAssetSelector[1] && !optionalAssetSelector[2]) {
-		optionalAssetSelector[1] = 'CSBReference';
-		optionalAssetSelector[2] = CSBAliases[lastIndex];
-		CSBAliases.pop();
-	}
-
-
-	return {
-		CSBAliases: CSBAliases,
-		assetType: optionalAssetSelector[1],
-		assetAid: optionalAssetSelector[2]
-	};
-}
-const CSBPath = '/CSB1/CSB2/CSB3:CSBReference:CSB4';
-const processedPath = __splitPath(CSBPath);
-console.log(processedPath);
 module.exports = RootCSB;
