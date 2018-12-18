@@ -20,7 +20,7 @@ function RootCSB(localFolder, masterRawCSB, seed, dseed, pin) {
 	};
 
 	this.loadRawCSB = function (CSBPath, callback) {
-		this.loadAssetFromPath(CSBPa111th,  (err, asset) => {
+		this.loadAssetFromPath(CSBPath,  (err, asset) => {
 			if(err){
 				return callback(err);
 			}
@@ -29,7 +29,6 @@ function RootCSB(localFolder, masterRawCSB, seed, dseed, pin) {
 	};
 
 	this.saveRawCSB = function (rawCSB, CSBPath, callback) {
-		console.log("CSBPath:", CSBPath);
 		const splitPath = CSBPath.split(':');
 		const parentPath = splitPath[0];
 		const assetType = splitPath[1];
