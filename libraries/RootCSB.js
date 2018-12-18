@@ -28,17 +28,38 @@ function RootCSB(localFolder, masterRawCSB, seed, dseed, pin) {
 		})
 	};
 
-	this.saveRawCSB = function (callback) {
-		crypto.encryptJson(masterRawCSB.blockchain, dseed, null, (err, encryptedBlockchain) => {
+	this.saveRawCSB = function (rawCSB, CSBPath, callback) {
+		const splitPath = CSBPath.split(':');
+		const parentPath = splitPath[0];
+		const assetType = splitPath[1];
+		const alias = splitPath[2];
+
+		 this.loadRawCSB(parentPath, (err, parentRawCSB) => {
 			if(err){
 				return callback(err);
 			}
-			fs.writeFile(path.join(localFolder, __generatePath(dseed)), encryptedBlockchain, (err) => {
-				if(err){
-					return callback(err);
+
+			parentRawCSB.modifyAsset(assetType, alias, (CSBReference) => {
+				let dseed = null;
+				if(CSBReference.isEmpty()){
+					const seed = crypto.generateSeed();
+					dseed = crypto.deriveSeed(seed);
+					CSBReference.init(alias, seed, dseed);
+				}else{
+					dseed = CSBReference.dseed;
 				}
-				callback(null);
-			})
+				crypto.encryptJson(rawCSB.blockchain, dseed, null, (err, encryptedBlockchain) => {
+					if(err){
+						return callback(err);
+					}
+					fs.writeFile(path.join(localFolder, __generatePath(dseed)), encryptedBlockchain, (err) => {
+						if(err){
+							return callback(err);
+						}
+						callback(null);
+					})
+				});
+			});
 		});
 	};
 
@@ -96,16 +117,40 @@ function RootCSB(localFolder, masterRawCSB, seed, dseed, pin) {
 		})
 	}
 
+	/**
+	 *
+	 * @param CSBPath: string - internal path that looks like /{CSBName1}/{CSBName2}:{assetType}:{assetAliasOrId}
+	 * @returns {{CSBAliases: [string], assetAid: (*|undefined), assetType: (*|undefined)}}
+	 * @private
+	 */
 	function __splitPath(CSBPath){
-		let pathArr = CSBPath.split("/");
-		if(pathArr.length < 2){
-			throw new Error("Invalid CSBPath")
+		const pathSeparator = '/';
+
+		if(CSBPath.startsWith(pathSeparator)) {
+			CSBPath = CSBPath.substring(1);
 		}
+
+		const CSBAliases = CSBPath.split(pathSeparator);
+		if(CSBAliases.length < 1) {
+			throw new Error('CSBPath too short');
+		}
+
+		const lastIndex = CSBAliases.length - 1;
+		const optionalAssetSelector = CSBAliases[lastIndex].split(':');
+		CSBAliases[lastIndex] = optionalAssetSelector[0];
+
+		if(!optionalAssetSelector[1] && !optionalAssetSelector[2]) {
+			optionalAssetSelector[1] = 'CSBReference';
+			optionalAssetSelector[2] = CSBAliases[lastIndex];
+			CSBAliases.pop();
+		}
+
+
 		return {
-			CSBAliases  : pathArr.slice(0, pathArr.length-2),
-			assetAid : pathArr.pop(),
-			assetType: pathArr.pop()
-		}
+			CSBAliases: CSBAliases,
+			assetType: optionalAssetSelector[1],
+			assetAid: optionalAssetSelector[2]
+		};
 	}
 
 	function __loadAssetFromPath(processedPath, dseed, currentIndex, callback) {
@@ -145,4 +190,38 @@ function GenericCache(size) {
 }
 
 let rawCSBCache = new GenericCache(10);
+function __splitPath(CSBPath){
+	const pathSeparator = '/';
+
+	if(CSBPath.startsWith(pathSeparator)) {
+		CSBPath = CSBPath.substring(1);
+	}
+
+	const CSBAliases = CSBPath.split(pathSeparator);
+	if(CSBAliases.length < 1) {
+		throw new Error('CSBPath too short');
+	}
+
+	const lastIndex = CSBAliases.length - 1;
+	const optionalAssetSelector = CSBAliases[lastIndex].split(':');
+	CSBAliases[lastIndex] = optionalAssetSelector[0];
+
+	console.log(optionalAssetSelector);
+
+	if(!optionalAssetSelector[1] && !optionalAssetSelector[2]) {
+		optionalAssetSelector[1] = 'CSBReference';
+		optionalAssetSelector[2] = CSBAliases[lastIndex];
+		CSBAliases.pop();
+	}
+
+
+	return {
+		CSBAliases: CSBAliases,
+		assetType: optionalAssetSelector[1],
+		assetAid: optionalAssetSelector[2]
+	};
+}
+const CSBPath = '/CSB1/CSB2/CSB3:CSBReference:CSB4';
+const processedPath = __splitPath(CSBPath);
+console.log(processedPath);
 module.exports = RootCSB;
