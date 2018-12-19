@@ -14,8 +14,7 @@ $$.swarm.describe("listCsbs", {
 		utils.checkPinIsValid(pin, function (err) {
 			if(err){
 				if(err.code ==='ENOENT'){
-				//TODO add a wrapper to err in order to be able to post it through window.postMessage
-                self.swarm("interaction", "handleError", err.code, "No master csb");
+                self.swarm("interaction", "handleError", err, "No master csb");
 				}
 				else{
                  self.swarm("interaction", "readPin", noTries-1);

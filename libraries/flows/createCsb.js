@@ -65,7 +65,8 @@ $$.swarm.describe("createCsb", {
 		utils.loadMasterCsb(pin, null, function (err, masterCsb) {
 			var pathCsb   = crypto.generateSafeUid(crypto.deriveSeed(seed));
 			if(utils.indexOfRecord(masterCsb.Data, "Csb", self.aliasCsb) >= 0){
-				self.swarm("interaction", "handleError", null, "Failed to write csb" + self.aliasCsb);
+				var error = new Error("csb_exists");
+				self.swarm("interaction", "handleError", error, "Failed to write csb" + self.aliasCsb);
 				return;
 			}
 			if(!masterCsb.Data["records"]) {
