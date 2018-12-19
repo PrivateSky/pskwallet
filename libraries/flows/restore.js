@@ -25,8 +25,9 @@ $$.swarm.describe("restore", {
 		utils.loadMasterCsb(null, this.seed, this.reportOrContinue("getCsbsToRestore", "Failed to load master"));
 	},
 	restoreMaster: function () {
-		var obj = JSON.parse(this.seed.toString());
-		this.url = obj.backup;
+		const strSeed = this.seed.toString();
+		this.url = strSeed.substring(33);
+		console.log("In restore ", this.url);
 		this.dseed = crypto.deriveSeed(this.seed);
 		$$.remote.doHttpGet(this.url +"/CSB/" + utils.getMasterUid(this.dseed), this.reportOrContinue("createAuxFolder", "Error at getting encryptedMaster"));
 	},
