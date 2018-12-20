@@ -93,7 +93,7 @@ $$.swarm.describe("createCsb", {
 						self.swarm("interaction", "handleError", err, "Failed to write csb" + self.aliasCsb);
 						return;
 					}
-					self.swarm("interaction", "printInfo", "Csb " + self.aliasCsb + " was successfully created.");
+					self.swarm("interaction", "printInfo", {status:"success", title:self.aliasCsb, path:pathCsb});
 				});
 
 			});
