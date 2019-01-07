@@ -3,7 +3,13 @@ const pskdb = require('pskdb');
 
 function RawCSB(initData) {
 	const data = new OwM(initData);
-	let blockchain = null;
+	const blockchain = pskdb.startDb({getInitValues, persist});
+
+	if(!data.blockchain) {
+		data.blockchain = {
+			transactionLog : ''
+		};
+	}
 
 	data.embedFile = function (fileAlias, fileData) {
 		data.modifyAsset("global.EmbeddedFile", fileAlias, (embeddedFile) => {
@@ -28,13 +34,8 @@ function RawCSB(initData) {
 	};
 
 	data.modifyAsset = function(assetType, aid, assetModifier) {
-		if (!blockchain) {
-			blockchain = pskdb.startDb({getInitValues, persist});
-		}
-
 		const transaction = blockchain.beginTransaction({});
 		const asset = transaction.lookup(assetType, aid);
-
 		assetModifier(asset);
 
 		transaction.add(asset);
@@ -42,10 +43,6 @@ function RawCSB(initData) {
 	};
 
 	data.getAsset = function (assetType, aid) {
-		if (!blockchain) {
-			blockchain = pskdb.startDb({getInitValues, persist});
-		}
-
 		const transaction = blockchain.beginTransaction({});
 		return transaction.lookup(assetType, aid);
 	};
@@ -54,12 +51,6 @@ function RawCSB(initData) {
 
 	function persist(transactionLog, currentValues, currentPulse) {
 		transactionLog.currentPulse = currentPulse;
-
-		if(!data.blockchain) {
-			data.blockchain = {
-				transactionLog : ''
-			};
-		}
 
 		data.blockchain.currentValues = JSON.stringify(currentValues, null, 1);
 		data.blockchain.transactionLog += mkSingleLine(JSON.stringify(transactionLog)) + "\n";
