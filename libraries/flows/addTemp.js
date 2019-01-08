@@ -48,8 +48,7 @@ $$.swarm.describe("addTemp", {
 
 
 					const file = transaction.lookup('global.FileReference', alias);
-
-					if (!file.isEmpty()) {
+					if (file.isPersisted()) {
 						self.swarm("interaction", "handleError", err, "A file with the same alias " + alias + " already exists ");
 						return;
 					}

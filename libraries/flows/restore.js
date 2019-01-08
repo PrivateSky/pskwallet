@@ -45,7 +45,7 @@ $$.swarm.describe("restore", {
 		utils.loadMasterCsb(null, this.seed, this.reportOrContinue("saveDseed", "Failed to decrypt the master CSB"));
 	},
 	saveDseed: function (masterCsb) {
-		crypto.saveDSeed(this.dseed, utils.defaultPin, utils.Paths.Dseed, this.reportOrContinue("getCsbsToRestore", "Failed at saving dseed", masterCsb));
+		crypto.saveData(this.dseed, utils.defaultPin, utils.Paths.Dseed, this.reportOrContinue("getCsbsToRestore", "Failed at saving dseed", masterCsb));
 
 	},
 	getCsbsToRestore: function (masterCsb) {
@@ -82,7 +82,7 @@ $$.swarm.describe("restore", {
 		}
 	},
 	__saveCsb: function(csbs, currentCsb, encryptedCsb) {
-		fs.writeFile(csbs[currentCsb]["Path"], encryptedCsb, this.reportOrContinue("restoreCsbs", "Failed to save csb", csbs, currentCsb + 1));
+		fs.writeFile(csbs[currentCsb]["Path"], encryptedCsb, this.reportOrContinue("restoreCsbs", "Failed to saveData csb", csbs, currentCsb + 1));
 	},
 	reportOrContinue:function(phaseName, errorMessage, ...args){
 		var self = this;
@@ -113,7 +113,7 @@ $$.swarm.describe("restore", {
 		$$.ensureFolderExists(utils.Paths.Adiacent, this.reportOrContinue("saveArchive", "Failed to create folder", data, url, archives, currentArchive));
 	},
 	saveArchive: function (data, url, archives, currentArchive) {
-		fs.writeFile(path.join(utils.Paths.Adiacent, archives[currentArchive]["Path"]), data, this.reportOrContinue("restoreArchives", "failed to save archive", url, archives, currentArchive+1));
+		fs.writeFile(path.join(utils.Paths.Adiacent, archives[currentArchive]["Path"]), data, this.reportOrContinue("restoreArchives", "failed to saveData archive", url, archives, currentArchive+1));
 	},
 	__getCsbsToRestore: function (masterCsbData, alias, callback) {
 		if(!alias){

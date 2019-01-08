@@ -3,100 +3,71 @@ var path = require("path");
 const utils = require("./../../utils/flowsUtils");
 $$.swarm.describe("setKey", {
 	start: function (aliasCsb, recordType, key, field) {
-		console.log("start", arguments);
-		this.swarm("interaction", "readPin", aliasCsb, recordType, key, field, 3);
+		this.aliasCsb 	= aliasCsb;
+		this.recordType = recordType;
+		this.key 		= key;
+		this.field 		= field;
+		this.swarm("interaction", "readPin", 3);
 	},
 
 	readPin: "interaction",
 
-	validatePin: function (pin ,aliasCsb, recordType, key, field, noTries) {
+	validatePin: function (pin, noTries) {
 		var self = this;
 		utils.checkPinIsValid(pin, function (err) {
 			if(err){
-				console.log("Invalid pin");
-				console.log("Try again");
-				self.swarm("interaction", "readPin", aliasCsb, recordType, key, field, noTries-1);
+				self.swarm("interaction", "readPin", noTries-1);
 			}else {
-				self.swarm("interaction", "readStructure", pin, aliasCsb, recordType, key, field);
+				self.readStructure(pin);
 			}
 		})
 	},
 
-	readStructure: "interaction",
-
+	readStructure: function (pin, csb, recordType, key, field) {
+		var self = this;
+		utils.getRecordStructure(recordType, function (err, recordStructure) {
+			if(err){
+				self.swarm("interaction", "handleError", err, "Failed to get record " + recordType + " structure");
+				return;
+			}
+			var fields = recordStructure["fields"];
+			self.checkInputValidity(pin, csb, recordType, key, field, fields);
+		});
+	},
 	checkInputValidity: function (pin, aliasCsb, recordType, key, field, fields) {
 		var self = this;
 		utils.getCsb(pin, aliasCsb, function (err, csb) {
 			if (err) {
-				throw err;
-			}
-			if (!csb) {
-				self.swarm("interaction", "printError");
+				self.swarm("interaction", "handleError", err, "Failed to get csb "+aliasCsb);
 				return;
 			}
-			if (key) {
+			if (!csb) {
+				self.swarm("interaction", "handleError", null, "The csb " + aliasCsb +"does not exist",true);
+				return;
+			}
+			if(key){
 				var indexRecord = utils.indexOfRecord(csb.Data, recordType, key);
-				if (indexRecord >= 0) {
-					var prompt = "Do you want to continue?";
-					if (!field) {
-						console.log("You are about to overwrite the following record:");
-						$$.flow.start("flows.getKey").getKey(pin, aliasCsb, recordType, key, null, function (err, record) {
-							if (err) {
-								throw(err);
-							}
-							// console.log(record);
-							utils.confirmOperation(prompt, null, function (err, rl) {
-								if (err) {
-									throw err;
-								}
-								utils.enterRecord(fields, 0, null, rl, function (err, record) {
-									if (err) {
-										throw err;
-									}
-									self.addRecord(pin, record, csb, recordType, key, field, callback)
-								});
-							});
-						});
+				if(indexRecord >= 0){
+					if(!field){
+						self.swarm("interaction", "confirmOverwrite", csb, recordType, key, field, fields, utils.getRecord);
 					}
 					else {
 						var indexField = utils.indexOfKey(fields, "fieldName", field);
 						if (indexField < 0) {
-							console.log("The record type", recordType, "does not have a field", field);
+							self.swarm("interaction", "handleError", null, "The field "+ field + " could not be found", true);
 						} else {
-							console.log("You are about to overwrite the following field:");
-							$$.flow.start("flows.getKey").getKey(pin, aliasCsb, recordType, key, field, function (err, record) {
-								if (err) {
-									return callback(err);
-								}
-								// console.log(record);
-								utils.confirmOperation(prompt, function (err, rl) {
-									if (err) {
-										return callback(err);
-									}
-									utils.enterField(field, rl, function (err, answer) {
-										if (err) {
-											return callback(err);
-										}
-										self.addRecord(pin, answer, csb, recordType, key, field, callback);
-									})
-								});
-							});
+							self.swarm("interaction", "confirmOverwrite", csb, recordType, key, field, fields, utils.getRecord);
 						}
 					}
-				} else {
-					console.log("No record of type", recordType, "having the key", key, "could be found in", aliasCsb);
+				}else {
+					self.swarm("interaction", "handleError", null, "The record "+ recordType + " could not be found", true);
 				}
-			} else if (!key && !field) {
-				utils.enterRecord(fields, 0, null, null, function (err, record) {
-					if (err) {
-						return callback(err);
-					}
-					self.addRecord(pin, record, csb, recordType, key, field, callback);
-				});
+			}else if(!key && !field) {
+				self.swarm("interaction", "enterRecord", csb, recordType, key, field, fields);
 			}
 		});
 	},
-	printError: "interaction",
+
 	addRecord: function (pin, record, csb, recordType, key, field, callback) {
 		if (!csb.Data["records"]) {
 			csb.Data["records"] = {};

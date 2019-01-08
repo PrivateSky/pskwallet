@@ -26,9 +26,9 @@ $$.swarm.describe("createCsb", {
 				var dseed = crypto.deriveSeed(seed);
 				self.swarm("interaction", "printSensitiveInfo", seed, utils.defaultPin);
 				pathMaster = pathMaster || utils.getMasterPath(dseed);
-				crypto.saveDSeed(dseed, pin, utils.Paths.Dseed, function (err) {
+				crypto.saveData(dseed, pin, utils.Paths.Dseed, function (err) {
 					if(err){
-						self.swarm("interaction", "handleError", err, "Failed to save dseed");
+						self.swarm("interaction", "handleError", err, "Failed to saveData dseed");
 						return;
 					}
 					var masterCsb = utils.defaultCSB();

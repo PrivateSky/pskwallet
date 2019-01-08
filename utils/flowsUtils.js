@@ -71,7 +71,7 @@ exports.loadMasterCsb = function(pin, seed, callback){
 			callback(null, masterCb);
 		});
 	}else {
-		crypto.loadDseed(pin, exports.Paths.Dseed, function (err, dseed) {
+		crypto.loadData(pin, exports.Paths.Dseed, function (err, dseed) {
 			if(err){
 				return callback(err);
 			}

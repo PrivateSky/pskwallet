@@ -2,6 +2,8 @@ const RawCSB = require('./RawCSB');
 const fs = require('fs');
 const path = require('path');
 const crypto = require('pskcrypto');
+const seed = new require('../utils/Seed')();
+
 /**
  *
  * @param localFolder  - required
@@ -209,8 +211,8 @@ function RootCSB(localFolder, masterRawCSB, dseed) {
 				if (CSBReference.isPersisted()) {
 					localDseed = Buffer.from(CSBReference.dseed);
 				} else {
-					const seed = crypto.generateSeed();
-					localDseed = crypto.deriveSeed(seed);
+					const localSeed = seed.create();
+					localDseed = seed.deriveSeed(localSeed);
 					CSBReference.init(splitPath.assetAid, seed, localDseed);
 				}
 
@@ -258,15 +260,16 @@ function GenericCache(size) {
 
 }
 
-function createRootCSB(localFolder, masterRawCSB, seed, dseed, pin, callback) {
-	if (seed && !dseed) {
-		dseed = crypto.deriveSeed(seed);
+function createRootCSB(localFolder, masterRawCSB, masterSeed, masterDseed, pin, callback) {
+	if (masterSeed && !masterDseed) {
+		masterDseed = crypto.deriveSeed(masterSeed);
+		masterDseed = seed.generateCompactForm(masterSeed);
 	}
 
-	if (pin && !dseed) {
-		crypto.loadDseed(pin, path.join(localFolder, 'dseed'), (err, diskDseed) => {
-			dseed = diskDseed;
-			const rootCSB = new RootCSB(localFolder, null, dseed);
+	if (pin && !masterDseed) {
+		crypto.loadData(pin, path.join(localFolder, 'dseed'), (err, diskDseed) => {
+			masterDseed = diskDseed;
+			const rootCSB = new RootCSB(localFolder, null, masterDseed);
 			rootCSB.loadMasterRawCSB((err) => {
 				if (err) {
 					return callback(err);
@@ -274,8 +277,8 @@ function createRootCSB(localFolder, masterRawCSB, seed, dseed, pin, callback) {
 				callback(null, rootCSB);
 			});
 		});
-	} else if (dseed) {
-		const rootCSB = new RootCSB(localFolder, null, dseed);
+	} else if (masterDseed) {
+		const rootCSB = new RootCSB(localFolder, null, masterDseed);
 		rootCSB.loadMasterRawCSB((err) => {
 			if (err) {
 				return callback(err);

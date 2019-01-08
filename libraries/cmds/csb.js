@@ -62,7 +62,7 @@ function doCreateCsb(aliasCSB) {
 		},
 		printInfo: generateMessagePrinter(),
 		printSensitiveInfo: function (seed, defaultPin) {
-			console.log("The following string represents the seed. Please save it.");
+			console.log("The following string represents the seed. Please saveData it.");
 			console.log();
 			console.log(seed.toString("base64"));
 			console.log();
@@ -90,7 +90,7 @@ function doCreateBlockchainCSB(aliasCSB) {
 		},
 		printInfo: generateMessagePrinter(),
 		printSensitiveInfo: function (seed, defaultPin) {
-			console.log("The following string represents the seed. Please save it.");
+			console.log("The following string represents the seed. Please saveData it.");
 			console.log();
 			console.log(seed.toString("base64"));
 			console.log();
@@ -322,7 +322,7 @@ addCommand("set", "pin", doSetPin,  "\t\t\t\t\t |change the pin"); //seteaza la 
 addCommand("create", "csb", doCreateCsb, "<aliasCsb> \t\t\t\t |create a new CSB having the alias <aliasCsb>"); //creaza un nou CSB si il adaugi in csb-ul master
 addCommand("set", "key", doSetKey, "<aliasCsb> <recordType> <key> <field>   |set the key " ); //seteaza o cheie intr-un csb
 addCommand("get", "key", doGetKey, "<aliasCsb> <recordType> <key> <field>   |get the key " ); //citeste o cheie intr-un csb
-addCommand("save", "backup", doSaveBackup,"<url>\t\t\t\t |save all csbs at address <url>");
+addCommand("save", "backup", doSaveBackup,"<url>\t\t\t\t |saveData all csbs at address <url>");
 addCommand("restore", null, doRestore, "<alias>\t\t\t\t |restore the csb  or archive having the name <alias> from one \n\t\t\t\t\t\t\t  of the addresses stored in backup\n");
 addCommand("reset", "pin", doResetPin, "\t\t\t\t\t |enter the seed in order to set the pin to a new value");
 addCommand("set", "url", doSetUrl, "<url> \t\t\t\t\t |set/update the record/field pointed by the provided <url>");

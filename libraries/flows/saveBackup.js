@@ -32,7 +32,7 @@ $$.swarm.describe("saveBackup", {
 				}
 				utils.writeCsbToFile(masterCsb.Path, masterCsb.Data, masterCsb.Dseed, function (err) {
 					if(err){
-						self.swarm("interaction", "handleError", err, "Failed to save master csb");
+						self.swarm("interaction", "handleError", err, "Failed to saveData master csb");
 						return;
 					}
 					$$.remote.doHttpPost(self.url + "/CSB/" + masterCsb.Uid, encryptedMaster, function (err) {

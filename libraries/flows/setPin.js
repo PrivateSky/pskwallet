@@ -22,12 +22,12 @@ $$.swarm.describe("setPin", {
 	},
 	enterNewPin: "interaction",
 	actualizePin: function (newPin, callback) {
-			crypto.loadDseed(this.oldPin, utils.Paths.Dseed, function (err, dseed) {
+			crypto.loadData(this.oldPin, utils.Paths.Dseed, function (err, dseed) {
 				if(err){
 					callback(err);
 					return;
 				}
-				crypto.saveDSeed(dseed, newPin, utils.Paths.Dseed, function (err) {
+				crypto.saveData(dseed, newPin, utils.Paths.Dseed, function (err) {
 					if(err){
 						return callback(err);
 					}else{

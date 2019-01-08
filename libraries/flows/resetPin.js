@@ -36,9 +36,9 @@ $$.swarm.describe("resetPin", {
 
 	updateData: function (pin) {
 		var self = this;
-		crypto.saveDSeed(crypto.deriveSeed(Buffer.from(this.seed, "base64")), pin, utils.Paths.Dseed, function (err) {
+		crypto.saveData(crypto.deriveSeed(Buffer.from(this.seed, "base64")), pin, utils.Paths.Dseed, function (err) {
 			if(err){
-				self.swarm("interaction", "printInfo", err, "Failed to save dseed");
+				self.swarm("interaction", "printInfo", err, "Failed to saveData dseed");
 				return;
 			}
 			self.swarm("interaction", "printInfo","The pin has been successfully changed");
