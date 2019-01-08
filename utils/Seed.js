@@ -8,6 +8,7 @@ function Seed() {
 		if (!Array.isArray(backupUrls)) {
 			backupUrls = [backupUrls];
 		}
+		seed.tag    = 's';
 		seed.random = crypto.randomBytes(32);
 		seed.backup = backupUrls;
 
