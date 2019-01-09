@@ -2,7 +2,7 @@ const RawCSB = require('./RawCSB');
 const fs = require('fs');
 const path = require('path');
 const crypto = require('pskcrypto');
-const seed = new require('../utils/Seed')();
+const Seed = require('../utils/Seed');
 
 /**
  *
@@ -14,7 +14,7 @@ const seed = new require('../utils/Seed')();
 function RootCSB(localFolder, masterRawCSB, dseed) {
 
 	let config = {
-		backup : "http://localhost:8080",
+		backup : ["http://localhost:8080"],
 		pin    : "12345678",
 		noTries: 3
 	};
@@ -36,13 +36,14 @@ function RootCSB(localFolder, masterRawCSB, dseed) {
 			if(err) {
 				return callback(err);
 			}
-			__saveRawCSB(masterRawCSB, splitPath, rawCSB, (err, persist) => {
+			__saveRawCSB(masterRawCSB, splitPath, rawCSB, (err, persist, parentRawCSB) => {
 				if(err) {
 					return callback(err);
 				}
 
-
-				__writeRawCSB(masterRawCSB, dseed, callback);
+				if(persist) {
+					__writeRawCSB(parentRawCSB, dseed, callback);
+				}
 			});
 		});
 	};
@@ -64,24 +65,21 @@ function RootCSB(localFolder, masterRawCSB, dseed) {
 		}
 	};
 
-	function __writeRawCSB(rawCSB, localDseed, callback) {
-		if(!Buffer.isBuffer(localDseed)){
-			localDseed = Buffer.from(localDseed);
-		}
-		crypto.encryptJson(rawCSB.blockchain, localDseed, null, (err, encryptedBlockchain) => {
-			if (err) {
+	this.saveMasterRawCSB = function (callback) {
+		this.loadMasterRawCSB((err, masterRawCSB) => {
+			if(err) {
 				return callback(err);
 			}
-			fs.writeFile(__generatePath(localDseed), encryptedBlockchain, (err) => {
-				if (err) {
+
+			fs.writeFile(path.join(process.cwd(), 'dseed'), dseed, (err) => {
+				if(err){
 					return callback(err);
 				}
-				callback();
+
+				__writeRawCSB(masterRawCSB, dseed, callback);
 			});
 		});
-	}
-
-
+	};
 
 	this.loadAssetFromPath = function(CSBPath, callback) {
 		let processedPath = __splitPath(CSBPath);
@@ -211,9 +209,10 @@ function RootCSB(localFolder, masterRawCSB, dseed) {
 				if (CSBReference.isPersisted()) {
 					localDseed = Buffer.from(CSBReference.dseed);
 				} else {
-					const localSeed = seed.create();
-					localDseed = seed.deriveSeed(localSeed);
-					CSBReference.init(splitPath.assetAid, seed, localDseed);
+					const seed = Seed.create(config.backup);
+					const localSeed = Seed.generateCompactForm(seed);
+					localDseed = Seed.generateCompactForm(Seed.deriveSeed(localSeed));
+					CSBReference.init(splitPath.assetAid, localSeed, localDseed);
 				}
 
 				__writeRawCSB(rawCSBToSave, localDseed, (err) => {
@@ -243,6 +242,22 @@ function RootCSB(localFolder, masterRawCSB, dseed) {
 			});
 		}
 	}
+	function __writeRawCSB(rawCSB, localDseed, callback) {
+		if(!Buffer.isBuffer(localDseed)){
+			localDseed = Buffer.from(localDseed);
+		}
+		crypto.encryptJson(rawCSB.blockchain, localDseed, null, (err, encryptedBlockchain) => {
+			if (err) {
+				return callback(err);
+			}
+			fs.writeFile(__generatePath(localDseed), encryptedBlockchain, (err) => {
+				if (err) {
+					return callback(err);
+				}
+				callback();
+			});
+		});
+	}
 }
 
 
@@ -262,12 +277,15 @@ function GenericCache(size) {
 
 function createRootCSB(localFolder, masterRawCSB, masterSeed, masterDseed, pin, callback) {
 	if (masterSeed && !masterDseed) {
-		masterDseed = crypto.deriveSeed(masterSeed);
 		masterDseed = seed.generateCompactForm(masterSeed);
 	}
 
 	if (pin && !masterDseed) {
 		crypto.loadData(pin, path.join(localFolder, 'dseed'), (err, diskDseed) => {
+			if(err) {
+				return callback(err);
+			}
+
 			masterDseed = diskDseed;
 			const rootCSB = new RootCSB(localFolder, null, masterDseed);
 			rootCSB.loadMasterRawCSB((err) => {
