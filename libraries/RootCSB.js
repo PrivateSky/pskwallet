@@ -42,6 +42,10 @@ function RootCSB(localFolder, masterRawCSB, dseed) {
 				}
 
 				if(persist) {
+					if(!dseed) {
+						return callback(new Error("Dseed not provided, can't save CSB"));
+					}
+
 					__writeRawCSB(parentRawCSB, dseed, callback);
 				}
 			});
@@ -52,6 +56,10 @@ function RootCSB(localFolder, masterRawCSB, dseed) {
 
 	this.loadMasterRawCSB = function (callback) {
 		if (!masterRawCSB) {
+			if(!dseed) {
+				return callback(new Error("Dseed not provided, can't load masterRawCSB"));
+			}
+
 			__loadRawCSB(dseed, function (err, newMasterRawCSB) {
 				if (err) {
 					masterRawCSB = new RawCSB();
@@ -71,13 +79,10 @@ function RootCSB(localFolder, masterRawCSB, dseed) {
 				return callback(err);
 			}
 
-			fs.writeFile(path.join(process.cwd(), 'dseed'), dseed, (err) => {
-				if(err){
-					return callback(err);
-				}
-
-				__writeRawCSB(masterRawCSB, dseed, callback);
-			});
+			if(!dseed) {
+				return callback(new Error("Dseed not provided, can't save masterRawCSB"));
+			}
+			__writeRawCSB(masterRawCSB, dseed, callback);
 		});
 	};
 
@@ -276,8 +281,13 @@ function GenericCache(size) {
 }
 
 function createRootCSB(localFolder, masterRawCSB, masterSeed, masterDseed, pin, callback) {
+	if(masterRawCSB) {
+		const rootCSB = new RootCSB(localFolder, masterRawCSB, masterDseed);
+		return callback(null, rootCSB);
+	}
+
 	if (masterSeed && !masterDseed) {
-		masterDseed = seed.generateCompactForm(masterSeed);
+		masterDseed = Seed.generateCompactForm(masterSeed);
 	}
 
 	if (pin && !masterDseed) {

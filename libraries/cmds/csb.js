@@ -44,12 +44,12 @@ function doSetPin() {
 	})
 }
 
-function doCreateCsb(aliasCSB) {
-	is.startSwarm("createCsb", "start", aliasCSB).on({
+function doCreateCsb(CSBPath) {
+	is.startSwarm("createBlockchainCSB", "start", CSBPath).on({
 		readPin: function (noTries, defaultPin, isFirstCall) {
 			var self = this;
 			if(isFirstCall){
-				self.swarm("createMasterCsb", defaultPin,);
+				self.swarm("createMasterCsb", defaultPin);
 			}else {
 				if (noTries < 3 && noTries > 0) {
 					console.log("Invalid pin");
@@ -62,7 +62,7 @@ function doCreateCsb(aliasCSB) {
 		},
 		printInfo: generateMessagePrinter(),
 		printSensitiveInfo: function (seed, defaultPin) {
-			console.log("The following string represents the seed. Please saveData it.");
+			console.log("The following string represents the seed. Please save it.");
 			console.log();
 			console.log(seed.toString("base64"));
 			console.log();

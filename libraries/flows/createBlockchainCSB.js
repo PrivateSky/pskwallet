@@ -1,8 +1,12 @@
 const utils = require('../../utils/flowsUtils');
 const Seed = require('../../utils/Seed');
+const RootCSB = require("../RootCSB");
+const RawCSB = require("../RawCSB");
+const crypto = require('pskcrypto');
+
 $$.swarm.describe("createBlockchainCSB", {
-	start: function (aliasCSB) {
-		this.aliasCSB = aliasCSB;
+	start: function (CSBPath) {
+		this.CSBPath = CSBPath;
 		utils.masterCsbExists( (err, status) => {
 			if(err){
 				this.swarm("interaction", "readPin", utils.noTries, utils.defaultPin, true);
@@ -14,71 +18,59 @@ $$.swarm.describe("createBlockchainCSB", {
 
 	createMasterCsb: function(pin) {
 		pin = pin || utils.defaultPin;
-		const seed = Seed.generateCompactForm(Seed.create(utils.defaultBackup));
-		const dseed = Seed.generateCompactForm(Seed.deriveSeed(seed));
-		this.rootCSB = require("../RootCSB").createRootCSB(process.cwd(), null, null, dseed, );
-		self.swarm("interaction", "printSensitiveInfo", seed, utils.defaultPin);
-
-		crypto.saveData(dseed, pin, utils.Paths.Dseed, function (err) {
-			if (err) {
-				self.swarm("interaction", "handleError", err, "Failed to save dseed");
+		$$.ensureFolderExists(utils.Paths.auxFolder, (err) => {
+			if(err){
+				this.swarm("interaction", "handleError", err, "Failed to create .privateSky folder");
 				return;
 			}
+			const seed = Seed.generateCompactForm(Seed.create(utils.defaultBackup));
+			const dseed = Seed.generateCompactForm(Seed.deriveSeed(seed));
+			RootCSB.createRootCSB(process.cwd(), null, null, dseed, null,(err, rootCSB) => {
+				if(err){
+					this.swarm("interaction", "handleError", err, "Failed to create rootCSB.");
+					return;
+				}
+				this.rootCSB = rootCSB;
+				this.swarm("interaction", "printSensitiveInfo", seed, utils.defaultPin);
 
+				crypto.saveData(dseed, pin, utils.Paths.Dseed,  (err) => {
+					if (err) {
+						this.swarm("interaction", "handleError", err, "Failed to save dseed");
+						return;
+					}
 
+					this.rootCSB.saveMasterRawCSB( (err) => {
+						if (err) {
+							this.swarm("interaction", "handleError", err, "Failed to save masterCSB");
+							return;
+						}
+						this.swarm("interaction", "printInfo", "Master csb has been created");
+						this.createCsb();
+					});
+				});
+			});
 		});
 	},
 
 	validatePin: function (pin, noTries) {
-		var self = this;
-		utils.checkPinIsValid(pin, function (err) {
+		RootCSB.createRootCSB(process.cwd(), null, null, null, pin, (err, rootCSB) =>{
 			if(err){
-				self.swarm("interaction", "readPin", noTries-1);
-			}else {
-				self.createCsb(pin);
+				this.swarm("interaction", "readPin", noTries-1);
+			}else{
+				this.rootCSB = rootCSB;
+				this.createCsb();
 			}
-		})
+		});
 	},
 
-	createCsb: function (pin) {
-		var self = this;
-		var csbData   = utils.defaultCSB();
-		var seed      = crypto.generateSeed(utils.defaultBackup);
-		utils.loadMasterCsb(pin, null, function (err, masterCsb) {
-			var pathCsb   = crypto.generateSafeUid(crypto.deriveSeed(seed));
-			if(utils.indexOfRecord(masterCsb.Data, "Csb", self.aliasCsb) >= 0){
-				self.swarm("interaction", "handleError", null, "Failed to write csb" + self.aliasCsb);
+	createCsb: function () {
+		const rawCSB = new RawCSB();
+		this.rootCSB.saveRawCSB(rawCSB, this.CSBPath, (err) => {
+			if(err){
+				this.swarm("interaction", "handleError", err, "Failed to save CSB at path " + this.CSBPath);
 				return;
 			}
-			if(!masterCsb.Data["records"]) {
-				masterCsb.Data["records"] = {};
-			}
-			if(!masterCsb.Data["records"]["Csb"]){
-				masterCsb.Data["records"]["Csb"] = []
-			}
-			var record = {
-				"Title": self.aliasCsb,
-				"Path" : pathCsb,
-				"Seed" : seed.toString("hex"),
-				"Dseed": crypto.deriveSeed(seed).toString("hex")
-			};
-			masterCsb.Data["records"]["Csb"].push(record);
-			utils.writeCsbToFile(masterCsb.Path, masterCsb.Data, masterCsb.Dseed, function (err) {
-				if(err){
-					self.swarm("interaction", "handleError", err, "Failed to write master csb");
-					return;
-				}
-				var dseed = crypto.deriveSeed(seed);
-				utils.writeCsbToFile(pathCsb, csbData, dseed, function (err) {
-					if(err){
-						self.swarm("interaction", "handleError", err, "Failed to write csb" + self.aliasCsb);
-						return;
-					}
-					self.swarm("interaction", "printInfo", "Csb " + self.aliasCsb + " was successfully created.");
-				});
-
-			});
-
+			this.swarm("interaction", "printInfo", "Successfully saved CSB at path " + this.CSBPath);
 		});
 	}
 });

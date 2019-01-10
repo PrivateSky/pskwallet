@@ -61,7 +61,6 @@ exports.masterCsbExists = function (callback) {
 
 exports.loadMasterCsb = function(pin, seed, callback){
 	pin = pin || exports.defaultPin;
-
 	if(seed){
 		var dseed = crypto.deriveSeed(seed);
 		__readMaster(dseed, function (err, masterCb) {

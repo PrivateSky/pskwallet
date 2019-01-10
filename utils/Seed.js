@@ -41,7 +41,7 @@ function Seed(keyLen = 32) {
 
 		dseed.tag 		 = 'd';
 		dseed.random 	 = crypto.deriveKey(strSeed, null, keyLen);
-		dseed.backupUrls = JSON.parse(backupUrls);
+		dseed.backup     = JSON.parse(backupUrls);
 
 		return dseed;
 	};
