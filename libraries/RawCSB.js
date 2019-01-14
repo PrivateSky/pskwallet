@@ -2,7 +2,7 @@ const OwM = require('swarmutils').OwM;
 const pskdb = require('pskdb');
 
 function RawCSB(initData) {
-	const data = new OwM(initData);
+	const data = new OwM({blockchain: initData});
 	const blockchain = pskdb.startDb({getInitValues, persist});
 
 	if(!data.blockchain) {
@@ -52,16 +52,15 @@ function RawCSB(initData) {
 	function persist(transactionLog, currentValues, currentPulse) {
 		transactionLog.currentPulse = currentPulse;
 
-		data.blockchain.currentValues = JSON.stringify(currentValues, null, 1);
+		data.blockchain.currentValues = currentValues;
 		data.blockchain.transactionLog += mkSingleLine(JSON.stringify(transactionLog)) + "\n";
 	}
 
 	function getInitValues () {
-		if(!data.blockchain) {
+		if(!data.blockchain || !data.blockchain.currentValues) {
 			return null;
 		}
-
-		return data.blockchain;
+		return data.blockchain.currentValues;
 	}
 
 	function mkSingleLine(str) {
