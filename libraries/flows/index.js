@@ -6,7 +6,6 @@ module.exports = $$.library(function () {
     require('./addTemp');
     require('./addPskdb');
     require('./copyUrl');
-    require('./createBlockchainCSB');
     require('./createCsb');
     require('./deleteUrl');
     require('./extract');

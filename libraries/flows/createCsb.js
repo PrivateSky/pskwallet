@@ -1,103 +1,52 @@
-const utils = require("./../../utils/flowsUtils");
-const crypto = require("pskcrypto");
-const fs = require("fs");
+const utils = require('../../utils/flowsUtils');
+const Seed = require('../../utils/Seed');
+const RootCSB = require("../RootCSB");
+const RawCSB = require("../RawCSB");
+const crypto = require('pskcrypto');
+const validator = require("../../utils/validator");
 
 $$.swarm.describe("createCsb", {
-	start: function (aliasCsb) {
-		var self = this;
-		self.aliasCsb = aliasCsb;
-		utils.masterCsbExists(function (err, status) {
+	start: function (CSBPath) {
+		this.CSBPath = CSBPath;
+		utils.masterCsbExists( (err, status) => {
 			if(err){
-				self.swarm("interaction", "readPin", utils.noTries, utils.defaultPin, true);
+				this.swarm("interaction", "readPin", utils.noTries, utils.defaultPin, true);
 			}else{
-				self.swarm("interaction", "readPin", utils.noTries);
+				this.swarm("interaction", "readPin", utils.noTries);
 			}
 		});
 	},
-	
-	createMasterCsb: function(pin, pathMaster) {
-		var self = this;
+	validatePin: function(pin, noTries){
+		validator.validatePin(this, "createCSB", pin, noTries);
+	},
+
+	createAuxFolder: function(pin) {
 		pin = pin || utils.defaultPin;
-		fs.mkdir(utils.Paths.auxFolder, function (err) {
-			if(err){
-				self.swarm("interaction", "handleError", err, "Failed to create .privateSky folder");
-			}else {
-				var seed = crypto.generateSeed(utils.defaultBackup);
-				var dseed = crypto.deriveSeed(seed);
-				self.swarm("interaction", "printSensitiveInfo", seed, utils.defaultPin);
-				pathMaster = pathMaster || utils.getMasterPath(dseed);
-				crypto.saveData(dseed, pin, utils.Paths.Dseed, function (err) {
-					if(err){
-						self.swarm("interaction", "handleError", err, "Failed to saveData dseed");
-						return;
-					}
-					var masterCsb = utils.defaultCSB();
-					utils.writeCsbToFile(pathMaster, masterCsb, dseed, function (err) {
-						if (err) {
-							self.swarm("interaction", "handleError", err, "Failed to write master csb");
-							return;
-						}
-						self.swarm("interaction", "printInfo", "Master csb has been created");
-						self.createCsb(pin);
+		$$.ensureFolderExists(utils.Paths.auxFolder, validator.reportOrContinue(this, "createMasterCSB", "Failed to create .privateSky folder.", pin ));
 
-					})
-
-				});
-			}
-		});
 	},
 
-	validatePin: function (pin, noTries) {
-		var self = this;
-		utils.checkPinIsValid(pin, function (err) {
-			if(err){
-				self.swarm("interaction", "readPin", noTries-1);
-			}else {
-				self.createCsb(pin);
-			}
-		})
+	createMasterCSB: function(pin){
+		const seed = Seed.generateCompactForm(Seed.create(utils.defaultBackup));
+		const dseed = Seed.generateCompactForm(Seed.deriveSeed(seed));
+		this.swarm("interaction", "printSensitiveInfo", seed, utils.defaultPin);
+		RootCSB.createRootCSB(process.cwd(), null, null, dseed, null, validator.reportOrContinue(this, "saveDseed", "Failed to create root CSB.", dseed, pin));
 	},
 
-	createCsb: function (pin) {
-		var self = this;
-		var csbData   = utils.defaultCSB();
-		var seed      = crypto.generateSeed(utils.defaultBackup);
-		utils.loadMasterCsb(pin, null, function (err, masterCsb) {
-			var pathCsb   = crypto.generateSafeUid(crypto.deriveSeed(seed));
-			if(utils.indexOfRecord(masterCsb.Data, "Csb", self.aliasCsb) >= 0){
-				var error = new Error("csb_exists");
-				self.swarm("interaction", "handleError", error, "Failed to write csb" + self.aliasCsb);
-				return;
-			}
-			if(!masterCsb.Data["records"]) {
-				masterCsb.Data["records"] = {};
-			}
-			if(!masterCsb.Data["records"]["Csb"]){
-				masterCsb.Data["records"]["Csb"] = []
-			}
-			var record = {
-				"Title": self.aliasCsb,
-				"Path" : pathCsb,
-				"Seed" : seed.toString("hex"),
-				"Dseed": crypto.deriveSeed(seed).toString("hex")
-			};
-			masterCsb.Data["records"]["Csb"].push(record);
-			utils.writeCsbToFile(masterCsb.Path, masterCsb.Data, masterCsb.Dseed, function (err) {
-				if(err){
-					self.swarm("interaction", "handleError", err, "Failed to write master csb");
-					return;
-				}
-				var dseed = crypto.deriveSeed(seed);
-				utils.writeCsbToFile(pathCsb, csbData, dseed, function (err) {
-					if(err){
-						self.swarm("interaction", "handleError", err, "Failed to write csb" + self.aliasCsb);
-						return;
-					}
-					self.swarm("interaction", "printInfo", {status:"success", title:self.aliasCsb, path:pathCsb});
-				});
+	saveDseed: function(rootCSB, dseed, pin){
+		this.rootCSB = rootCSB;
+		crypto.saveData(dseed, pin, utils.Paths.Dseed, validator.reportOrContinue(this, "saveMasterCSB"))
+	},
+	saveMasterCSB: function(){
+		this.rootCSB.saveMasterRawCSB(validator.reportOrContinue(this, "createCSB", "Failed to save masterCSB"));
+	},
 
-			});
+	createCSB: function () {
+		const rawCSB = new RawCSB();
+		this.rootCSB.saveRawCSB(rawCSB, this.CSBPath, validator.reportOrContinue(this, "printSuccessMsg", "Failed to save raw CSB"));
+	},
 
-		});
+	printSuccessMsg: function () {
+		this.swarm("interaction", "printInfo", "Successfully saved CSB at path " + this.CSBPath);
 	}
 });
