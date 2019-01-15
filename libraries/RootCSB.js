@@ -93,13 +93,16 @@ function RootCSB(localFolder, masterRawCSB, dseed) {
 
 	this.loadAssetFromPath = function(CSBPath, callback) {
 		let processedPath = __splitPath(CSBPath);
+		console.log("processedPath", processedPath);
 		if(!masterRawCSB){
 			return callback(new Error('masterRawCSB does not exist'));
 		}
 
 		let CSBReference = null;
 		if(processedPath.CSBAliases.length > 0) {
-			CSBReference = masterRawCSB.getAsset('global.CSBReference', processedPath.CSBAliases.shift());
+			const nextAlias = processedPath.CSBAliases.shift();
+			console.log("loadAsset", nextAlias);
+			CSBReference = masterRawCSB.getAsset('global.CSBReference', nextAlias);
 		} else {
 			CSBReference = masterRawCSB.getAsset('global.CSBReference', processedPath.assetAid);
 		}
@@ -194,8 +197,9 @@ function RootCSB(localFolder, masterRawCSB, dseed) {
 			if (err) {
 				return callback(err);
 			}
-			if (currentIndex < processedPath.CSBAliases.length - 1) {
-				let asset = rawCSB.getAsset('global.CSBReference', processedPath.CSBAliases[currentIndex]);
+			if (currentIndex < processedPath.CSBAliases.length) {
+				const nextAlias = processedPath.CSBAliases[currentIndex];
+				let asset = rawCSB.getAsset('global.CSBReference', nextAlias);
 				__loadAssetFromPath(processedPath, Buffer.from(asset.dseed), ++currentIndex, callback);
 				return;
 			}
