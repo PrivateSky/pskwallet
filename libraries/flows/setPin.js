@@ -9,7 +9,7 @@ $$.swarm.describe("setPin", {
 
 	validatePin: function (oldPin, noTries) {
 		this.oldPin = oldPin;
-		validator.validatePin(this, "interactionJumper", oldPin, noTries);
+		validator.validatePin(process.cwd(), this, "interactionJumper", oldPin, noTries);
 	},
 
 	interactionJumper: function(){

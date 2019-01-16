@@ -17,7 +17,7 @@ $$.swarm.describe("createCsb", {
 		});
 	},
 	validatePin: function(pin, noTries){
-		validator.validatePin(this, "createCSB", pin, noTries);
+		validator.validatePin(process.cwd(), this, "createCSB", pin, noTries);
 	},
 
 	createAuxFolder: function(pin) {
@@ -30,15 +30,14 @@ $$.swarm.describe("createCsb", {
 		const seed = Seed.generateCompactForm(Seed.create(utils.defaultBackup));
 		const dseed = Seed.generateCompactForm(Seed.deriveSeed(seed));
 		this.swarm("interaction", "printSensitiveInfo", seed, utils.defaultPin);
-		RootCSB.createRootCSB(process.cwd(), null, null, dseed, null, validator.reportOrContinue(this, "saveDseed", "Failed to create root CSB.", dseed, pin));
+		// RootCSB.writeNewMasterCSB(process.cwd(), dseed, validator.reportOrContinue(this, "saveDseed", "Failed to create root CSB.", dseed, pin));
+		// RootCSB.createRootCSB(process.cwd(), null, null, dseed, null, validator.reportOrContinue(this, "saveDseed", "Failed to create root CSB.", dseed, pin));
+		this.rootCSB = RootCSB.createNew(process.cwd(), dseed);
+		this.saveDseed(dseed, pin);
 	},
 
-	saveDseed: function(rootCSB, dseed, pin){
-		this.rootCSB = rootCSB;
-		crypto.saveData(dseed, pin, utils.Paths.Dseed, validator.reportOrContinue(this, "saveMasterCSB"))
-	},
-	saveMasterCSB: function(){
-		this.rootCSB.saveMasterRawCSB(validator.reportOrContinue(this, "createCSB", "Failed to save masterCSB"));
+	saveDseed: function(dseed, pin){
+		crypto.saveData(dseed, pin, utils.Paths.Dseed, validator.reportOrContinue(this, "createCSB"))
 	},
 
 	createCSB: function () {

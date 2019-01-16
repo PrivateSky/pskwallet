@@ -46,16 +46,15 @@ function doSetPin() {
 function doCreateCsb(CSBPath) {
 	is.startSwarm("createCsb", "start", CSBPath).on({
 		readPin: function (noTries, defaultPin, isFirstCall) {
-			var self = this;
 			if(isFirstCall){
-				self.swarm("createAuxFolder", defaultPin);
+				this.swarm("createAuxFolder", defaultPin);
 			}else {
 				if (noTries < 3 && noTries > 0) {
 					console.log("Invalid pin");
 					console.log("Try again");
 				}
-				utils.insertPassword("Insert pin:", noTries, function (err, pin) {
-					self.swarm("validatePin", pin, noTries);
+				utils.insertPassword("Insert pin:", noTries, (err, pin) =>{
+					this.swarm("validatePin", pin, noTries);
 				})
 			}
 		},
