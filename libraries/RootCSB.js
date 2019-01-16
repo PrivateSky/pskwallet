@@ -3,7 +3,7 @@ const fs = require('fs');
 const path = require('path');
 const crypto = require('pskcrypto');
 const Seed = require('../utils/Seed');
-
+const utils = require('../utils/utils');
 /**
  *
  * @param localFolder  - required
@@ -70,6 +70,7 @@ function RootCSB(localFolder, masterRawCSB, dseed) {
 					return callback(err);
 				}
 
+				masterRawCSB = newMasterRawCSB;
 				callback(null, newMasterRawCSB);
 			})
 		} else {
@@ -96,7 +97,6 @@ function RootCSB(localFolder, masterRawCSB, dseed) {
 			if(err) {
 				return callback(err);
 			}
-
 			rawCSB.saveAsset(asset);
 			this.saveRawCSB(rawCSB, splitPath.CSBAliases, callback);
 		});
@@ -124,13 +124,6 @@ function RootCSB(localFolder, masterRawCSB, dseed) {
 
 
 	//internal functions
-	function __generatePath(dseed) {
-		if(dseed && !Buffer.isBuffer(dseed)){
-			dseed = Buffer.from(dseed, "hex");
-		}
-		const filePath = path.join(localFolder, crypto.generateSafeUid(dseed, localFolder));
-		return filePath;
-	}
 
 	function __loadRawCSB(localDseed, callback) {
 		if(localDseed && !Buffer.isBuffer(localDseed)){
@@ -141,7 +134,7 @@ function RootCSB(localFolder, masterRawCSB, dseed) {
 		if(cachedRawCSB) {
 			return callback(null, cachedRawCSB);
 		}
-		let rootPath = __generatePath(localDseed);
+		let rootPath = utils.generatePath(localFolder, localDseed);
 		fs.readFile(rootPath, function (err, encryptedCsb) {
 			if (err) {
 				return callback(new Error(err.message));
@@ -224,7 +217,6 @@ function RootCSB(localFolder, masterRawCSB, dseed) {
 			if(!parentRawCSB) {
 				return callback(new Error('Invalid CSBPath'));
 			}
-
 			parentRawCSB.modifyAsset(splitPath.assetType, splitPath.assetAid, (CSBReference) => {
 				let localDseed = null;
 				if (CSBReference.isPersisted()) {
@@ -272,7 +264,7 @@ function RootCSB(localFolder, masterRawCSB, dseed) {
 			if (err) {
 				return callback(err);
 			}
-			fs.writeFile(__generatePath(localDseed), encryptedBlockchain, (err) => {
+			fs.writeFile(utils.generatePath(localFolder,localDseed), encryptedBlockchain, (err) => {
 				if (err) {
 					return callback(err);
 				}
