@@ -1,82 +1,64 @@
-const utils = require("./../../utils/flowsUtils");
+const flowsUtils = require("./../../utils/flowsUtils");
+const utils = require("./../../utils/utils");
 const crypto = require("pskcrypto");
-var fs = require("fs");
-const path = require("path");
-$$.swarm.describe("addTemp", {
-	start: function (url, filePath) {
-		this.url = url;
+const validator = require("../../utils/validator");
+const Seed = require('../../utils/Seed');
+
+$$.swarm.describe("addTemp", { //url: CSB1/CSB2/aliasFile
+	start: function (url, filePath) { //csb1:assetType:alias
+		const {CSBPath, alias} = this.__processUrl(url);
+		console.log("CSBPath:", CSBPath, alias);
+		this.CSBPath = CSBPath;
+		this.alias = alias;
 		this.filePath = filePath;
 		this.swarm("interaction", "readPin", 3);
 	},
 
 	validatePin: function (pin, noTries) {
-		var self = this;
-		utils.checkPinIsValid(pin, function (err) {
-			if (err) {
-				self.swarm("interaction", "readPin", noTries - 1);
-			} else {
-				self.addFile(pin);
-			}
-		})
+		validator.validatePin(process.cwd(), this, 'loadFileReference', pin, noTries);
 	},
 
-	addFile: function (pin) {
-		this.filePath = path.resolve(this.filePath);
-		var self = this;
-		utils.traverseUrl(pin, this.url, function (err, args) {
-			if (err) {
-				self.swarm("interaction", "handleError", err, "Failed to traverse url");
+	loadFileReference: function(pin){
+		this.pin = pin;
+		this.rootCSB.loadMasterRawCSB((err) => {
+			if(err) {
+				console.log(err, ' nu azi');
 				return;
 			}
-
-			utils.getChildCsb(args[0], args[1], function (err, csb) {
-				if (err) {
-					self.swarm("interaction", "handleError", err, "Failed to get child csb");
-					return;
-				}
-				var alias = args[3];
-				$$.ensureFolderExists(utils.Paths.PskdbFiles, function (err) {
-					if (err) {
-						self.swarm("interaction", "handleError", err, "Failed to create Adiacent folder");
-						return;
-					}
-					const memoryBlockchain = require('pskdb').startInMemoryDB();
-					const transaction = memoryBlockchain.beginTransaction({});
-					const pskdbHandler = transaction.getHandler();
-
-					pskdbHandler.initialiseInternalValue(csb.Data["pskdb"]);
-
-
-					const file = transaction.lookup('global.FileReference', alias);
-					if (file.isPersisted()) {
-						self.swarm("interaction", "handleError", err, "A file with the same alias " + alias + " already exists ");
-						return;
-					}
-
-
-					var fileId = crypto.generateSafeUid(null, path.basename(self.filePath));
-					var pth = path.join(utils.Paths.PskdbFiles, fileId);
-					crypto.encryptStream(self.filePath, pth, Buffer.from(csb.Dseed, "hex"), function (err) {
-						if (err) {
-							self.swarm("interaction", "handleError", err, "Failed to encrypt stream");
-							return;
-						}
-
-						file.init(alias, pth);
-						transaction.add(file);
-						memoryBlockchain.commit(transaction);
-						csb.Data["pskdb"] = pskdbHandler.getInternalValues();
-
-						utils.writeCsbToFile(csb.Path, csb.Data, csb.Dseed, function (err) {
-							if (err) {
-								self.swarm("interaction", "handleError", err, "Failed to write csb to file");
-								return;
-							}
-							self.swarm("interaction", "printInfo", self.filePath + " has been successfully added to " + csb.Title);
-						});
-					});
-				});
-			});
+			this.rootCSB.loadAssetFromPath(this.CSBPath, validator.reportOrContinue(this, 'saveFileToDisk', 'Failed to load asset'));
 		});
+	},
+
+	saveFileToDisk: function(file){
+		if (file.isPersisted()) {
+			this.swarm("interaction", "handleError", new Error("File is persisted"), "A file with the same alias already exists ");
+			return;
+		}
+
+		const seed = Seed.generateCompactForm(Seed.create(flowsUtils.defaultBackup));
+		const dseed = Seed.generateCompactForm(Seed.deriveSeed(seed));
+		const fileID = utils.generatePath(process.cwd(), dseed);
+
+		crypto.encryptStream(this.filePath, fileID, dseed, validator.reportOrContinue(this, 'saveFileReference', "Failed at file encryption.",file, seed, dseed));
+
+	},
+
+	saveFileReference: function(file, seed, dseed){
+		file.init(this.alias, seed, dseed);
+		this.rootCSB.saveAssetToPath(this.CSBPath, file, validator.reportOrContinue(this, 'printSuccess', "Failed to save file"));
+	},
+
+	printSuccess: function(){
+		this.swarm("interaction", "printInfo", this.filePath + " has been successfully added to " + this.CSBPath);
+	},
+
+	__processUrl: function (url) {
+		let splitUrl = url.split('/');
+		const aliasAsset = splitUrl.pop();
+		let CSBPath = splitUrl.join('/');
+		return {
+			CSBPath: CSBPath + ':FileReference:' + aliasAsset,
+			alias: aliasAsset
+		};
 	}
 });
