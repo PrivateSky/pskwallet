@@ -33,6 +33,12 @@ function RawCSB(initData) {
 		});
 	};
 
+	data.saveAsset = function(asset) {
+		const transaction = blockchain.beginTransaction({});
+		transaction.add(asset);
+		blockchain.commit(transaction);
+	};
+
 	data.modifyAsset = function(assetType, aid, assetModifier) {
 		const transaction = blockchain.beginTransaction({});
 		const asset = transaction.lookup(assetType, aid);
