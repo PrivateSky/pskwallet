@@ -3,11 +3,11 @@ const utils = require("./../../utils/utils");
 const crypto = require("pskcrypto");
 const validator = require("../../utils/validator");
 const Seed = require('../../utils/Seed');
+const DseedCage = require('../../utils/DseedCage');
 
-$$.swarm.describe("addTemp", { //url: CSB1/CSB2/aliasFile
+$$.swarm.describe("attachFile", { //url: CSB1/CSB2/aliasFile
 	start: function (url, filePath) { //csb1:assetType:alias
-		const {CSBPath, alias} = this.__processUrl(url);
-		console.log("CSBPath:", CSBPath, alias);
+		const {CSBPath, alias} = utils.processUrl(url, 'FileReference');
 		this.CSBPath = CSBPath;
 		this.alias = alias;
 		this.filePath = filePath;
@@ -20,13 +20,12 @@ $$.swarm.describe("addTemp", { //url: CSB1/CSB2/aliasFile
 
 	loadFileReference: function(pin){
 		this.pin = pin;
-		this.rootCSB.loadMasterRawCSB((err) => {
-			if(err) {
-				console.log(err, ' nu azi');
-				return;
-			}
-			this.rootCSB.loadAssetFromPath(this.CSBPath, validator.reportOrContinue(this, 'saveFileToDisk', 'Failed to load asset'));
-		});
+		this.rootCSB.loadMasterRawCSB(validator.reportOrContinue(this, 'loadAsset', 'Failed to load masterCSB.'));
+	},
+
+	loadAsset: function(){
+		this.rootCSB.loadAssetFromPath(this.CSBPath, validator.reportOrContinue(this, 'saveFileToDisk', 'Failed to load asset'));
+
 	},
 
 	saveFileToDisk: function(file){
@@ -50,15 +49,5 @@ $$.swarm.describe("addTemp", { //url: CSB1/CSB2/aliasFile
 
 	printSuccess: function(){
 		this.swarm("interaction", "printInfo", this.filePath + " has been successfully added to " + this.CSBPath);
-	},
-
-	__processUrl: function (url) {
-		let splitUrl = url.split('/');
-		const aliasAsset = splitUrl.pop();
-		let CSBPath = splitUrl.join('/');
-		return {
-			CSBPath: CSBPath + ':FileReference:' + aliasAsset,
-			alias: aliasAsset
-		};
 	}
 });

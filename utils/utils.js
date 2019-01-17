@@ -8,6 +8,17 @@ function generatePath(localFolder, dseed) {
 	return path.join(localFolder, crypto.generateSafeUid(dseed, localFolder));
 }
 
+function processUrl(url,assetType) {
+	let splitUrl = url.split('/');
+	const aliasAsset = splitUrl.pop();
+	let CSBPath = splitUrl.join('/');
+	return {
+		CSBPath: CSBPath + ':' + assetType + ':' + aliasAsset,
+		alias: aliasAsset
+	};
+}
+
 module.exports = {
-	generatePath
+	generatePath,
+	processUrl
 };
