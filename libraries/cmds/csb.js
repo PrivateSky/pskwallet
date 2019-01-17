@@ -4,22 +4,20 @@ const utils = require('../../utils/consoleUtils');
 const path = require("path");
 
 function readPin(noTries) {
-	var self = this;
 	if(noTries < 3 && noTries > 0){
 		console.log("Invalid pin");
 		console.log("Try again");
 	}
-	utils.insertPassword("Insert pin:", noTries, function (err, pin) {
-		self.swarm("validatePin", pin, noTries);
+	utils.insertPassword("Insert pin:", noTries, (err, pin) => {
+		this.swarm("validatePin", pin, noTries);
 	})
 }
 
 function generateErrorHandler(){
-	return function(err,info, isWarning){
+	return function(err, info, isWarning){
 		if(isWarning){
 			console.log("Warning", info);
 		} else{
-
 			console.log("Error", info, err);
 		}
 	}
@@ -47,7 +45,7 @@ function doCreateCsb(CSBPath) {
 	is.startSwarm("createCsb", "start", CSBPath).on({
 		readPin: function (noTries, defaultPin, isFirstCall) {
 			if(isFirstCall){
-				this.swarm("createAuxFolder", defaultPin);
+				this.swarm("createMasterCSB", defaultPin);
 			}else {
 				if (noTries < 3 && noTries > 0) {
 					console.log("Invalid pin");
@@ -60,12 +58,9 @@ function doCreateCsb(CSBPath) {
 		},
 		printInfo: generateMessagePrinter(),
 		printSensitiveInfo: function (seed, defaultPin) {
-			console.log("The following string represents the seed. Please save it.");
-			console.log();
-			console.log(seed.toString("base64"));
-			console.log();
-			console.log("The default pin is:", defaultPin);
-			console.log();
+			console.log("The following string represents the seed. Please save it.\n");
+			console.log(seed.toString("base64"), '\n');
+			console.log("The default pin is:", defaultPin, '\n');
 		}
 	});
 }
@@ -272,7 +267,7 @@ function doAddPskdb(url) {
 }
 
 function doAddFileToPskdb(url, filePath) {
-	is.startSwarm("addTemp", "start", url, filePath).on({
+	is.startSwarm("attachFile", "start", url, filePath).on({
 		readPin: readPin,
 		printInfo: generateMessagePrinter(),
 		handleError: generateErrorHandler()
@@ -304,5 +299,5 @@ addCommand("copy", null, doCopy, "<srcUrl> <destUrl> \t\t\t |copy the csb/record
 addCommand("delete", null, doDelete, "<url>\t\t\t\t\t |delete the csb/record/field pointed to by <url>");
 addCommand("move", null, doMove, "<srcUrl> <destUrl>\t\t\t |move the csb/record/field from <srcUrl> to <destUrl>");
 addCommand("add", "pskdb", doAddPskdb, "<url> \t\t\t |add a pskdb to csb pointed by <url>");
-addCommand("add", "temp", doAddFileToPskdb, "<url> <filePath>\t\t\t |add file <filepath> to pskdb pointed by <url>");
+addCommand("attach", "file", doAddFileToPskdb, "<url> <filePath>\t\t\t |add file <filepath> to pskdb pointed by <url>");
 addCommand("extra", "temp", doExtractFromPskdb, "<url> \t\t\t |extract asset referenced by <url> from pskdb inside of csb");
