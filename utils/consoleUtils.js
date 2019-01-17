@@ -4,7 +4,7 @@ const getPassword = require("./getPassword").readPassword;
 function insertPassword(prompt, noTries, callback){
 	prompt = prompt || "Insert pin:";
 	if(noTries === 0){
-		console.log("You have inserted an invalid character 3 times");
+		console.log("You have inserted an invalid pin 3 times");
 		console.log("Preparing to exit");
 
 	}else {
