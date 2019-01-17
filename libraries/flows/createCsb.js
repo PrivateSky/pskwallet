@@ -1,43 +1,37 @@
-const utils = require('../../utils/flowsUtils');
+const flowsUtils = require('../../utils/flowsUtils');
 const Seed = require('../../utils/Seed');
 const RootCSB = require("../RootCSB");
 const RawCSB = require("../RawCSB");
 const crypto = require('pskcrypto');
 const validator = require("../../utils/validator");
+const DseedCage = require("../../utils/DseedCage");
+
+const localFolder = process.cwd();
 
 $$.swarm.describe("createCsb", {
 	start: function (CSBPath) {
 		this.CSBPath = CSBPath;
-		utils.masterCsbExists( (err, status) => {
+		this.dseedCage = new DseedCage(localFolder);
+
+		this.dseedCage.loadDseed(flowsUtils.defaultPin, (err, dseed) => {
 			if(err){
-				this.swarm("interaction", "readPin", utils.noTries, utils.defaultPin, true);
+				this.swarm("interaction", "readPin", flowsUtils.noTries, flowsUtils.defaultPin, true);
 			}else{
-				this.swarm("interaction", "readPin", utils.noTries);
+				this.dseed = dseed;
+				this.swarm("interaction", "readPin", flowsUtils.noTries);
 			}
 		});
 	},
 	validatePin: function(pin, noTries){
-		validator.validatePin(process.cwd(), this, "createCSB", pin, noTries);
-	},
-
-	createAuxFolder: function(pin) {
-		pin = pin || utils.defaultPin;
-		$$.ensureFolderExists(utils.Paths.auxFolder, validator.reportOrContinue(this, "createMasterCSB", "Failed to create .privateSky folder.", pin ));
-
+		validator.validatePin(localFolder, this, "createCSB", pin, noTries);
 	},
 
 	createMasterCSB: function(pin){
-		const seed = Seed.generateCompactForm(Seed.create(utils.defaultBackup));
-		const dseed = Seed.generateCompactForm(Seed.deriveSeed(seed));
-		this.swarm("interaction", "printSensitiveInfo", seed, utils.defaultPin);
-		// RootCSB.writeNewMasterCSB(process.cwd(), dseed, validator.reportOrContinue(this, "saveDseed", "Failed to create root CSB.", dseed, pin));
-		// RootCSB.createRootCSB(process.cwd(), null, null, dseed, null, validator.reportOrContinue(this, "saveDseed", "Failed to create root CSB.", dseed, pin));
-		this.rootCSB = RootCSB.createNew(process.cwd(), dseed);
-		this.saveDseed(dseed, pin);
-	},
-
-	saveDseed: function(dseed, pin){
-		crypto.saveData(dseed, pin, utils.Paths.Dseed, validator.reportOrContinue(this, "createCSB"))
+		const seed = Seed.generateCompactForm(Seed.create(flowsUtils.defaultBackup));
+		this.dseed = Seed.generateCompactForm(Seed.deriveSeed(seed));
+		this.swarm("interaction", "printSensitiveInfo", seed, flowsUtils.defaultPin);
+		this.rootCSB = RootCSB.createNew(localFolder, this.dseed);
+		this.dseedCage.saveDseed(pin, this.dseed, validator.reportOrContinue(this, "createCSB", "Failed to save dseed "));
 	},
 
 	createCSB: function () {

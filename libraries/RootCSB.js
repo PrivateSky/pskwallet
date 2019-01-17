@@ -4,6 +4,8 @@ const path = require('path');
 const crypto = require('pskcrypto');
 const Seed = require('../utils/Seed');
 const utils = require('../utils/utils');
+const DseedCage = require('../utils/DseedCage');
+
 /**
  *
  * @param localFolder  - required
@@ -34,6 +36,7 @@ function RootCSB(localFolder, masterRawCSB, dseed) {
 			__loadRawCSB(asset.dseed, callback)
 		})
 	};
+
 	this.saveRawCSB = function (rawCSB, CSBPath, callback) {
 		const splitPath = __splitPath(CSBPath);
 		this.loadMasterRawCSB((err, masterRawCSB) => {
@@ -52,6 +55,8 @@ function RootCSB(localFolder, masterRawCSB, dseed) {
 					}
 
 					__writeRawCSB(masterRawCSB, dseed, callback);
+				} else {
+					callback();
 				}
 			});
 		});
@@ -290,45 +295,6 @@ function GenericCache(size) {
 
 }
 
-function createRootCSB(localFolder, masterRawCSB, masterSeed, masterDseed, pin, callback) {
-	if (masterSeed && !masterDseed) {
-		masterDseed = Seed.generateCompactForm(masterSeed);
-	}
-
-	if(masterRawCSB) {
-		const rootCSB = new RootCSB(localFolder, masterRawCSB, masterDseed);
-		return callback(null, rootCSB);
-	}
-
-	if (pin && !masterDseed) {
-		crypto.loadData(pin, path.join(localFolder, '.privatesky', 'Dseed'), (err, diskDseed) => {
-			if(err) {
-				return callback(err);
-			}
-
-			masterDseed = diskDseed;
-			const rootCSB = new RootCSB(localFolder, null, masterDseed);
-			rootCSB.loadMasterRawCSB((err) => {
-				if (err) {
-					return callback(err);
-				}
-
-				callback(null, rootCSB);
-			});
-		});
-	} else if (masterDseed) {
-		const rootCSB = new RootCSB(localFolder, null, masterDseed);
-		rootCSB.loadMasterRawCSB((err) => {
-			if (err) {
-				return callback(err);
-			}
-			callback(null, rootCSB);
-		});
-	} else {
-		callback(new Error('Missing seed, dseed and pin, at least one is required'));
-	}
-}
-
 let rawCSBCache = new GenericCache(10);
 module.exports = {
 	createRootCSB: function (localFolder, masterRawCSB, masterSeed, masterDseed, pin, callback) {
@@ -350,7 +316,7 @@ module.exports = {
 		}
 	},
 	loadWithPin: function (localFolder, pin, callback) {
-		crypto.loadData(pin, path.join(localFolder, '.privatesky', 'Dseed'), (err, diskDseed) => {
+		new DseedCage(localFolder).loadDseed(pin, (err, diskDseed) => {
 			if (err) {
 				return callback(err);
 			}

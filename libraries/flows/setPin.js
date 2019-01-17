@@ -1,6 +1,8 @@
 const utils = require("./../../utils/flowsUtils");
 const crypto = require("pskcrypto");
 const validator = require("../../utils/validator");
+const DseedCage = require('../../utils/DseedCage');
+const localFolder = process.cwd();
 
 $$.swarm.describe("setPin", {
 	start: function () {
@@ -9,7 +11,7 @@ $$.swarm.describe("setPin", {
 
 	validatePin: function (oldPin, noTries) {
 		this.oldPin = oldPin;
-		validator.validatePin(process.cwd(), this, "interactionJumper", oldPin, noTries);
+		validator.validatePin(localFolder, this, "interactionJumper", oldPin, noTries);
 	},
 
 	interactionJumper: function(){
@@ -17,11 +19,13 @@ $$.swarm.describe("setPin", {
 	},
 
 	actualizePin: function (newPin) {
-		crypto.loadData(this.oldPin, utils.Paths.Dseed, validator.reportOrContinue(this, "saveDseed", "Failed to load dseed.", newPin));
+		this.dseedCage = new DseedCage(localFolder);
+
+		this.dseedCage.loadDseed(this.oldPin, validator.reportOrContinue(this, "saveDseed", "Failed to load dseed.", newPin));
 	},
 
 	saveDseed: function (dseed, pin) {
-		crypto.saveData(dseed, pin, utils.Paths.Dseed, validator.reportOrContinue(this, "printSuccessMsg", "Failed to save dseed"));
+		this.dseedCage.saveDseed(pin, dseed, validator.reportOrContinue(this, "printSuccessMsg", "Failed to save dseed"));
 	},
 
 	printSuccessMsg: function () {
