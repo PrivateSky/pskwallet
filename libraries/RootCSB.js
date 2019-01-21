@@ -29,7 +29,7 @@ function RootCSB(localFolder, masterRawCSB, dseed) {
 		if(!CSBPath){
 			return callback(null, masterRawCSB);
 		}
-		this.loadAssetFromPath(CSBPath,  (err, asset) => {
+		this.loadAssetFromPath(CSBPath,  (err, asset, rawCSB) => {
 			if(err){
 				return callback(err);
 			}
@@ -115,8 +115,8 @@ function RootCSB(localFolder, masterRawCSB, dseed) {
 
 		let CSBReference = null;
 		if(processedPath.CSBAliases.length > 0) {
-			const nextAlias = processedPath.CSBAliases.shift();
-			CSBReference = masterRawCSB.getAsset(processedPath.assetType, nextAlias);
+			const nextAlias = processedPath.CSBAliases[0];
+			CSBReference = masterRawCSB.getAsset('global.CSBReference', nextAlias);
 		} else {
 			CSBReference = masterRawCSB.getAsset(processedPath.assetType, processedPath.assetAid);
 		}
@@ -124,6 +124,7 @@ function RootCSB(localFolder, masterRawCSB, dseed) {
 		if(processedPath.CSBAliases.length === 0) {
 			return callback(null, CSBReference, masterRawCSB);
 		}
+		processedPath.CSBAliases.shift();
 		__loadAssetFromPath(processedPath, Buffer.from(CSBReference.dseed), 0, callback);
 	};
 
@@ -199,13 +200,13 @@ function RootCSB(localFolder, masterRawCSB, dseed) {
 		if(!Buffer.isBuffer(localDseed)){
 			localDseed = Buffer.from(localDseed);
 		}
-		__loadRawCSB(localDseed, function (err, rawCSB) {
+		__loadRawCSB(localDseed,  (err, rawCSB) =>{
 			if (err) {
 				return callback(err);
 			}
 			if (currentIndex < processedPath.CSBAliases.length) {
 				const nextAlias = processedPath.CSBAliases[currentIndex];
-				let asset = rawCSB.getAsset(processedPath.assetType, nextAlias);
+				let asset = rawCSB.getAsset("global.CSBReference", nextAlias);
 				__loadAssetFromPath(processedPath, Buffer.from(asset.dseed), ++currentIndex, callback);
 				return;
 			}
@@ -255,6 +256,8 @@ function RootCSB(localFolder, masterRawCSB, dseed) {
 
 					if (persist) {
 						__writeRawCSB(nextRawCSB, Buffer.from(nextCSBReference.dseed), callback);
+					} else {
+						callback();
 					}
 				});
 			});
@@ -296,64 +299,77 @@ function GenericCache(size) {
 }
 
 let rawCSBCache = new GenericCache(10);
-module.exports = {
-	createRootCSB: function (localFolder, masterRawCSB, masterSeed, masterDseed, pin, callback) {
-		if (masterSeed && !masterDseed) {
-			return this.loadWithSeed(localFolder, masterSeed, callback);
+
+function createRootCSB(localFolder, masterRawCSB, masterSeed, masterDseed, pin, callback) {
+	if (masterSeed && !masterDseed) {
+		return loadWithSeed(localFolder, masterSeed, callback);
+	}
+
+	if (masterRawCSB) {
+		const rootCSB = new RootCSB(localFolder, masterRawCSB, masterDseed);
+		return callback(null, rootCSB);
+	}
+
+	if (masterDseed) {
+		return loadWithDseed(localFolder, masterDseed, callback);
+	} else if (pin) {
+		return loadWithPin(localFolder, pin, callback);
+	} else {
+		callback(new Error('Missing seed, dseed and pin, at least one is required'));
+	}
+}
+function loadWithPin(localFolder, pin, callback) {
+	new DseedCage(localFolder).loadDseed(pin, (err, diskDseed) => {
+		if (err) {
+			return callback(err);
 		}
 
-		if (masterRawCSB) {
-			const rootCSB = new RootCSB(localFolder, masterRawCSB, masterDseed);
-			return callback(null, rootCSB);
-		}
-
-		if (pin && !masterDseed) {
-			return this.loadWithPin(localFolder, pin, callback);
-		} else if (masterDseed) {
-			return this.loadWithDseed(localFolder, masterDseed, callback);
-		} else {
-			callback(new Error('Missing seed, dseed and pin, at least one is required'));
-		}
-	},
-	loadWithPin: function (localFolder, pin, callback) {
-		new DseedCage(localFolder).loadDseed(pin, (err, diskDseed) => {
-			if (err) {
-				return callback(err);
-			}
-
-			const rootCSB = new RootCSB(localFolder, null, diskDseed);
-			rootCSB.loadMasterRawCSB((err) => {
-				if (err) {
-					return callback(err);
-				}
-
-				callback(null, rootCSB);
-			});
-		});
-	},
-
-	loadWithSeed: function (localFolder, masterSeed, callback) {
-		const masterDseed = Seed.generateCompactForm(masterSeed);
-		this.loadWithDseed(localFolder, masterDseed, callback);
-	},
-	loadWithDseed: function (localFolder, masterDseed, callback) {
-		const rootCSB = new RootCSB(localFolder, null, masterDseed);
+		const rootCSB = new RootCSB(localFolder, null, diskDseed);
 		rootCSB.loadMasterRawCSB((err) => {
 			if (err) {
 				return callback(err);
 			}
-			callback(null, rootCSB);
-		});
-	},
-	createNew: function(localFolder, masterDseed) {
-		return new RootCSB(localFolder, new RawCSB(), masterDseed);
-	},
-	writeNewMasterCSB: function (localFolder, masterDseed, callback) {
-		if (!localFolder || !masterDseed) {
-			callback(new Error('Missing required arguments'));
-		}
 
-		const rootCSB = new RootCSB(localFolder, new RawCSB(), masterDseed);
-		rootCSB.saveMasterRawCSB(callback);
+			callback(null, rootCSB, diskDseed);
+		});
+	});
+}
+
+function loadWithSeed(localFolder, masterSeed, callback) {
+	const masterDseed = Seed.deriveSeed(masterSeed);
+	loadWithDseed(localFolder, masterDseed, callback);
+}
+
+function loadWithDseed(localFolder, masterDseed, callback) {
+	if(typeof masterDseed === 'object') {
+		masterDseed = Seed.generateCompactForm(masterDseed);
 	}
+	const rootCSB = new RootCSB(localFolder, null, masterDseed);
+	rootCSB.loadMasterRawCSB((err) => {
+		if (err) {
+			return callback(err);
+		}
+		callback(null, rootCSB);
+	});
+}
+
+function createNew(localFolder, masterDseed) {
+	return new RootCSB(localFolder, new RawCSB(), masterDseed);
+}
+
+function writeNewMasterCSB(localFolder, masterDseed, callback) {
+	if (!localFolder || !masterDseed) {
+		callback(new Error('Missing required arguments'));
+	}
+
+	const rootCSB = new RootCSB(localFolder, new RawCSB(), masterDseed);
+	rootCSB.saveMasterRawCSB(callback);
+}
+module.exports = {
+	createNew,
+	createRootCSB,
+	loadWithDseed,
+	loadWithPin,
+	loadWithSeed,
+	writeNewMasterCSB
 };
