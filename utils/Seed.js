@@ -20,12 +20,13 @@ function Seed(keyLen = 32) {
 
 	this.deriveSeed = function (seed) {
 		let compactSeed = seed;
-		if(Buffer.isBuffer(seed)) {
-			compactSeed = seed.toString();
-		}
 
 		if(typeof seed === 'object' && !Buffer.isBuffer(seed)){
 			compactSeed = this.generateCompactForm(seed);
+		}
+
+		if(Buffer.isBuffer(seed)) {
+			compactSeed = seed.toString();
 		}
 
 		if(compactSeed[0] === 'd') {
