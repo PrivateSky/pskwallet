@@ -53,6 +53,11 @@ function RawCSB(initData) {
 		return transaction.lookup(assetType, aid);
 	};
 
+	data.getAllAssets = function(assetType) {
+		const transaction = blockchain.beginTransaction({});
+		return transaction.loadAssets(assetType);
+	};
+
 	/* internal functions */
 
 	function persist(transactionLog, currentValues, currentPulse) {
