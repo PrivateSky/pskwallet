@@ -220,27 +220,29 @@ function RootCSB(localFolder, masterRawCSB, dseed) {
 
 	function __saveRawCSB(parentRawCSB, splitPath, rawCSBToSave, callback) {
 		if (splitPath.CSBAliases.length === 0) {
-			if(!parentRawCSB) {
+			if (!parentRawCSB) {
 				return callback(new Error('Invalid CSBPath'));
 			}
-			parentRawCSB.modifyAsset(splitPath.assetType, splitPath.assetAid, (CSBReference) => {
-				let localDseed = null;
-				if (CSBReference.isPersisted()) {
-					localDseed = Buffer.from(CSBReference.dseed);
-				} else {
-					const seed = Seed.create(config.backup);
-					const localSeed = Seed.generateCompactForm(seed);
-					localDseed = Seed.generateCompactForm(Seed.deriveSeed(localSeed));
-					CSBReference.init(splitPath.assetAid, localSeed, localDseed);
+
+			const CSBReference = parentRawCSB.getAsset(splitPath.assetType, splitPath.assetAid);
+			let localDseed = null;
+
+			if (CSBReference.isPersisted()) {
+				localDseed = Buffer.from(CSBReference.dseed);
+			} else {
+				const seed = Seed.create(config.backup);
+				const localSeed = Seed.generateCompactForm(seed);
+				localDseed = Seed.generateCompactForm(Seed.deriveSeed(localSeed));
+				CSBReference.init(splitPath.assetAid, localSeed, localDseed);
+				parentRawCSB.saveAsset(CSBReference);
+			}
+
+			__writeRawCSB(rawCSBToSave, localDseed, (err) => {
+				if (err) {
+					return callback(err);
 				}
 
-				__writeRawCSB(rawCSBToSave, localDseed, (err) => {
-					if (err) {
-						return callback(err);
-					}
-
-					callback(null, true, parentRawCSB);
-				});
+				callback(null, true, parentRawCSB);
 			});
 		} else {
 			const nextCSBAlias = splitPath.CSBAliases.shift();
