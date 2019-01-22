@@ -59,7 +59,7 @@ function doCreateCsb(CSBPath) {
 		printInfo: generateMessagePrinter(),
 		printSensitiveInfo: function (seed, defaultPin) {
 			console.log("The following string represents the seed. Please save it.\n");
-			console.log(seed.toString("base64"), '\n');
+			console.log(seed.toString(), '\n');
 			console.log("The default pin is:", defaultPin, '\n');
 		}
 	});
@@ -95,13 +95,24 @@ function doGetKey(aliasCsb, recordType, key, field) {
 	$$.flow.start("flows.getKey").start(aliasCsb, recordType, key, field);
 };
 
-function doSaveBackup(url) {
-	is.startSwarm("saveBackup", "start", url).on({
+function doSaveBackup(CSBPath) {
+	is.startSwarm("saveBackup", "start", CSBPath).on({
 		readPin: readPin,
 		printInfo: generateMessagePrinter(),
-		handleError: generateErrorHandler()
+		handleError: generateErrorHandler(),
+		csbBackupReport: function({fileErrors, fileSuccesses, csbBackupURL, csbAlias}) {
+			fileErrors.forEach(({alias, backupURL, csbAlias}) => {
+				console.log(`Error while saving file ${alias} from CSB ${csbAlias} on ${backupURL}`);
+			});
+
+			fileSuccesses.forEach(({alias, backupURL, csbAlias}) => {
+				console.log(`Successfully backed up file ${alias} from CSB ${csbAlias} on ${backupURL}`);
+			});
+
+			console.log(`Successfully backed up CSB ${csbAlias} on ${csbBackupURL}`);
+		}
 	});
-};
+}
 
 
 function doRestore(alias) {

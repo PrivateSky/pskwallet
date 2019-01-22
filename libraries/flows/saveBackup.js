@@ -1,111 +1,151 @@
-var path = require("path");
-
-const utils = require("./../../utils/flowsUtils");
+const path = require("path");
+const flowsUtils = require("./../../utils/flowsUtils");
+const utils = require("./../../utils/utils");
 const crypto = require("pskcrypto");
-var fs = require("fs");
+const fs = require("fs");
+const Seed = require('../../utils/Seed');
+const validator = require("../../utils/validator");
+const DseedCage = require("../../utils/DseedCage");
+const localFolder = process.cwd();
 
 $$.swarm.describe("saveBackup", {
-	start: function (url) {
-		this.url = url;
+	start: function (CSBPath) {
+		this.CSBPath = CSBPath;
 		this.swarm("interaction", "readPin", 3);
 	},
+
 	validatePin: function (pin, noTries) {
-		var self = this;
-		utils.checkPinIsValid(pin, function (err) {
-			if(err){
-				self.swarm("interaction", "readPin", noTries-1);
-			}else {
-				self.backupMaster(pin);
-			}
-		})
+		validator.validatePin(localFolder, this, "readEncryptedMaster", pin, noTries);
 	},
 
-	backupMaster: function (pin) {
-		var self = this;
-		utils.loadMasterCsb(pin, null, function (err, masterCsb) {
-			// masterCsb.Data["backups"].push(self.url);
-			var csbs = masterCsb.Data["records"]["Csb"];
-			crypto.encryptJson(masterCsb.Data, masterCsb.Dseed, null, function (err, encryptedMaster) {
-				if(err){
-					self.swarm("interaction", "handleError", err, "Failed to encrypt master csb");
-					return;
-				}
-				utils.writeCsbToFile(masterCsb.Path, masterCsb.Data, masterCsb.Dseed, function (err) {
-					if(err){
-						self.swarm("interaction", "handleError", err, "Failed to saveData master csb");
+
+	readEncryptedMaster: function(){
+		this.masterID = utils.generatePath(localFolder, this.dseed);
+		fs.readFile(this.masterID, validator.reportOrContinue(this, 'backupMaster', 'Failed to read masterCSB.'));
+	},
+
+	backupMaster: function(encryptedMasterCSB){
+		validator.reportOrContinue(this, 'loadMaster', 'Failed to post masterCSB')();
+	},
+
+	loadMaster: function () {
+		this.rootCSB.loadMasterRawCSB(validator.reportOrContinue(this, "collectCSBs", "Failed to load masterCSB", this.dseed, '', 'master'));
+	},
+
+
+	collectCSBs: function (rawCSB, dseed, currentPath, alias) {
+		const listCSBs = rawCSB.getAllAssets('global.CSBReference');
+		const nextArguments = [];
+		let counter = 0;
+
+		if (listCSBs && listCSBs.length > 0) {
+			listCSBs.forEach(CSBReference => {
+				const nextPath = currentPath + '/' + CSBReference.alias;
+				const nextDseed = Buffer.from(CSBReference.dseed);
+				const nextAlias = CSBReference.alias;
+				this.rootCSB.loadRawCSB(nextPath, (err, nextRawCSB) => {
+
+					if (err) {
+						throw err;
+					}
+
+					nextArguments.push([nextRawCSB, nextDseed, nextPath, nextAlias]);
+
+					if (++counter === listCSBs.length) {
+						nextArguments.forEach(args => {
+							this.collectCSBs(...args);
+						});
+					}
+				});
+			});
+		}
+
+		this.backupCSB(rawCSB, dseed, alias);
+	},
+	backupCSB: function(rawCSB, dseed, alias) {
+		const csbDiskPath = utils.generatePath(localFolder, dseed);
+		const csbStream = fs.createReadStream(csbDiskPath);
+
+		this.backupStream(csbStream, dseed, alias, (err, {alias, backupURL}) => {
+			if (err) {
+				return this.swarm('interaction', 'handleError', err);
+			}
+
+			this.backupFiles(rawCSB, alias, (errors, successes) => {
+				this.swarm('interaction', 'csbBackupReport', {fileErrors: errors, fileSuccesses: successes, csbBackupURL: backupURL, csbAlias: alias});
+			});
+		});
+	},
+	backupStream: function(stream, dseed, alias, callback) {
+		stream.on('error', callback);
+
+		let readStart = false;
+
+		stream.on('readable', () => {
+			if(readStart) {
+				return;
+			}
+
+			readStart = true;
+			const dseedObj  = Seed.load(dseed);
+			const backups   = dseedObj.backup;
+			const backupUid = crypto.generateSafeUid(dseed, '');
+			let counter     = 0;
+
+			const failedRequestsMessages = [];
+
+			backups.forEach(backup => {
+				const backupURL = backup + "/CSB/" + backupUid;
+				$$.remote.doHttpPost(backup + "/CSB/" + backupUid, stream, (err) => {
+					counter++;
+					if (err) {
+						failedRequestsMessages.push({alias, backupURL});
 						return;
 					}
-					$$.remote.doHttpPost(self.url + "/CSB/" + masterCsb.Uid, encryptedMaster, function (err) {
-						if(err){
-							self.swarm("interaction", "handleError", err, "Failed to post master csb");
-						}else{
-							self.backupCsbs(csbs, 0);
+
+					if (counter === backups.length) {
+						if (failedRequestsMessages.length > 0) {
+							return callback(failedRequestsMessages);
 						}
-					});
+
+						callback(undefined, {alias, backupURL});
+					}
 				});
 			});
 		});
-
 	},
-	backupCsbs: function(csbs, currentCsb){
-		var self = this;
-		if(currentCsb == csbs.length){
-			self.swarm("interaction", "printInfo", "All csbs have been backed up");
-		}else{
-			utils.readEncryptedCsb(csbs[currentCsb]["Path"], function (err, encryptedCsb) {
-				if(err){
-					self.swarm("interaction", "handleError", err, "Failed to read encrypted csb");
-					return;
-				}
 
-				function __backupCsb() {
-					$$.remote.doHttpPost(self.url + "/CSB/" + csbs[currentCsb]["Path"], encryptedCsb, function(err){
-						if(err){
-							self.swarm("interaction", "handleError", err, "Failed to post csb " + csbs[currentCsb].Title);
-						}else{
-							self.backupCsbs(csbs, currentCsb + 1);
-						}
-					})
-				}
-				crypto.decryptJson(encryptedCsb, Buffer.from(csbs[currentCsb]["Dseed"], "hex"), function (err, csb) {
-					if(err){
-						self.swarm("interaction", "handleError", err, "Failed to decrypt the csb " + csbs[currentCsb].Title);
-						return;
+	backupFiles: function (rawCSB, csbAlias, callback) {
+		const files = rawCSB.getAllAssets('global.FileReference');
+
+		let counter = 0;
+		const errors = [];
+		const successes = [];
+
+		if (files.length === 0) {
+			callback(errors, successes);
+		} else {
+			files.forEach(FileReference => {
+				const alias = FileReference.alias;
+				const dseed = Buffer.from(FileReference.dseed);
+				const fileDiskPath = utils.generatePath(localFolder, dseed);
+				const fileStream = fs.createReadStream(fileDiskPath);
+
+				this.backupStream(fileStream, dseed, alias, (err, successInfo) => {
+					counter++;
+					if (err) {
+						err.csbAlias = csbAlias;
+						errors.push(err);
+					} else {
+						successInfo.csbAlias = csbAlias;
+						successes.push(successInfo);
 					}
-					if(csb["records"]){
-						if(csb["records"]["Csb"] && csb["records"]["Csb"].length > 0) {
-							csbs = csbs.concat(csb["records"]["Csb"]);
-						}
-						if(csb["records"]["Adiacent"] && csb["records"]["Adiacent"].length > 0){
-							self.backupArchives(csb["records"]["Adiacent"], 0, function (err) {
-								if(err){
-									self.swarm("interaction", "handleError", err, "Failed to backup archives");
-									return;
-								}
-								__backupCsb();
-							})
-						}else{
-							__backupCsb();
-						}
+
+					if (counter === files.length) {
+						callback(errors, successes);
 					}
 				});
 			});
 		}
-	},
-	backupArchives: function (archives, currentArchive, callback) {
-		var self = this;
-		if(currentArchive == archives.length){
-			self.swarm("interaction", "onComplete");
-			return;
-		}
-		const stream = fs.createReadStream(path.join(utils.Paths.Adiacent, archives[currentArchive]["Path"]));
-		$$.remote.doHttpPost(self.url + "/CSB/" + archives[currentArchive]["Path"], stream, function(err){
-			stream.close();
-			if(err){
-				callback(err);
-			}else{
-				self.backupArchives(archives, currentArchive + 1, callback);
-			}
-		})
 	}
 });
