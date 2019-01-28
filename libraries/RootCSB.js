@@ -5,6 +5,7 @@ const crypto = require('pskcrypto');
 const Seed = require('../utils/Seed');
 const utils = require('../utils/utils');
 const DseedCage = require('../utils/DseedCage');
+const HashCage = require('../utils/HashCage');
 
 /**
  *
@@ -39,25 +40,41 @@ function RootCSB(localFolder, masterRawCSB, dseed) {
 
 	this.saveRawCSB = function (rawCSB, CSBPath, callback) {
 		const splitPath = __splitPath(CSBPath);
-		this.loadMasterRawCSB((err, masterRawCSB) => {
-			if (err) {
-				return callback(err);
+
+		const hashCage = new HashCage(localFolder);
+		let hashObj = {};
+
+		hashCage.loadHash((err, hash) => {
+			if(!err){
+				hashObj = hash;
 			}
 
-			__saveRawCSB(masterRawCSB, splitPath, rawCSB, (err, persist) => {
+			this.loadMasterRawCSB((err, masterRawCSB) => {
 				if (err) {
 					return callback(err);
 				}
 
-				if (persist) {
-					if (!dseed) {
-						return callback(new Error("Dseed not provided, can't save CSB"));
+				__saveRawCSB(masterRawCSB, splitPath, rawCSB, hashObj, (err, persist) => {
+					if (err) {
+						return callback(err);
 					}
 
-					__writeRawCSB(masterRawCSB, dseed, callback);
-				} else {
-					callback();
-				}
+					if (persist) {
+						if (!dseed) {
+							return callback(new Error("Dseed not provided, can't save CSB"));
+						}
+
+						__writeRawCSB(masterRawCSB, dseed, hashObj, (err) => {
+							if(err){
+								return callback(err);
+							}
+
+							new HashCage(localFolder).saveHash(hashObj, callback);
+						});
+					} else {
+						callback();
+					}
+				});
 			});
 		});
 	};
@@ -84,16 +101,30 @@ function RootCSB(localFolder, masterRawCSB, dseed) {
 	};
 
 	this.saveMasterRawCSB = function (callback) {
-		this.loadMasterRawCSB((err, masterRawCSB) => {
-			if(err) {
-				return callback(err);
+		let hashObj = {};
+		const hashCage = new HashCage(localFolder);
+		hashCage.loadHash((err, hash) => {
+			if(!err){
+				hashObj = hash;
 			}
 
-			if(!dseed) {
-				return callback(new Error("Dseed not provided, can't save masterRawCSB"));
-			}
-			__writeRawCSB(masterRawCSB, dseed, callback);
-		});
+			this.loadMasterRawCSB((err, masterRawCSB) => {
+				if(err) {
+					return callback(err);
+				}
+
+				if(!dseed) {
+					return callback(new Error("Dseed not provided, can't save masterRawCSB"));
+				}
+				__writeRawCSB(masterRawCSB, dseed, hashObj, (err) => {
+					if(err){
+						return callback(err);
+					}
+
+					hashCage.saveHash(hashObj, callback);
+				});
+			});
+		})
 	};
 
 	this.saveAssetToPath = function (CSBPath, asset, callback) {
@@ -135,7 +166,7 @@ function RootCSB(localFolder, masterRawCSB, dseed) {
 		if(localDseed && !Buffer.isBuffer(localDseed)){
 			localDseed = Buffer.from(localDseed);
 		}
-		let dseedHash = crypto.generateSafeUid(localDseed, localFolder);
+		let dseedHash = crypto.generateSafeUid(localDseed);
 		let cachedRawCSB = rawCSBCache.load(dseedHash);
 		if(cachedRawCSB) {
 			return callback(null, cachedRawCSB);
@@ -218,7 +249,7 @@ function RootCSB(localFolder, masterRawCSB, dseed) {
 
 	}
 
-	function __saveRawCSB(parentRawCSB, splitPath, rawCSBToSave, callback) {
+	function __saveRawCSB(parentRawCSB, splitPath, rawCSBToSave, hashObj, callback) {
 		if (splitPath.CSBAliases.length === 0) {
 			if (!parentRawCSB) {
 				return callback(new Error('Invalid CSBPath'));
@@ -237,7 +268,7 @@ function RootCSB(localFolder, masterRawCSB, dseed) {
 				parentRawCSB.saveAsset(CSBReference);
 			}
 
-			__writeRawCSB(rawCSBToSave, localDseed, (err) => {
+			__writeRawCSB(rawCSBToSave, localDseed, hashObj, (err) => {
 				if (err) {
 					return callback(err);
 				}
@@ -251,13 +282,13 @@ function RootCSB(localFolder, masterRawCSB, dseed) {
 				if(err) {
 					return callback(err);
 				}
-				__saveRawCSB(nextRawCSB, splitPath, rawCSBToSave, (err, persist) => {
+				__saveRawCSB(nextRawCSB, splitPath, rawCSBToSave, hashObj,(err, persist) => {
 					if(err) {
 						return callback(err);
 					}
 
 					if (persist) {
-						__writeRawCSB(nextRawCSB, Buffer.from(nextCSBReference.dseed), callback);
+						__writeRawCSB(nextRawCSB, Buffer.from(nextCSBReference.dseed), hashObj, callback);
 					} else {
 						callback();
 					}
@@ -266,7 +297,7 @@ function RootCSB(localFolder, masterRawCSB, dseed) {
 		}
 	}
 
-	function __writeRawCSB(rawCSB, localDseed, callback) {
+	function __writeRawCSB(rawCSB, localDseed, hashObj, callback) {
 		if(!Buffer.isBuffer(localDseed)){
 			localDseed = Buffer.from(localDseed);
 		}
@@ -278,6 +309,8 @@ function RootCSB(localFolder, masterRawCSB, dseed) {
 				if (err) {
 					return callback(err);
 				}
+				const key = crypto.generateSafeUid(localDseed);
+				hashObj[key] = crypto.pskHash(encryptedBlockchain);
 				callback(null);
 			});
 		});

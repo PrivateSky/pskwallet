@@ -5,28 +5,27 @@ const RawCSB = require("../RawCSB");
 const crypto = require('pskcrypto');
 const validator = require("../../utils/validator");
 const DseedCage = require("../../utils/DseedCage");
-
+const HashCage = require("../../utils/HashCage");
 const localFolder = process.cwd();
 
 $$.swarm.describe("createCsb", {
 	start: function (CSBPath) {
 		this.CSBPath = CSBPath;
 		this.dseedCage = new DseedCage(localFolder);
-
 		this.dseedCage.loadDseed(flowsUtils.defaultPin, (err, dseed) => {
-			if(err){
+			if (err) {
 				this.swarm("interaction", "readPin", flowsUtils.noTries, flowsUtils.defaultPin, true);
-			}else{
-				this.dseed = dseed;
+			} else {
 				this.swarm("interaction", "readPin", flowsUtils.noTries);
 			}
 		});
 	},
-	validatePin: function(pin, noTries){
+
+	validatePin: function (pin, noTries) {
 		validator.validatePin(localFolder, this, "createCSB", pin, noTries);
 	},
 
-	createMasterCSB: function(pin){
+	createMasterCSB: function (pin) {
 		const seed = Seed.generateCompactForm(Seed.create(flowsUtils.defaultBackup));
 		this.dseed = Seed.generateCompactForm(Seed.deriveSeed(seed));
 		this.swarm("interaction", "printSensitiveInfo", seed, flowsUtils.defaultPin);
@@ -37,6 +36,10 @@ $$.swarm.describe("createCsb", {
 	createCSB: function () {
 		const rawCSB = new RawCSB();
 		this.rootCSB.saveRawCSB(rawCSB, this.CSBPath, validator.reportOrContinue(this, "printSuccessMsg", "Failed to save raw CSB"));
+	},
+
+	computeHash: function () {
+
 	},
 
 	printSuccessMsg: function () {
