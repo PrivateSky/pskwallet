@@ -22,6 +22,8 @@ function RootCSB(localFolder, masterRawCSB, dseed) {
 		noTries: 3
 	};
 
+	const hashCage = new HashCage(localFolder);
+
 	this.getMidRoot = function (CSBPath) {
 		throw new Error("Not implemented");
 	};
@@ -41,7 +43,6 @@ function RootCSB(localFolder, masterRawCSB, dseed) {
 	this.saveRawCSB = function (rawCSB, CSBPath, callback) {
 		const splitPath = __splitPath(CSBPath);
 
-		const hashCage = new HashCage(localFolder);
 		let hashObj = {};
 
 		hashCage.loadHash((err, hash) => {
@@ -69,7 +70,7 @@ function RootCSB(localFolder, masterRawCSB, dseed) {
 								return callback(err);
 							}
 
-							new HashCage(localFolder).saveHash(hashObj, callback);
+							hashCage.saveHash(hashObj, callback);
 						});
 					} else {
 						callback();
@@ -288,7 +289,14 @@ function RootCSB(localFolder, masterRawCSB, dseed) {
 					}
 
 					if (persist) {
-						__writeRawCSB(nextRawCSB, Buffer.from(nextCSBReference.dseed), hashObj, callback);
+						__writeRawCSB(nextRawCSB, Buffer.from(nextCSBReference.dseed), hashObj, (err) => {
+							if(err){
+								return callback(err);
+							}
+
+							hashCage.saveHash(hashObj, callback);
+						});
+
 					} else {
 						callback();
 					}
@@ -310,8 +318,8 @@ function RootCSB(localFolder, masterRawCSB, dseed) {
 					return callback(err);
 				}
 				const key = crypto.generateSafeUid(localDseed);
-				hashObj[key] = crypto.pskHash(encryptedBlockchain);
-				callback(null);
+				hashObj[key] = crypto.pskHash(encryptedBlockchain).toString('hex');
+				callback();
 			});
 		});
 	}
