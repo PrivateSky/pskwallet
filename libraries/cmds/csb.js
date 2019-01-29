@@ -93,37 +93,38 @@ function doResetPin(){
 }
 function doGetKey(aliasCsb, recordType, key, field) {
 	$$.flow.start("flows.getKey").start(aliasCsb, recordType, key, field);
-};
+}
 
 function doSaveBackup(CSBPath) {
 	is.startSwarm("saveBackup", "start", CSBPath).on({
 		readPin: readPin,
 		printInfo: generateMessagePrinter(),
 		handleError: generateErrorHandler(),
-		csbBackupReport: function({fileErrors, fileSuccesses, csbBackupURL, csbAlias}) {
-			fileErrors.forEach(({alias, backupURL, csbAlias}) => {
-				console.log(`Error while saving file ${alias} from CSB ${csbAlias} on ${backupURL}`);
+		csbBackupReport: function({errors, successes}) {
+			if(errors.length === 0 && successes.length === 0) {
+				console.log('All CSBs are already backed up');
+			}
+
+			errors.forEach(({alias, backupURL}) => {
+				console.log(`Error while saving file ${alias} on ${backupURL}`);
 			});
 
-			fileSuccesses.forEach(({alias, backupURL, csbAlias}) => {
-				console.log(`Successfully backed up file ${alias} from CSB ${csbAlias} on ${backupURL}`);
+			successes.forEach(({alias, backupURL}) => {
+				console.log(`Successfully backed up file ${alias} on ${backupURL}`);
 			});
-
-			console.log(`Successfully backed up CSB ${csbAlias} on ${csbBackupURL}`);
 		}
 	});
 }
 
 
-function doRestore(alias) {
-	is.startSwarm("restore", "start", alias).on({
+function doRestore(CSBPath) {
+	is.startSwarm("restore", "start", CSBPath).on({
 		readSeed: function () {
-			var self = this;
-			utils.insertPassword("Enter seed:", 3, function (err, seed) {
+			utils.insertPassword("Enter seed:", 3, (err, seed) =>{
 				if (err) {
 					throw err;
 				}
-				self.swarm("checkMasterExists", Buffer.from(seed, "base64"));
+				this.swarm("checkMasterExists", Buffer.from(seed, "base64"));
 			});
 		},
 		printInfo: generateMessagePrinter(),
