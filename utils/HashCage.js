@@ -42,3 +42,5 @@ function HashCage(localFolder) {
 		saveHash
 	};
 }
+
+module.exports = HashCage;

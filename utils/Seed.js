@@ -53,6 +53,10 @@ function Seed(keyLen = 32) {
 	};
 
 	this.load = function (compactSeed) {
+		if(Buffer.isBuffer(compactSeed)) {
+			compactSeed = compactSeed.toString();
+		}
+
 		const decodedCompactSeed = decodeURIComponent(compactSeed);
 		const seed = {};
 		const splitCompactSeed = decodedCompactSeed.substring(1).split('|');
@@ -65,9 +69,10 @@ function Seed(keyLen = 32) {
 	};
 
 	this.getBackupUrls = function (seed) {
-		if(typeof seed === 'string'){
+		if(typeof seed === 'string' || Buffer.isBuffer(seed)){
 			seed = this.load(seed);
 		}
+
 		return seed.backup;
 	}
 

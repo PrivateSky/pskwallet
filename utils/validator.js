@@ -2,11 +2,12 @@ const RootCSB = require("../libraries/RootCSB");
 
 
 module.exports.validatePin = function (localFolder, swarm, phaseName, pin, noTries, ...args) {
-	RootCSB.createRootCSB(localFolder, null, null, null, pin, (err, rootCSB) =>{
+	RootCSB.createRootCSB(localFolder, null, null, null, pin, (err, rootCSB, dseed) =>{
 		if(err){
 			swarm.swarm("interaction", "readPin", noTries-1);
 		}else{
 			swarm.rootCSB = rootCSB;
+			swarm.dseed = dseed;
 			swarm[phaseName](...args);
 		}
 	});
