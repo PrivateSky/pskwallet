@@ -13,7 +13,7 @@ function HashCage(localFolder) {
 
 			fs.readFile(hashPath, (err, data) => {
 				if(err){
-					return callback(err);
+					return callback(null, {});
 				}
 
 				callback(null, JSON.parse(data));
@@ -28,7 +28,7 @@ function HashCage(localFolder) {
 				return callback(err);
 			}
 
-			fs.writeFile(hashPath, JSON.stringify(hashObj), (err) => {
+			fs.writeFile(hashPath, JSON.stringify(hashObj, null, '\t'), (err) => {
 				if (err) {
 					return callback(err);
 				}
