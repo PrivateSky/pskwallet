@@ -43,13 +43,13 @@ function RootCSB(localFolder, masterRawCSB, dseed) {
 	this.saveRawCSB = function (rawCSB, CSBPath, callback) {
 		const splitPath = __splitPath(CSBPath);
 
-		let hashObj = {};
 
 		hashCage.loadHash((err, hash) => {
-			if(!err){
-				hashObj = hash;
+			if(err){
+				return callback(err);
 			}
 
+			let	hashObj = hash;
 			this.loadMasterRawCSB((err, masterRawCSB) => {
 				if (err) {
 					return callback(err);
@@ -102,12 +102,13 @@ function RootCSB(localFolder, masterRawCSB, dseed) {
 	};
 
 	this.saveMasterRawCSB = function (callback) {
-		let hashObj = {};
+
 		const hashCage = new HashCage(localFolder);
 		hashCage.loadHash((err, hash) => {
-			if(!err){
-				hashObj = hash;
+			if(err){
+				return callback(err);
 			}
+			let hashObj = hash;
 
 			this.loadMasterRawCSB((err, masterRawCSB) => {
 				if(err) {
@@ -384,7 +385,7 @@ function loadWithSeed(localFolder, masterSeed, callback) {
 }
 
 function loadWithDseed(localFolder, masterDseed, callback) {
-	if(typeof masterDseed === 'object') {
+	if(typeof masterDseed === 'object' && !Buffer.isBuffer(masterDseed)) {
 		masterDseed = Seed.generateCompactForm(masterDseed);
 	}
 	const rootCSB = new RootCSB(localFolder, null, masterDseed);
