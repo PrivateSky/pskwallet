@@ -27,11 +27,11 @@ $$.swarm.describe("saveBackup", {
 	readEncryptedMaster: function(hashFile){
 		this.hashFile = hashFile;
 		this.masterID = utils.generatePath(localFolder, this.dseed);
-		fs.readFile(this.masterID, validator.reportOrContinue(this, 'loadMaster', 'Failed to read masterCSB.'));
+		fs.readFile(this.masterID, validator.reportOrContinue(this, 'createRootCSB', 'Failed to read masterCSB.'));
 	},
 
 
-	loadMaster: function () {
+	createRootCSB: function () {
 		this.rootCSB.loadMasterRawCSB(validator.reportOrContinue(this, "dispatcher", "Failed to load masterCSB"));
 	},
 	dispatcher: function(rawCSB) {
