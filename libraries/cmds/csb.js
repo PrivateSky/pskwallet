@@ -117,14 +117,14 @@ function doSaveBackup(CSBPath) {
 }
 
 
-function doRestore(CSBPath) {
-	is.startSwarm("restore", "start", CSBPath).on({
+function doClone(CSBPath) {
+	is.startSwarm("clone", "start", CSBPath).on({
 		readSeed: function () {
 			utils.insertPassword("Enter seed:", 3, (err, seed) =>{
 				if (err) {
 					throw err;
 				}
-				this.swarm("checkMasterExists", Buffer.from(seed, "base64"));
+				this.swarm("restoreMaster", seed);
 			});
 		},
 		printInfo: generateMessagePrinter(),
@@ -299,7 +299,7 @@ addCommand("create", "csb", doCreateCsb, "<aliasCsb> \t\t\t\t |create a new CSB 
 addCommand("set", "key", doSetKey, "<aliasCsb> <recordType> <key> <field>   |set the key " ); //seteaza o cheie intr-un csb
 addCommand("get", "key", doGetKey, "<aliasCsb> <recordType> <key> <field>   |get the key " ); //citeste o cheie intr-un csb
 addCommand("save", "backup", doSaveBackup,"<url>\t\t\t\t |saveData all csbs at address <url>");
-addCommand("restore", null, doRestore, "<alias>\t\t\t\t |restore the csb  or archive having the name <alias> from one \n\t\t\t\t\t\t\t  of the addresses stored in backup\n");
+addCommand("clone", null, doClone, "<alias>\t\t\t\t |restore the csb  or archive having the name <alias> from one \n\t\t\t\t\t\t\t  of the addresses stored in backup\n");
 addCommand("reset", "pin", doResetPin, "\t\t\t\t\t |enter the seed in order to set the pin to a new value");
 addCommand("set", "url", doSetUrl, "<url> \t\t\t\t\t |set/update the record/field pointed by the provided <url>");
 addCommand("get", "url", doGetUrl, "<url> \t\t\t\t\t |print the record/field indicated by te provided <url>");
