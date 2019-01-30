@@ -7,6 +7,8 @@ const Seed = require('../../utils/Seed');
 const validator = require("../../utils/validator");
 const DseedCage = require("../../utils/DseedCage");
 const HashCage  = require('../../utils/HashCage');
+const AsyncDispatcher = require("../../utils/AsyncDispatcher");
+
 const localFolder = process.cwd();
 
 $$.swarm.describe("saveBackup", {
@@ -33,7 +35,7 @@ $$.swarm.describe("saveBackup", {
 		this.rootCSB.loadMasterRawCSB(validator.reportOrContinue(this, "dispatcher", "Failed to load masterCSB"));
 	},
 	dispatcher: function(rawCSB) {
-		this.asyncQueue = new AsyncQueue((errors, results) => {
+		this.asyncDispatcher = new AsyncDispatcher((errors, results) => {
 			if(errors.length > 0) {
 				this.swarm('interaction', 'handleError', JSON.stringify(errors, null, '\t'), 'Failed to collect all CSBs');
 				return;
@@ -41,7 +43,7 @@ $$.swarm.describe("saveBackup", {
 			this.collectFiles(results);
 		});
 
-		this.asyncQueue.dispatch(() => {
+		this.asyncDispatcher.dispatch(() => {
 			this.collectCSBs(rawCSB, this.dseed, '', 'master');
 		});
 	},
@@ -60,28 +62,28 @@ $$.swarm.describe("saveBackup", {
 				nextArguments.push([nextRawCSB, nextDseed, nextPath, nextAlias]);
 				if (++counter === listCSBs.length) {
 					nextArguments.forEach(args => {
-						this.asyncQueue.dispatch(() => {
+						this.asyncDispatcher.dispatch(() => {
 							this.collectCSBs(...args);
 						});
 					});
-					this.asyncQueue.markOneAsFinished(undefined, {rawCSB, dseed, alias});
+					this.asyncDispatcher.markOneAsFinished(undefined, {rawCSB, dseed, alias});
 				}
 			});
 		});
 
 		if(listCSBs.length === 0) {
-			this.asyncQueue.markOneAsFinished(undefined, {rawCSB, dseed, alias});
+			this.asyncDispatcher.markOneAsFinished(undefined, {rawCSB, dseed, alias});
 		}
 	},
 	collectFiles: function(collectedCSBs){
-		this.asyncQueue = new AsyncQueue((errors, newResults) => {
+		this.asyncDispatcher = new AsyncDispatcher((errors, newResults) => {
 			if(errors.length > 0) {
 				this.swarm('interaction', 'handleError', JSON.stringify(errors, null, '\t'), 'Failed to collect files attached to CSBs');
 			}
-
 			this.__categorize(collectedCSBs.concat(newResults));
 		});
 
+		this.asyncDispatcher.emptyDispatch(collectedCSBs.length);
 		collectedCSBs.forEach(({rawCSB, dseed, alias}) => {
 			this.__collectFiles(rawCSB, alias);
 		});
@@ -100,7 +102,7 @@ $$.swarm.describe("saveBackup", {
 			})
 		});
 
-		this.asyncQueue = new AsyncQueue((errors, successes) => {
+		this.asyncDispatcher = new AsyncDispatcher((errors, successes) => {
 			this.swarm('interaction', 'csbBackupReport', {errors, successes});
 		});
 
@@ -117,10 +119,10 @@ $$.swarm.describe("saveBackup", {
 				filesToUpdate[fileName] = this.hashFile[fileName];
 			}
 		});
-		this.asyncQueue.emptyDispatch();
+		this.asyncDispatcher.emptyDispatch();
 		$$.remote.doHttpPost(backupURL + "/CSB/compareVersions", JSON.stringify(filesToUpdate), (err, modifiedFiles) => {
 			if(err) {
-				this.asyncQueue.markOneAsFinished(new Error('Failed to connect to ' + backupURL));
+				this.asyncDispatcher.markOneAsFinished(new Error('Failed to connect to ' + backupURL));
 				return;
 			}
 			this.__backupFiles(JSON.parse(modifiedFiles), backupURL, filesNames);
@@ -128,90 +130,31 @@ $$.swarm.describe("saveBackup", {
 	},
 
 	__backupFiles: function (files, backupAddress, aliases) {
+		this.asyncDispatcher.emptyDispatch(files.length);
 		files.forEach(file => {
 			const fileStream = fs.createReadStream(file);
-			this.asyncQueue.dispatch((callback) => {
-				const backupURL = backupAddress + '/CSB/' + file;
-				$$.remote.doHttpPost(backupURL, fileStream, (err, res) => {
-					if (err) {
-						return callback({alias: aliases[file], backupURL: backupURL});
-					}
+			const backupURL = backupAddress + '/CSB/' + file;
+			$$.remote.doHttpPost(backupURL, fileStream, (err, res) => {
+				if (err) {
+					return this.asyncDispatcher.markOneAsFinished({alias: aliases[file], backupURL: backupURL});
+				}
 
-					callback(undefined, {alias: aliases[file], backupURL: backupURL});
-				});
+				this.asyncDispatcher.markOneAsFinished(undefined, {alias: aliases[file], backupURL: backupURL});
 			});
 		});
-		this.asyncQueue.markOneAsFinished();
+
+		this.asyncDispatcher.markOneAsFinished(); // for http request to compareVersions
 	},
+
 	__collectFiles: function (rawCSB, csbAlias) {
 		const files = rawCSB.getAllAssets('global.FileReference');
-
+		this.asyncDispatcher.emptyDispatch(files.length);
 		files.forEach(FileReference => {
 			const alias = FileReference.alias;
 			const dseed = Buffer.from(FileReference.dseed);
-
-			this.asyncQueue.dispatch((callback) => {
-				callback(undefined, {dseed, alias});
-			});
+			this.asyncDispatcher.markOneAsFinished(undefined, {dseed, alias})
 		});
-
+		this.asyncDispatcher.markOneAsFinished();
 	}
 });
 
-
-function AsyncQueue(finalCallback) {
-	const results = [];
-	const errors = [];
-
-	let started = 0;
-
-	function dispatch(fn) {
-		++started;
-		fn(function (err, res) {
-			if(err) {
-				errors.push(err);
-			}
-
-			if(arguments.length > 2) {
-				arguments[0] = undefined;
-				res = arguments;
-			}
-
-			if(typeof res !== "undefined") {
-				results.push(res);
-			}
-			if(--started <= 0) {
-				finalCallback(errors, results);
-			}
-		});
-	}
-
-	function markOneAsFinished(err, res) {
-		if(err) {
-			errors.push(err);
-		}
-
-		if(arguments.length > 2) {
-			arguments[0] = undefined;
-			res = arguments;
-		}
-
-		if(typeof res !== "undefined") {
-			results.push(res);
-		}
-
-		if(--started <= 0) {
-			finalCallback(errors, results);
-		}
-	}
-
-	function emptyDispatch() {
-		++started;
-	}
-
-	return {
-		dispatch,
-		emptyDispatch,
-		markOneAsFinished
-	}
-}
