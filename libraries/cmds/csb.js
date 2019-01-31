@@ -212,8 +212,8 @@ function doAddFolder(csbUrl, folderPath){
 	doAddFile(csbUrl, folderPath);
 }
 
-function doExtract(url){
-	is.startSwarm("extract", "start", url).on({
+function doExtractFile(url){
+	is.startSwarm("extractFile", "start", url).on({
 		readPin: readPin,
 		printInfo: generateMessagePrinter(),
 		handleError:generateErrorHandler()
@@ -305,7 +305,7 @@ addCommand("set", "url", doSetUrl, "<url> \t\t\t\t\t |set/update the record/fiel
 addCommand("get", "url", doGetUrl, "<url> \t\t\t\t\t |print the record/field indicated by te provided <url>");
 addCommand("add", "file", doAddFile, "<csbUrl> <filePath> \t\t\t |add a file to the csb pointed by <csbUrl>");
 addCommand("add", "folder", doAddFile, "<csbUrl> <folderPath> \t\t |add a folder to the csb pointed by <csbUrl>");
-addCommand("extract", null, doExtract, "<csbUrl> <alias> \t\t\t |decrypt file/folder/csb having the alias <alias>, contained\n\t\t\t\t\t\t\t   by the csb pointed to by <csbUrl>\n");
+addCommand("extract", "file", doExtractFile, "<csbUrl> <alias> \t\t\t |decrypt file/folder/csb having the alias <alias>, contained\n\t\t\t\t\t\t\t   by the csb pointed to by <csbUrl>\n");
 addCommand("list", "csbs", doListCsbs, "<aliasCsb> \t\t\t\t |show all child csbs in the csb <aliasCsb>; if <aliasCsb> \n\t\t\t\t\t\t\t  is not provided, the command will print all the csbs \n\t\t\t\t\t\t\t  in the current folder\n");
 addCommand("copy", null, doCopy, "<srcUrl> <destUrl> \t\t\t |copy the csb/record/field from <srcUrl> to <destUrl>");
 addCommand("delete", null, doDelete, "<url>\t\t\t\t\t |delete the csb/record/field pointed to by <url>");
