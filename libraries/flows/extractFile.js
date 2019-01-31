@@ -1,23 +1,25 @@
-var path = require("path");
-
-const utils = require("./../../utils/flowsUtils");
-const fs = require("fs");
+const path = require("path");
+const flowsUtils = require("./../../utils/flowsUtils");
+const utils = require("./../../utils/utils");
 const crypto = require("pskcrypto");
-$$.swarm.describe("extractTemp", {
-	start: function (url) {
-		this.url = url;
-		this.swarm("interaction", "readPin", utils.noTries);
+const fs = require("fs");
+const Seed = require('../../utils/Seed');
+const validator = require("../../utils/validator");
+const DseedCage = require("../../utils/DseedCage");
+const HashCage  = require('../../utils/HashCage');
+const AsyncDispatcher = require("../../utils/AsyncDispatcher");
+
+const localFolder = process.cwd();
+$$.swarm.describe("extractFile", {
+	start: function (CSBPath) {
+		this.CSBPath = CSBPath;
+		this.swarm("interaction", "readPin", flowsUtils.noTries);
 	},
+
 	validatePin: function (pin, noTries) {
-		var self = this;
-		utils.checkPinIsValid(pin, function (err) {
-			if (err) {
-				self.swarm("interaction", "readPin", noTries - 1);
-			} else {
-				self.extract(pin);
-			}
-		})
+		validator.validatePin(localFolder, this, "loadHashFile", pin, noTries);
 	},
+
 	extract: function (pin) {
 		var self = this;
 		utils.traverseUrl(pin, this.url, function (err, args) {

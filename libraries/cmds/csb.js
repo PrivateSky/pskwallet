@@ -14,7 +14,7 @@ function readPin(noTries) {
 }
 
 function generateErrorHandler(){
-	return function(err, info, isWarning){
+	return function(err, info = '', isWarning){
 		if(isWarning){
 			console.log("Warning", info);
 		} else{
@@ -128,7 +128,7 @@ function doClone(CSBPath) {
 			});
 		},
 		printInfo: generateMessagePrinter(),
-		handleError: generateErrorHandler
+		handleError: generateErrorHandler()
 	});
 }
 

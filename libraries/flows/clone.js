@@ -20,7 +20,13 @@ $$.swarm.describe("clone", {
 	restoreMaster: function (seed) {
 		this.hashCage = new HashCage(localFolder);
 		this.hashObj = {};
-		let backupUrls = Seed.getBackupUrls(seed);
+		let backupUrls;
+		try {
+			backupUrls = Seed.getBackupUrls(seed);
+		} catch (e) {
+			return this.swarm('interaction', 'handleError', new Error('Invalid seed'));
+		}
+
 		this.dseed = Seed.generateCompactForm(Seed.deriveSeed(seed));
 		this.dseedCage = new DseedCage(localFolder);
 		const masterUid = crypto.generateSafeUid(this.dseed);

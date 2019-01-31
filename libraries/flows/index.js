@@ -9,7 +9,7 @@ module.exports = $$.library(function () {
     require('./createCsb');
     require('./deleteUrl');
     require('./extract');
-    require('./extractTemp');
+    require('./extractFile');
     require('./getKey');
     require('./getUrl');
     require('./listCsbs');
