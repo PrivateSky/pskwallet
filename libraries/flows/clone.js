@@ -59,7 +59,7 @@ $$.swarm.describe("clone", {
 				if(err) {
 					this.swarm('interaction', 'handleError', err, 'Fuck you');
 				}
-				this.swarm('interaction', 'printInfo', 'All done, life is good, javascript is not');
+				this.swarm('interaction', 'printInfo', 'All CSBs have been restored.');
 			});
 		});
 		this.rootCSB.loadMasterRawCSB(validator.reportOrContinue(this, "collectFiles", "Failed to load masterRawCSB", this.dseed, '', 'master'));
