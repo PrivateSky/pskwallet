@@ -2,10 +2,8 @@ const flowsUtils = require('../../utils/flowsUtils');
 const Seed = require('../../utils/Seed');
 const RootCSB = require("../RootCSB");
 const RawCSB = require("../RawCSB");
-const crypto = require('pskcrypto');
 const validator = require("../../utils/validator");
 const DseedCage = require("../../utils/DseedCage");
-const HashCage = require("../../utils/HashCage");
 const localFolder = process.cwd();
 
 $$.swarm.describe("createCsb", {
@@ -20,7 +18,14 @@ $$.swarm.describe("createCsb", {
 			}
 		});
 	},
-
+	withDseed: function(CSBPath, dseed) {
+		this.CSBPath = CSBPath;
+		this.rootCSB = RootCSB.loadWithDseed(localFolder, dseed, validator.reportOrContinue(this, 'createCSB', 'Failed to load master with provided dseed'));
+	},
+	withoutPin: function(CSBPath) {
+		this.CSBPath = CSBPath;
+		this.createMasterCSB();
+	},
 	validatePin: function (pin, noTries) {
 		validator.validatePin(localFolder, this, "createCSB", pin, noTries);
 	},
@@ -30,19 +35,21 @@ $$.swarm.describe("createCsb", {
 		this.dseed = Seed.generateCompactForm(Seed.deriveSeed(seed));
 		this.swarm("interaction", "printSensitiveInfo", seed, flowsUtils.defaultPin);
 		this.rootCSB = RootCSB.createNew(localFolder, this.dseed);
-		this.dseedCage.saveDseed(pin, this.dseed, validator.reportOrContinue(this, "createCSB", "Failed to save dseed "));
+		if(pin) {
+			this.dseedCage.saveDseed(pin, this.dseed, validator.reportOrContinue(this, "createCSB", "Failed to save dseed "));
+		}else{
+			this.createCSB();
+		}
 	},
-
 	createCSB: function () {
 		const rawCSB = new RawCSB();
 		this.rootCSB.saveRawCSB(rawCSB, this.CSBPath, validator.reportOrContinue(this, "printSuccessMsg", "Failed to save raw CSB"));
 	},
-
-	computeHash: function () {
-
-	},
-
 	printSuccessMsg: function () {
-		this.swarm("interaction", "printInfo", "Successfully saved CSB at path " + this.CSBPath);
+		let message = "Successfully saved CSB at path " + this.CSBPath;
+		if(!this.CSBPath || this.CSBPath === '') {
+			message = 'Successfully saved CSB root';
+		}
+		this.swarm("interaction", "printInfo", message);
 	}
 });

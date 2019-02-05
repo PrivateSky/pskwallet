@@ -5,6 +5,7 @@ module.exports.loadWithDseed = RootCSB.loadWithDseed;
 module.exports.loadWithSeed  = RootCSB.loadWithSeed;
 module.exports.loadWithPin   = RootCSB.loadWithPin;
 module.exports.writeNewMasterCSB = RootCSB.writeNewMasterCSB;
+module.exports.RootCSB = RootCSB;
 module.exports.RawCSB = require('./libraries/RawCSB');
 module.exports.Seed = require('./utils/Seed');
 module.exports.CSBServer = require('./libraries/CSBServer');

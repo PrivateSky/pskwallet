@@ -23,7 +23,7 @@ $$.swarm.describe("attachFile", { //url: CSB1/CSB2/aliasFile
 
 	loadFileReference: function(pin){
 		this.pin = pin;
-		this.rootCSB.loadMasterRawCSB(validator.reportOrContinue(this, 'loadAsset', 'Failed to load masterCSB.'));
+		this.rootCSB.loadRawCSB('', validator.reportOrContinue(this, 'loadAsset', 'Failed to load masterCSB.'));
 	},
 
 	loadAsset: function(){
