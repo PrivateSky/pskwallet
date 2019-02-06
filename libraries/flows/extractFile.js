@@ -23,14 +23,11 @@ $$.swarm.describe("extractFile", {
 	},
 
 	loadFileAsset: function () {
-		console.log("load asset");
 		this.rootCSB.loadAssetFromPath(this.CSBPath, validator.reportOrContinue(this, "decryptFile", "Failed to load file asset " + this.alias));
 	},
 	
 	decryptFile: function (fileReference, rawCSB) {
-		console.log("File reference", fileReference);
 		const filePath = utils.generatePath(localFolder, Buffer.from(fileReference.dseed));
-		console.log("File path", filePath);
 		crypto.decryptStream(filePath, localFolder, Buffer.from(fileReference.dseed), (err) => {
 			if(err){
 				return this.swarm("interaction", "handleError", err, "Failed to decrypt file" + filePath);

@@ -1,5 +1,5 @@
 $$.loadLibrary("flows", require("../flows"));
-var is = require("interact").createInteractionSpace();
+const is = require("interact").createInteractionSpace();
 const utils = require('../../utils/consoleUtils');
 const path = require("path");
 
@@ -98,7 +98,6 @@ function doGetKey(aliasCsb, recordType, key, field) {
 function doSaveBackup(CSBPath) {
 	is.startSwarm("saveBackup", "start", CSBPath).on({
 		readPin: readPin,
-		printInfo: generateMessagePrinter(),
 		handleError: generateErrorHandler(),
 		csbBackupReport: function({errors, successes}) {
 			if(errors.length === 0 && successes.length === 0) {
@@ -220,19 +219,16 @@ function doExtractFile(url){
 	});
 }
 
-function doListCsbs(aliasCsb) {
-	is.startSwarm("listCsbs", "start", aliasCsb).on({
+function doListCSBs(CSBPath) {
+	is.startSwarm("listCSBs", "start", CSBPath).on({
 		readPin: readPin,
-		printCsb: function (csbs, currentCsb) {
-			console.log(csbs[currentCsb].Title);
-			if(currentCsb < csbs.length - 1){
-				this.swarm("listCsbs", csbs, currentCsb + 1)
-			}
-		},
 		printInfo: generateMessagePrinter(),
-		handleError: generateErrorHandler()
+		handleError: generateErrorHandler(),
+		__return__ : function (csbAliases) {
+			console.log(csbAliases);
+		}
 	})
-};
+}
 
 
 function doCopy(sourceUrl, destUrl) {
@@ -306,7 +302,7 @@ addCommand("get", "url", doGetUrl, "<url> \t\t\t\t\t |print the record/field ind
 addCommand("add", "file", doAddFile, "<csbUrl> <filePath> \t\t\t |add a file to the csb pointed by <csbUrl>");
 addCommand("add", "folder", doAddFile, "<csbUrl> <folderPath> \t\t |add a folder to the csb pointed by <csbUrl>");
 addCommand("extract", "file", doExtractFile, "<csbUrl> <alias> \t\t\t |decrypt file/folder/csb having the alias <alias>, contained\n\t\t\t\t\t\t\t   by the csb pointed to by <csbUrl>\n");
-addCommand("list", "csbs", doListCsbs, "<aliasCsb> \t\t\t\t |show all child csbs in the csb <aliasCsb>; if <aliasCsb> \n\t\t\t\t\t\t\t  is not provided, the command will print all the csbs \n\t\t\t\t\t\t\t  in the current folder\n");
+addCommand("list", "csbs", doListCSBs, "<aliasCsb> \t\t\t\t |show all child csbs in the csb <aliasCsb>; if <aliasCsb> \n\t\t\t\t\t\t\t  is not provided, the command will print all the csbs \n\t\t\t\t\t\t\t  in the current folder\n");
 addCommand("copy", null, doCopy, "<srcUrl> <destUrl> \t\t\t |copy the csb/record/field from <srcUrl> to <destUrl>");
 addCommand("delete", null, doDelete, "<url>\t\t\t\t\t |delete the csb/record/field pointed to by <url>");
 addCommand("move", null, doMove, "<srcUrl> <destUrl>\t\t\t |move the csb/record/field from <srcUrl> to <destUrl>");

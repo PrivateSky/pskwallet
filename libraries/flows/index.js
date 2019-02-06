@@ -11,7 +11,7 @@ module.exports = $$.library(function () {
     require('./extractFile');
     require('./getKey');
     require('./getUrl');
-    require('./listCsbs');
+    require('./listCSBs');
     require('./moveUrl');
     require('./resetPin');
     require('./clone');
