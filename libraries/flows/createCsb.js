@@ -12,7 +12,7 @@ $$.swarm.describe("createCsb", {
 		this.dseedCage = new DseedCage(localFolder);
 		this.dseedCage.loadDseed(flowsUtils.defaultPin, (err, dseed) => {
 			if (err) {
-				this.swarm("interaction", "readPin", flowsUtils.noTries, flowsUtils.defaultPin, true);
+				this.swarm("interaction", "createPin", flowsUtils.defaultPin);
 			} else {
 				this.swarm("interaction", "readPin", flowsUtils.noTries);
 			}

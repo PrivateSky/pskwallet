@@ -43,19 +43,18 @@ function doSetPin() {
 
 function doCreateCsb(CSBPath) {
 	is.startSwarm("createCsb", "start", CSBPath).on({
-		readPin: function (noTries, defaultPin, isFirstCall) {
-			if(isFirstCall){
-				this.swarm("createMasterCSB", defaultPin);
-			}else {
-				if (noTries < 3 && noTries > 0) {
-					console.log("Invalid pin");
-					console.log("Try again");
-				}
-				utils.insertPassword("Insert pin:", noTries, (err, pin) =>{
-					this.swarm("validatePin", pin, noTries);
-				})
-			}
-		},
+        readPin: function (noTries) {
+            if (noTries < 3 && noTries > 0) {
+                console.log("Invalid pin");
+                console.log("Try again");
+            }
+            utils.insertPassword("Insert pin:", noTries, (err, pin) => {
+                this.swarm("validatePin", pin, noTries);
+            })
+        },
+        createPin: function (defaultPin) {
+            this.swarm("createMasterCSB", defaultPin);
+        },
 		printInfo: generateMessagePrinter(),
 		printSensitiveInfo: function (seed, defaultPin) {
 			console.log("The following string represents the seed. Please save it.\n");
