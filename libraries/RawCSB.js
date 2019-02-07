@@ -7,19 +7,20 @@ function RawCSB(initData) {
 
 	if(!data.blockchain) {
 		data.blockchain = {
-			transactionLog : ''
+			transactionLog : '',
+			embeddedFiles: {}
 		};
 	}
 
 	data.embedFile = function (fileAlias, fileData) {
-		data.modifyAsset("global.EmbeddedFile", fileAlias, (embeddedFile) => {
-			if (!embeddedFile.isEmpty()) {
-				console.log(`File with alias ${fileAlias} already exists`);
-				return;
-			}
+		const embeddedAsset = data.getAsset("global.EmbeddedFile", fileAlias);
+		if(embeddedAsset.isPersisted()){
+			console.log(`File with alias ${fileAlias} already exists`);
+			return;
+		}
 
-			embeddedFile.init(fileAlias, fileData);
-		});
+		data.blockchain.embeddedFiles[fileAlias] = fileData;
+		data.saveAsset(embeddedAsset);
 	};
 
 	data.attachFile = function (fileAlias, path, seed) {
