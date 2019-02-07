@@ -68,7 +68,7 @@ $$.swarm.describe("clone", {
 				this.swarm('interaction', 'printInfo', 'All CSBs have been restored.');
 			});
 		});
-		this.rootCSB.loadMasterRawCSB(validator.reportOrContinue(this, "collectFiles", "Failed to load masterRawCSB", this.dseed, '', 'master'));
+		this.rootCSB.loadRawCSB('', validator.reportOrContinue(this, "collectFiles", "Failed to load masterRawCSB", this.dseed, '', 'master'));
 	},
 
 	collectFiles: function(rawCSB, dseed, currentPath, alias, callback) {

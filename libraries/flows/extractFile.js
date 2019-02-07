@@ -1,13 +1,7 @@
-const path = require("path");
 const flowsUtils = require("./../../utils/flowsUtils");
 const utils = require("./../../utils/utils");
 const crypto = require("pskcrypto");
-const fs = require("fs");
-const Seed = require('../../utils/Seed');
 const validator = require("../../utils/validator");
-const DseedCage = require("../../utils/DseedCage");
-const HashCage  = require('../../utils/HashCage');
-const AsyncDispatcher = require("../../utils/AsyncDispatcher");
 
 const localFolder = process.cwd();
 $$.swarm.describe("extractFile", {

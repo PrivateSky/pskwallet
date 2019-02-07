@@ -1,11 +1,8 @@
-const path = require("path");
-const flowsUtils = require("./../../utils/flowsUtils");
 const utils = require("./../../utils/utils");
 const crypto = require("pskcrypto");
 const fs = require("fs");
 const Seed = require('../../utils/Seed');
 const validator = require("../../utils/validator");
-const DseedCage = require("../../utils/DseedCage");
 const HashCage  = require('../../utils/HashCage');
 const AsyncDispatcher = require("../../utils/AsyncDispatcher");
 
@@ -32,7 +29,7 @@ $$.swarm.describe("saveBackup", {
 
 
 	createRootCSB: function () {
-		this.rootCSB.loadMasterRawCSB(validator.reportOrContinue(this, "dispatcher", "Failed to load masterCSB"));
+		this.rootCSB.loadRawCSB('', validator.reportOrContinue(this, "dispatcher", "Failed to load masterCSB"));
 	},
 	dispatcher: function(rawCSB) {
 		this.asyncDispatcher = new AsyncDispatcher((errors, results) => {
