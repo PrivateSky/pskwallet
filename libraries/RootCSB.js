@@ -4,6 +4,8 @@ const crypto = require('pskcrypto');
 const Seed = require('../utils/Seed');
 const utils = require('../utils/utils');
 const DseedCage = require('../utils/DseedCage');
+const HashCage  = require('../utils/HashCage');
+
 
 /**
  *
@@ -23,6 +25,8 @@ function RootCSB(localFolder, currentRawCSB, dseed) {
 		noTries: 3
 	};
 
+	const hashCage = new HashCage(localFolder);
+	
 	this.getMidRoot = function (CSBPath, callback) {
 		throw new Error('Not implemented');
 	};
@@ -65,6 +69,12 @@ function RootCSB(localFolder, currentRawCSB, dseed) {
 				currentRawCSB = rawCSB;
 			}
 
+			const csbMeta = currentRawCSB.getAsset('global.CSBMeta', 'meta');
+			if(!csbMeta.id) {
+				csbMeta.init($$.uidGenerator.safe_uuid());
+				currentRawCSB.saveAsset(csbMeta);
+			}
+
 			return __writeRawCSB(currentRawCSB, dseed, callback);
 		}
 
@@ -74,7 +84,6 @@ function RootCSB(localFolder, currentRawCSB, dseed) {
 			if(err) {
 				callback(err);
 			}
-
 			if(!csbReference.dseed) {
 				const seed = Seed.create(config.backup);
 				const localSeed = Seed.generateCompactForm(seed);
@@ -85,7 +94,16 @@ function RootCSB(localFolder, currentRawCSB, dseed) {
 					if(err) {
 						return callback(err);
 					}
-					__writeRawCSB(rawCSB, csbReference.dseed, callback);
+
+					this.loadAssetFromPath(CSBPath, (err, csbRef) => {
+						if(err) {
+							return callback(err);
+						}
+						const asset = rawCSB.getAsset("global.CSBMeta", "meta");
+						asset.init(csbRef.getMetadata('swarmId'));
+						rawCSB.saveAsset(asset);
+						__writeRawCSB(rawCSB, csbReference.dseed, callback);
+					});
 				});
 			} else {
 				__writeRawCSB(rawCSB, csbReference.dseed, callback);
@@ -233,12 +251,29 @@ function RootCSB(localFolder, currentRawCSB, dseed) {
 		if(!Buffer.isBuffer(localDseed)){
 			localDseed = Buffer.from(localDseed);
 		}
+
+
+
 		crypto.encryptJson(rawCSB.blockchain, localDseed, null, (err, encryptedBlockchain) => {
 			if (err) {
 				return callback(err);
 			}
+			hashCage.loadHash((err, hashObj) => {
+				if(err){
+					return callback(err);
+				}
+				
+				const key = crypto.generateSafeUid(localDseed);
+				hashObj[key] = crypto.pskHash(encryptedBlockchain).toString('hex');
 
-			fs.writeFile(utils.generatePath(localFolder,localDseed), encryptedBlockchain, callback);
+				hashCage.saveHash(hashObj, (err) => {
+					if(err){
+						return callback(err);
+					}
+
+					fs.writeFile(utils.generatePath(localFolder,localDseed), encryptedBlockchain, callback);
+				});
+			});
 		});
 	}
 }
