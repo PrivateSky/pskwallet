@@ -322,6 +322,9 @@ function loadWithPin(localFolder, pin, callback) {
 
 		const rootCSB = new RootCSB(localFolder, null, diskDseed);
 		rootCSB.loadRawCSB('', (err) => {
+			if(err){
+				return callback(err);
+			}
 			callback(null, rootCSB, diskDseed);
 		});
 	});
