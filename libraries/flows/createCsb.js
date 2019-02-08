@@ -4,12 +4,12 @@ const RootCSB = require("../RootCSB");
 const RawCSB = require("../RawCSB");
 const validator = require("../../utils/validator");
 const DseedCage = require("../../utils/DseedCage");
-const localFolder = process.cwd();
 
 $$.swarm.describe("createCsb", {
-	start: function (CSBPath) {
+	start: function (CSBPath, localFolder = process.cwd()) {
+		this.localFolder = localFolder;
 		this.CSBPath = CSBPath;
-		this.dseedCage = new DseedCage(localFolder);
+		this.dseedCage = new DseedCage(this.localFolder);
 		this.dseedCage.loadDseed(flowsUtils.defaultPin, (err, dseed) => {
 			if (err) {
 				this.swarm("interaction", "createPin", flowsUtils.defaultPin);
@@ -20,21 +20,25 @@ $$.swarm.describe("createCsb", {
 	},
 	withDseed: function(CSBPath, dseed) {
 		this.CSBPath = CSBPath;
-		this.rootCSB = RootCSB.loadWithDseed(localFolder, dseed, validator.reportOrContinue(this, 'createCSB', 'Failed to load master with provided dseed'));
+		this.rootCSB = RootCSB.loadWithDseed(this.localFolder, dseed, validator.reportOrContinue(this, 'createCSB', 'Failed to load master with provided dseed'));
 	},
-	withoutPin: function(CSBPath) {
+	withoutPin: function(CSBPath, backups, localFolder = process.cwd()) {
+		this.localFolder = localFolder;
 		this.CSBPath = CSBPath;
-		this.createMasterCSB();
+		if(backups.length === 0) {
+			backups = flowsUtils.defaultBackup;
+		}
+		this.createMasterCSB(undefined, backups);
 	},
 	validatePin: function (pin, noTries) {
-		validator.validatePin(localFolder, this, "createCSB", pin, noTries);
+		validator.validatePin(this.localFolder, this, "createCSB", pin, noTries);
 	},
 
-	createMasterCSB: function (pin) {
-		const seed = Seed.generateCompactForm(Seed.create(flowsUtils.defaultBackup));
+	createMasterCSB: function (pin, backups) {
+		const seed = Seed.generateCompactForm(Seed.create(backups || flowsUtils.defaultBackup));
 		this.dseed = Seed.generateCompactForm(Seed.deriveSeed(seed));
 		this.swarm("interaction", "printSensitiveInfo", seed, flowsUtils.defaultPin);
-		this.rootCSB = RootCSB.createNew(localFolder, this.dseed);
+		this.rootCSB = RootCSB.createNew(this.localFolder, this.dseed);
 		if(pin) {
 			this.dseedCage.saveDseed(pin, this.dseed, validator.reportOrContinue(this, "createCSB", "Failed to save dseed "));
 		}else{
@@ -51,5 +55,6 @@ $$.swarm.describe("createCsb", {
 			message = 'Successfully saved CSB root';
 		}
 		this.swarm("interaction", "printInfo", message);
+		this.swarm('interaction', '__return__');
 	}
 });

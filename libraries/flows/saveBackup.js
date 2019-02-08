@@ -6,24 +6,29 @@ const validator = require("../../utils/validator");
 const HashCage  = require('../../utils/HashCage');
 const AsyncDispatcher = require("../../utils/AsyncDispatcher");
 
-const localFolder = process.cwd();
 
 $$.swarm.describe("saveBackup", {
-	start: function (CSBPath) {
-		this.CSBPath = CSBPath;
+	start: function (localFolder = process.cwd()) {
+		this.localFolder = localFolder;
 		this.swarm("interaction", "readPin", 3);
 	},
 
 	validatePin: function (pin, noTries) {
-		validator.validatePin(localFolder, this, "loadHashFile", pin, noTries);
+		validator.validatePin(this.localFolder, this, "loadHashFile", pin, noTries);
 	},
+
+	withDseed: function (dseed, localFolder = process.cwd()) {
+		this.localFolder = localFolder;
+		this.loadHashFile();
+	},
+
 	loadHashFile: function() {
-		this.hashCage = new HashCage(localFolder);
+		this.hashCage = new HashCage(this.localFolder);
 		this.hashCage.loadHash(validator.reportOrContinue(this, 'readEncryptedMaster', 'Failed to load hash file'));
 	},
 	readEncryptedMaster: function(hashFile){
 		this.hashFile = hashFile;
-		this.masterID = utils.generatePath(localFolder, this.dseed);
+		this.masterID = utils.generatePath(this.localFolder, this.dseed);
 		fs.readFile(this.masterID, validator.reportOrContinue(this, 'createRootCSB', 'Failed to read masterCSB.'));
 	},
 

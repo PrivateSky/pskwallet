@@ -7,22 +7,43 @@ const validator = require("../../utils/validator");
 const Seed = require('../../utils/Seed');
 const DseedCage = require('../../utils/DseedCage');
 const HashCage  = require('../../utils/HashCage');
-const localFolder = process.cwd();
+const RootCSB = require("../RootCSB");
+
 $$.swarm.describe("attachFile", { //url: CSB1/CSB2/aliasFile
-	start: function (url, filePath) { //csb1:assetType:alias
+	start: function (url, filePath, localFolder = process.cwd()) { //csb1:assetType:alias
 		const {CSBPath, alias} = utils.processUrl(url, 'FileReference');
 		this.CSBPath = CSBPath;
 		this.alias = alias;
 		this.filePath = filePath;
+		this.localFolder = localFolder;
 		this.swarm("interaction", "readPin", 3);
 	},
 
 	validatePin: function (pin, noTries) {
-		validator.validatePin(localFolder, this, 'loadFileReference', pin, noTries);
+		validator.validatePin(this.localFolder, this, 'loadFileReference', pin, noTries);
 	},
 
-	loadFileReference: function(pin){
-		this.pin = pin;
+	withDseed: function (dseed, url, filePath, localFolder = process.cwd()) {
+		const {CSBPath, alias} = utils.processUrl(url, 'FileReference');
+		this.CSBPath = CSBPath;
+		this.alias = alias;
+		this.filePath = filePath;
+		this.localFolder = localFolder;
+		console.log('fortza folcal folder', this.localFolder);
+		RootCSB.loadWithDseed(this.localFolder, dseed, (err, rootCSB) => {
+			if(err){
+				this.swarm("interaction", "handleError", err, "Failed to load rootCSB");
+				return;
+			}
+
+			this.rootCSB = rootCSB;
+			this.dseed = dseed;
+			this.loadFileReference();
+
+		});
+	},
+
+	loadFileReference: function(){
 		this.rootCSB.loadRawCSB('', validator.reportOrContinue(this, 'loadAsset', 'Failed to load masterCSB.'));
 	},
 
@@ -39,7 +60,7 @@ $$.swarm.describe("attachFile", { //url: CSB1/CSB2/aliasFile
 
 		const seed = Seed.generateCompactForm(Seed.create(flowsUtils.defaultBackup));
 		const dseed = Seed.generateCompactForm(Seed.deriveSeed(seed));
-		this.fileID = utils.generatePath(localFolder, dseed);
+		this.fileID = utils.generatePath(this.localFolder, dseed);
 
 		crypto.encryptStream(this.filePath, this.fileID, dseed, validator.reportOrContinue(this, 'saveFileReference', "Failed at file encryption.", FileReference, seed, dseed));
 
@@ -57,7 +78,7 @@ $$.swarm.describe("attachFile", { //url: CSB1/CSB2/aliasFile
 	},
 
 	loadHashObj: function (digest) {
-		this.hashCage = new HashCage(localFolder);
+		this.hashCage = new HashCage(this.localFolder);
 		this.hashCage.loadHash(validator.reportOrContinue(this, "addToHashObj", "Failed to load hashObj", digest));
 	},
 
@@ -68,5 +89,7 @@ $$.swarm.describe("attachFile", { //url: CSB1/CSB2/aliasFile
 
 	printSuccess: function(){
 		this.swarm("interaction", "printInfo", this.filePath + " has been successfully added to " + this.CSBPath);
+		this.swarm("interaction", "__return__");
+
 	}
 });
