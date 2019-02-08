@@ -1,7 +1,7 @@
 
 exports.readPassword = function (prompt, callback) {
-	var stdin = process.stdin;
-	var stdout = process.stdout;
+	const stdin = process.stdin;
+	const stdout = process.stdout;
 
 	if (prompt) {
 		stdout.write(prompt);
@@ -12,7 +12,7 @@ exports.readPassword = function (prompt, callback) {
 	stdin.resume();
 	stdin.setEncoding('utf8');
 
-	var password = "";
+	let password = "";
 
 	function escaping(...args) {
 		stdin.removeListener("data", readingInput);
@@ -35,17 +35,18 @@ exports.readPassword = function (prompt, callback) {
 				escaping(false, password);
 				break;
 			case "\x08":
+			case "\x7f":
 				password = password.slice(0, password.length - 1);
 				stdout.clearLine();
 				stdout.cursorTo(0);
 				stdout.write(prompt);
-				for (var i = 0; i < password.length; i++) {
+				for (let i = 0; i < password.length; i++) {
 					stdout.write("*");
 				}
 				break;
 			default:
 				let str = "";
-				for (var i = 0; i < data.length; i++) {
+				for (let i = 0; i < data.length; i++) {
 					str += "*";
 				}
 				stdout.write(str);
