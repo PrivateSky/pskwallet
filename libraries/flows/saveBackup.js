@@ -5,6 +5,8 @@ const Seed = require('../../utils/Seed');
 const validator = require("../../utils/validator");
 const HashCage  = require('../../utils/HashCage');
 const AsyncDispatcher = require("../../utils/AsyncDispatcher");
+const RootCSB = require('../RootCSB');
+const path = require('path');
 
 
 $$.swarm.describe("saveBackup", {
@@ -19,7 +21,17 @@ $$.swarm.describe("saveBackup", {
 
 	withDseed: function (dseed, localFolder = process.cwd()) {
 		this.localFolder = localFolder;
-		this.loadHashFile();
+		this.dseed = dseed;
+		RootCSB.loadWithDseed(localFolder, dseed, (err, rootCSB) => {
+			if(err) {
+				this.swarm('interaction', 'handleError', err, 'Failed to load root CSB');
+				return;
+			}
+
+			this.rootCSB = rootCSB;
+
+			this.loadHashFile();
+		});
 	},
 
 	loadHashFile: function() {
@@ -134,7 +146,8 @@ $$.swarm.describe("saveBackup", {
 	__backupFiles: function (files, backupAddress, aliases) {
 		this.asyncDispatcher.emptyDispatch(files.length);
 		files.forEach(file => {
-			const fileStream = fs.createReadStream(file);
+			const fileStream = fs.createReadStream(path.join(this.localFolder, file));
+
 			const backupURL = backupAddress + '/CSB/' + file;
 			$$.remote.doHttpPost(backupURL, fileStream, (err, res) => {
 				if (err) {

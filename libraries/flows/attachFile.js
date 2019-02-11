@@ -29,7 +29,6 @@ $$.swarm.describe("attachFile", { //url: CSB1/CSB2/aliasFile
 		this.alias = alias;
 		this.filePath = filePath;
 		this.localFolder = localFolder;
-		console.log('fortza folcal folder', this.localFolder);
 		RootCSB.loadWithDseed(this.localFolder, dseed, (err, rootCSB) => {
 			if(err){
 				this.swarm("interaction", "handleError", err, "Failed to load rootCSB");
