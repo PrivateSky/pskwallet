@@ -86,6 +86,14 @@ $$.swarm.describe("attachFile", { //url: CSB1/CSB2/aliasFile
 		this.hashCage.saveHash(hashObj, validator.reportOrContinue(this, "printSuccess", "Failed to save hashObj"));
 	},
 
+	updateProgress:function(progress){
+        /**
+ 		 TODO Add some progress feedback. It is helpful for frontend use. Decide if it should be handled by
+ 		  a new interaction phase (onProgress) or printInfo phase could be used.
+   		**/
+        this.swarm("interaction", "onProgress", progress);
+	},
+
 	printSuccess: function(){
 		this.swarm("interaction", "printInfo", this.filePath + " has been successfully added to " + this.CSBPath);
 		this.swarm("interaction", "__return__");
