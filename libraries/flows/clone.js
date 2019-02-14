@@ -63,7 +63,7 @@ $$.swarm.describe("clone", {
 		this.asyncDispatcher = new AsyncDispatcher((errs, succs) => {
 			this.hashCage.saveHash(this.hashObj, (err) => {
 				if(err) {
-					this.swarm('interaction', 'handleError', err, 'Fuck you');
+					return this.swarm('interaction', 'handleError', err, 'Failed to save hashObj');
 				}
 				this.swarm('interaction', 'printInfo', 'All CSBs have been restored.');
 			});
