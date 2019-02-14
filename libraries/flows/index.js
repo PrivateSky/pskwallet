@@ -5,7 +5,6 @@ module.exports = $$.library(function () {
     require('./attachFile');
     require('./addPskdb');
     require('./createCsb');
-    require('./extract');
     require('./extractFile');
     require('./listCSBs');
     require('./resetPin');
