@@ -68,17 +68,17 @@ $$.swarm.describe("clone", {
 				this.swarm('interaction', 'printInfo', 'All CSBs have been restored.');
 			});
 		});
-		this.rootCSB.loadRawCSB('', validator.reportOrContinue(this, "collectFiles", "Failed to load masterRawCSB", this.dseed, '', 'master'));
+		this.rootCSB.loadRawCSB('', validator.reportOrContinue(this, "collectFiles", "Failed to load masterRawCSB", this.dseed, '', 'master', () => {
+			this.asyncDispatcher.markOneAsFinished();
+		}));
 	},
 
 	collectFiles: function(rawCSB, dseed, currentPath, alias, callback) {
 		const listFiles = rawCSB.getAllAssets('global.FileReference');
-
 		const asyncDispatcher = new AsyncDispatcher((errs, succs) => {
 			this.collectCSBs(rawCSB, dseed, currentPath, alias);
-
 			if(callback) {
-				callback();
+				callback(errs, succs);
 			}
 		});
 
