@@ -7,14 +7,14 @@ $$.swarm.describe("listCSBs", {
 	start: function (CSBPath) {
 		this.CSBPath = CSBPath;
 
-        this.dseedCage = new DseedCage(localFolder);
-        this.dseedCage.loadDseed(flowsUtils.defaultPin, (err, dseed) => {
-            if (err) {
-                this.swarm("interaction", "noMasterCSBExists");
-            } else {
-                this.swarm("interaction", "readPin", flowsUtils.noTries);
-            }
-        });
+		this.dseedCage = new DseedCage(localFolder);
+		this.dseedCage.loadDseed(flowsUtils.defaultPin, (err, dseed) => {
+			if (err) {
+				this.swarm("interaction", "noMasterCSBExists");
+			} else {
+				this.swarm("interaction", "readPin", flowsUtils.noTries);
+			}
+		});
 	},
 
 	validatePin: function (pin, noTries) {
@@ -27,8 +27,15 @@ $$.swarm.describe("listCSBs", {
 
 	getCSBs: function (rawCSB) {
 		const csbReferences = rawCSB.getAllAssets('global.CSBReference');
-		const csbAliases = csbReferences.map(ref => ref.alias);
-		this.swarm("interaction", "__return__", csbAliases);
+		const csbsAliases = csbReferences.map(ref => ref.alias);
+
+		const fileReferences = rawCSB.getAllAssets('global.FileReference');
+		const filesAliases = fileReferences.map(ref => ref.alias);
+
+		this.swarm("interaction", "__return__", {
+			csbs: csbsAliases,
+			files: filesAliases
+		});
 	}
 
 });
