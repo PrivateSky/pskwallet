@@ -7,14 +7,14 @@ $$.swarm.describe("listCSBs", {
 	start: function (CSBPath) {
 		this.CSBPath = CSBPath;
 
-		this.dseedCage = new DseedCage(localFolder);
-		this.dseedCage.loadDseed(flowsUtils.defaultPin, (err, dseed) => {
-			if (err) {
-				this.swarm("interaction", "noMasterCSBExists");
-			} else {
-				this.swarm("interaction", "readPin", flowsUtils.noTries);
-			}
-		});
+        this.dseedCage = new DseedCage(localFolder);
+        this.dseedCage.loadDseed(flowsUtils.defaultPin, (err, dseed) => {
+            if (err) {
+                this.swarm("interaction", "noMasterCSBExists");
+            } else {
+                this.swarm("interaction", "readPin", flowsUtils.noTries);
+            }
+        });
 	},
 
 	validatePin: function (pin, noTries) {
