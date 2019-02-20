@@ -68,9 +68,7 @@ $$.swarm.describe("clone", {
 				this.swarm('interaction', 'printInfo', 'All CSBs have been restored.');
 			});
 		});
-		this.rootCSB.loadRawCSB('', validator.reportOrContinue(this, "collectFiles", "Failed to load masterRawCSB", this.dseed, '', 'master', () => {
-			this.asyncDispatcher.markOneAsFinished();
-		}));
+		this.rootCSB.loadRawCSB('', validator.reportOrContinue(this, "collectFiles", "Failed to load masterRawCSB", this.dseed, '', 'master'));
 	},
 
 	collectFiles: function(rawCSB, dseed, currentPath, alias, callback) {
@@ -114,6 +112,11 @@ $$.swarm.describe("clone", {
 		const listCSBs = rawCSB.getAllAssets('global.CSBReference');
 		const nextArguments = [];
 		let counter = 0;
+
+		if(listCSBs.length === 0) {
+			this.asyncDispatcher.emptyDispatch();
+			this.asyncDispatcher.markOneAsFinished();
+		}
 
 		if (listCSBs && listCSBs.length > 0) {
 			listCSBs.forEach(CSBReference => {
