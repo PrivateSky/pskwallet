@@ -74,7 +74,28 @@ function Seed(keyLen = 32) {
 		}
 
 		return seed.backup;
-	}
+	};
+
+	this.isValidForm = function (seed) {
+		try {
+			if (typeof seed === 'string' || Buffer.isBuffer(seed)) {
+				seed = this.load(seed);
+			}
+
+			if (seed.tag !== 's' && seed.tag !== 'd') {
+				return false;
+			}
+
+			if (!Buffer.isBuffer(seed.random)) {
+				return false;
+			}
+
+			return seed.backup.length !== 0;
+
+		} catch (e) {
+			return false;
+		}
+	};
 
 }
 
