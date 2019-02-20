@@ -22,12 +22,12 @@ $$.swarm.describe("extractFile", {
 	
 	decryptFile: function (fileReference, rawCSB) {
 		const filePath = utils.generatePath(localFolder, Buffer.from(fileReference.dseed));
-		crypto.decryptStream(filePath, localFolder, Buffer.from(fileReference.dseed), (err) => {
+		crypto.decryptStream(filePath, localFolder, Buffer.from(fileReference.dseed), (err, fileNames) => {
 			if(err){
 				return this.swarm("interaction", "handleError", err, "Failed to decrypt file" + filePath);
 			}
 
-			this.swarm("interaction", "printInfo", this.alias + " was successfully extracted. ");
+			this.swarm("interaction", "printInfo", fileNames, this.alias + " was successfully extracted. ");
 		})
 	}
 });
