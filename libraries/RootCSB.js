@@ -117,8 +117,12 @@ function RootCSB(localFolder, currentRawCSB, dseed) {
 			if(err) {
 				return callback(err);
 			}
-			rawCSB.saveAsset(asset);
-			this.saveRawCSB(rawCSB, splitPath.CSBAliases, callback);
+			try {
+				rawCSB.saveAsset(asset);
+				this.saveRawCSB(rawCSB, splitPath.CSBAliases, callback);
+			}catch (e) {
+				callback(e);
+			}
 		});
 	};
 
