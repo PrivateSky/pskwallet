@@ -173,7 +173,7 @@ function RootCSB(localFolder, currentRawCSB, dseed) {
 				return callback(new Error(err.message));
 			}
 
-			crypto.decryptJson(encryptedCsb, localDseed, function (err, csbData) {
+			crypto.decryptObject(encryptedCsb, localDseed, function (err, csbData) {
 				if (err) {
 					return callback(err);
 				}
@@ -258,7 +258,7 @@ function RootCSB(localFolder, currentRawCSB, dseed) {
 
 
 
-		crypto.encryptJson(rawCSB.blockchain, localDseed, null, (err, encryptedBlockchain) => {
+		crypto.encryptObject(rawCSB.blockchain, localDseed, null, (err, encryptedBlockchain) => {
 			if (err) {
 				return callback(err);
 			}
