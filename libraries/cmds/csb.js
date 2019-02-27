@@ -124,7 +124,10 @@ function doAttachFile(url, filePath) {
 	is.startSwarm("attachFile", "start", url, filePath).on({
 		readPin: readPin,
 		printInfo: generateMessagePrinter(),
-		handleError: generateErrorHandler()
+		handleError: generateErrorHandler(),
+		onProgress: function (progress) {
+			console.log("progress:", progress.toFixed(2));
+		}
 	})
 }
 
