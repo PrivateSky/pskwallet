@@ -8,7 +8,7 @@ module.exports = $$.library(function () {
     require('./extractFile');
     require('./listCSBs');
     require('./resetPin');
-    require('./clone');
+    require('./restore');
 	require('./saveBackup');
     require('./setPin');
 });

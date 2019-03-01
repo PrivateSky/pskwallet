@@ -11,7 +11,7 @@ const RootCSB = require('../RootCSB');
 const HashCage = require('../../utils/HashCage');
 const AsyncDispatcher = require('../../utils/AsyncDispatcher');
 
-$$.swarm.describe("clone", {
+$$.swarm.describe("restore", {
 	start: function (CSBPath) {
 		this.CSBPath = CSBPath;
 		this.swarm("interaction", "readSeed")
