@@ -59,18 +59,14 @@ $$.swarm.describe("attachFile", { //url: CSB1/CSB2/aliasFile
         const seed = Seed.generateCompactForm(Seed.create(flowsUtils.defaultBackup));
         const dseed = Seed.generateCompactForm(Seed.deriveSeed(seed));
         this.fileID = utils.generatePath(this.localFolder, dseed);
-        crypto.on('progress', (progress) => {
-            this.swarm('interaction', 'onProgress', progress);
-        });
+
         crypto.encryptStream(this.filePath, this.fileID, dseed, validator.reportOrContinue(this, 'saveFileReference', "Failed at file encryption.", FileReference, seed, dseed));
 
     },
 
 
     saveFileReference: function (FileReference, seed, dseed) {
-        crypto.off('progress', () => {
 
-        });
         FileReference.init(this.alias, seed, dseed);
         this.rootCSB.saveAssetToPath(this.CSBPath, FileReference, validator.reportOrContinue(this, 'computeHash', "Failed to save file", this.fileID));
     },

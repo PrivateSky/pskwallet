@@ -36,7 +36,7 @@ function Seed(keyLen = 32) {
 		const decodedCompactSeed = decodeURIComponent(compactSeed);
 		const splitCompactSeed = decodedCompactSeed.substring(1).split('|');
 
-		const strSeed = Buffer.from(splitCompactSeed[0], 'base64').toString();
+		const strSeed = Buffer.from(splitCompactSeed[0], 'base64').toString('hex');
 		const backupUrls = Buffer.from(splitCompactSeed[1], 'base64').toString();
 		const dseed = {};
 
