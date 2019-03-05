@@ -112,11 +112,16 @@ function doRestore(CSBPath) {
 				if (err) {
 					throw err;
 				}
-				this.swarm("restoreMaster", seed);
+				this.swarm("restoreCSB", seed);
 			});
 		},
 		printInfo: generateMessagePrinter(),
-		handleError: generateErrorHandler()
+		handleError: generateErrorHandler(),
+		printSensitiveInfo: function (seed, defaultPin) {
+			console.log("The following string represents the seed. Please save it.\n");
+			console.log(seed.toString(), '\n');
+			console.log("The default pin is:", defaultPin, '\n');
+		}
 	});
 }
 

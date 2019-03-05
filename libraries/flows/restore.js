@@ -8,8 +8,11 @@ const validator = require("../../utils/validator");
 const DseedCage = require("../../utils/DseedCage");
 const localFolder = process.cwd();
 const RootCSB = require('../RootCSB');
+const RawCSB = require('../RawCSB');
 const HashCage = require('../../utils/HashCage');
 const AsyncDispatcher = require('../../utils/AsyncDispatcher');
+
+const defaultCSBAlias = 'default';
 
 $$.swarm.describe("restore", {
 	start: function (CSBPath) {
@@ -17,7 +20,7 @@ $$.swarm.describe("restore", {
 		this.swarm("interaction", "readSeed")
 	},
 
-	restoreMaster: function (seed) {
+	restoreCSB: function (seed) {
 		this.hashCage = new HashCage(localFolder);
 		this.hashObj = {};
 		let backupUrls;
@@ -27,38 +30,35 @@ $$.swarm.describe("restore", {
 			return this.swarm('interaction', 'handleError', new Error('Invalid seed'));
 		}
 
+		this.backupUrls = backupUrls;
 		this.dseed = Seed.generateCompactForm(Seed.deriveSeed(seed));
 		this.dseedCage = new DseedCage(localFolder);
-		const masterUid = crypto.generateSafeUid(this.dseed);
+		const uid = crypto.generateSafeUid(this.dseed);
 
-		backupUrls = backupUrls.map(url => url + '/CSB/' + masterUid);
-		this.__tryDownload(backupUrls, 0, (err, encryptedMaster) => {
+		backupUrls = backupUrls.map(url => url + '/CSB/' + uid);
+		this.__tryDownload(backupUrls, 0, (err, encryptedCSB) => {
 			if (err) {
-				return this.swarm("interaction", "handleError", err, "Failed to restore masterCSB");
+				return this.swarm("interaction", "handleError", err, "Failed to restore CSB");
 			}
 
-			this.__addCSBHash(masterUid, encryptedMaster);
-			this.createAuxFolder(encryptedMaster);
+			this.__addCSBHash(uid, encryptedCSB);
+			this.createAuxFolder(encryptedCSB);
 		});
 	},
 
-	createAuxFolder: function (encryptedMasterStream) {
-		$$.ensureFolderExists(path.join(localFolder, ".privateSky"), validator.reportOrContinue(this, "writeMaster", "Failed to create folder .privateSky", encryptedMasterStream));
+	createAuxFolder: function (encryptedCSBStream) {
+		$$.ensureFolderExists(path.join(localFolder, ".privateSky"), validator.reportOrContinue(this, "writeCSB", "Failed to create folder .privateSky", encryptedCSBStream));
 	},
 
-	writeMaster: function (encryptedMasterStream) {
-		fs.writeFile(utils.generatePath(localFolder, this.dseed), encryptedMasterStream, validator.reportOrContinue(this, "saveDseed", "Failed to write masterCSB to disk"));
+	writeCSB: function (encryptedMasterStream) {
+		fs.writeFile(utils.generatePath(localFolder, this.dseed), encryptedMasterStream, validator.reportOrContinue(this, "createRootCSB", "Failed to write masterCSB to disk"));
 	},
 
-	saveDseed: function () {
-		this.dseedCage.saveDseed(flowsUtils.defaultPin, this.dseed, validator.reportOrContinue(this, "createRootCSB", "Failed to save dseed"));
-	},
-	
 	createRootCSB: function () {
-		RootCSB.loadWithDseed(localFolder, this.dseed, validator.reportOrContinue(this, "loadMasterRawCSB", "Failed to create rootCSB"));
+		RootCSB.loadWithDseed(localFolder, this.dseed, validator.reportOrContinue(this, "loadRawCSB", "Failed to create rootCSB"));
 	},
 
-	loadMasterRawCSB: function (rootCSB) {
+	loadRawCSB: function (rootCSB) {
 		this.rootCSB = rootCSB;
 		this.asyncDispatcher = new AsyncDispatcher((errs, succs) => {
 			this.hashCage.saveHash(this.hashObj, (err) => {
@@ -68,7 +68,38 @@ $$.swarm.describe("restore", {
 				this.swarm('interaction', 'printInfo', 'All CSBs have been restored.');
 			});
 		});
-		this.rootCSB.loadRawCSB('', validator.reportOrContinue(this, "collectFiles", "Failed to load masterRawCSB", this.dseed, '', 'master'));
+		this.rootCSB.loadRawCSB('', validator.reportOrContinue(this, "checkCSBStatus", "Failed to load RawCSB"));
+	},
+
+	checkCSBStatus: function (rawCSB) {
+		console.log("Check CSB status");
+		const meta = rawCSB.getAsset('global.CSBMeta', 'meta');
+		if(meta.master){
+			this.saveDseed(rawCSB);
+		}else{
+			this.createMasterCSB(rawCSB);
+		}
+	},
+
+	saveDseed: function (rawCSB) {
+		this.dseedCage.saveDseed(flowsUtils.defaultPin, this.dseed, validator.reportOrContinue(this, "collectFiles", "Failed to save dseed", rawCSB, this.dseed, '', 'master'));
+	},
+
+	createMasterCSB: function (rawCSB) {
+		const seed = Seed.generateCompactForm(Seed.create(this.backupUrls || flowsUtils.defaultBackup));
+		const dseed = Seed.generateCompactForm(Seed.deriveSeed(seed));
+		this.swarm("interaction", "printSensitiveInfo", seed, flowsUtils.defaultPin);
+		this.rootCSB = RootCSB.createNew(localFolder, dseed);
+		this.dseedCage.saveDseed(flowsUtils.defaultPin, dseed, validator.reportOrContinue(this, "attachCSB", "Failed to save master dseed ", rawCSB));
+	},
+
+	attachCSB: function (rawCSB) {
+		this.__attachCSB(this.rootCSB, defaultCSBAlias, this.seed, this.dseed, validator.reportOrContinue(this, 'saveRawCSB', '', rawCSB));
+
+	},
+
+	saveRawCSB: function (rawCSB) {
+		this.rootCSB.saveRawCSB(rawCSB, defaultCSBAlias, validator.reportOrContinue(this, "collectFiles", "Failed to save CSB", rawCSB, this.dseed, defaultCSBAlias, defaultCSBAlias));
 	},
 
 	collectFiles: function(rawCSB, dseed, currentPath, alias, callback) {
@@ -159,6 +190,7 @@ $$.swarm.describe("restore", {
 			});
 		}
 	},
+
 	__tryDownload(urls, index, callback) {
 		if(index === urls.length) {
 			return callback(new Error('Could not download resource'));
@@ -180,6 +212,17 @@ $$.swarm.describe("restore", {
 		pskHash.update(encryptedCSB);
 		this.hashObj[csbUid] = pskHash.digest().toString('hex');
 
+	},
+
+	__attachCSB: function (rootCSB, alias, seed, dseed, callback) {
+		rootCSB.loadAssetFromPath(alias, (err, csbRef)=>{
+			if(err){
+				return callback(err);
+			}
+			csbRef.init(alias, seed, dseed);
+			rootCSB.saveAssetToPath(alias, csbRef, callback);
+
+		})
 	}
 
 });
