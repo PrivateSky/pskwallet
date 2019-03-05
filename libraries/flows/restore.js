@@ -12,7 +12,6 @@ const RawCSB = require('../RawCSB');
 const HashCage = require('../../utils/HashCage');
 const AsyncDispatcher = require('../../utils/AsyncDispatcher');
 
-const defaultCSBAlias = 'default';
 
 $$.swarm.describe("restore", {
 	start: function (CSBPath) {
@@ -72,34 +71,41 @@ $$.swarm.describe("restore", {
 	},
 
 	checkCSBStatus: function (rawCSB) {
-		console.log("Check CSB status");
-		const meta = rawCSB.getAsset('global.CSBMeta', 'meta');
-		if(meta.master){
-			this.saveDseed(rawCSB);
+		this.rawCSB = rawCSB;
+		const meta = this.rawCSB.getAsset('global.CSBMeta', 'meta');
+		if(meta.isMaster){
+			this.saveDseed();
 		}else{
-			this.createMasterCSB(rawCSB);
+			this.createMasterCSB();
 		}
 	},
 
-	saveDseed: function (rawCSB) {
-		this.dseedCage.saveDseed(flowsUtils.defaultPin, this.dseed, validator.reportOrContinue(this, "collectFiles", "Failed to save dseed", rawCSB, this.dseed, '', 'master'));
+	saveDseed: function () {
+		this.dseedCage.saveDseed(flowsUtils.defaultPin, this.dseed, validator.reportOrContinue(this, "collectFiles", "Failed to save dseed", this.rawCSB, this.dseed, '', 'master'));
 	},
 
-	createMasterCSB: function (rawCSB) {
+
+
+	createMasterCSB: function () {
 		const seed = Seed.generateCompactForm(Seed.create(this.backupUrls || flowsUtils.defaultBackup));
 		const dseed = Seed.generateCompactForm(Seed.deriveSeed(seed));
 		this.swarm("interaction", "printSensitiveInfo", seed, flowsUtils.defaultPin);
 		this.rootCSB = RootCSB.createNew(localFolder, dseed);
-		this.dseedCage.saveDseed(flowsUtils.defaultPin, dseed, validator.reportOrContinue(this, "attachCSB", "Failed to save master dseed ", rawCSB));
+		this.dseedCage.saveDseed(flowsUtils.defaultPin, dseed, validator.reportOrContinue(this, "insertCSBAlias", "Failed to save master dseed "));
 	},
 
-	attachCSB: function (rawCSB) {
-		this.__attachCSB(this.rootCSB, defaultCSBAlias, this.seed, this.dseed, validator.reportOrContinue(this, 'saveRawCSB', '', rawCSB));
+	insertCSBAlias: function () {
+		this.swarm("interaction", "insertAlias");
+	},
+
+	attachCSB: function (CSBAlias) {
+		this.CSBAlias = CSBAlias;
+		this.__attachCSB(this.rootCSB, this.CSBAlias, this.seed, this.dseed, validator.reportOrContinue(this, 'saveRawCSB', 'Failed to attach rawCSB'));
 
 	},
 
-	saveRawCSB: function (rawCSB) {
-		this.rootCSB.saveRawCSB(rawCSB, defaultCSBAlias, validator.reportOrContinue(this, "collectFiles", "Failed to save CSB", rawCSB, this.dseed, defaultCSBAlias, defaultCSBAlias));
+	saveRawCSB: function () {
+		this.rootCSB.saveRawCSB(this.rawCSB, this.CSBAlias, validator.reportOrContinue(this, "collectFiles", "Failed to save CSB", this.rawCSB, this.dseed, this.CSBAlias, this.CSBAlias));
 	},
 
 	collectFiles: function(rawCSB, dseed, currentPath, alias, callback) {
@@ -224,6 +230,5 @@ $$.swarm.describe("restore", {
 
 		})
 	}
-
 });
 

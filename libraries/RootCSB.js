@@ -71,7 +71,7 @@ function RootCSB(localFolder, currentRawCSB, dseed) {
 
 			const csbMeta = currentRawCSB.getAsset('global.CSBMeta', 'meta');
 			if(!csbMeta.id) {
-				csbMeta.init($$.uidGenerator.safe_uuid());
+				csbMeta.init($$.uidGenerator.safe_uuid(), true);
 				currentRawCSB.saveAsset(csbMeta);
 			}
 
@@ -100,7 +100,7 @@ function RootCSB(localFolder, currentRawCSB, dseed) {
 							return callback(err);
 						}
 						const asset = rawCSB.getAsset("global.CSBMeta", "meta");
-						asset.init(csbRef.getMetadata('swarmId'));
+						asset.init(csbRef.getMetadata('swarmId'), false);
 						rawCSB.saveAsset(asset);
 						__writeRawCSB(rawCSB, csbReference.dseed, callback);
 					});

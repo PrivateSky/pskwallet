@@ -20,26 +20,8 @@ function insertPassword(prompt, noTries, callback){
 	}
 }
 
-function enterRecord(fields, currentField, record, rl, callback){
-	record = record || {};
-	rl = rl || readline.createInterface({
-		input: process.stdin,
-		output: process.stdout
-	});
-	if(currentField === fields.length){
-		rl.close();
-		callback(null, record);
-	}else {
-		var field = fields[currentField];
-		rl.question("Insert " + field["fieldName"] + ":", (answer) => {
-			record[field["fieldName"]] = answer;
-			enterRecord(fields, currentField + 1, record, rl, callback);
-		});
-	}
-}
-
-function enterField(field, rl, callback){
-	rl = rl || readline.createInterface({
+function insertText(field, callback){
+	const rl = readline.createInterface({
 		input: process.stdin,
 		output: process.stdout
 	});
@@ -51,29 +33,8 @@ function enterField(field, rl, callback){
 }
 
 
-function confirmOperation(prompt, rl, callback) {
-	rl = rl || readline.createInterface({
-		input: process.stdin,
-		output: process.stdout
-	});
-	prompt = prompt || "Do you want to continue?";
-	rl.question(prompt + "[y/n]", (answer) => {
-		if (answer === "y") {
-			rl.close();
-			callback(null);
-		} else if (answer !== "n") {
-			console.log("Invalid option");
-			confirmOperation(prompt, rl, callback);
-		}else{
-			rl.close();
-		}
-	});
-
-}
 
 module.exports = {
 	insertPassword,
-	enterRecord,
-	enterField,
-	confirmOperation
+	insertText,
 };
