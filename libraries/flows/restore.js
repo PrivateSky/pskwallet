@@ -14,10 +14,14 @@ const AsyncDispatcher = require('../../utils/AsyncDispatcher');
 
 
 $$.swarm.describe("restore", {
-	start: function (CSBPath) {
+	start: function (url = 'master') {
+		const {CSBPath, alias} = utils.processUrl(url, 'global.CSBReference');
 		this.CSBPath = CSBPath;
+		this.CSBAlias = alias;
 		this.swarm("interaction", "readSeed")
 	},
+
+
 
 	restoreCSB: function (seed) {
 		this.hashCage = new HashCage(localFolder);
@@ -30,9 +34,10 @@ $$.swarm.describe("restore", {
 		}
 
 		this.backupUrls = backupUrls;
-		this.dseed = Seed.generateCompactForm(Seed.deriveSeed(seed));
-		this.dseedCage = new DseedCage(localFolder);
-		const uid = crypto.generateSafeUid(this.dseed);
+		this.seed = seed;
+		this.insertedDseed = Seed.generateCompactForm(Seed.deriveSeed(this.seed));
+		this.insertedDseedCage = new DseedCage(localFolder);
+		const uid = crypto.generateSafeUid(this.insertedDseed);
 
 		backupUrls = backupUrls.map(url => url + '/CSB/' + uid);
 		this.__tryDownload(backupUrls, 0, (err, encryptedCSB) => {
@@ -41,24 +46,40 @@ $$.swarm.describe("restore", {
 			}
 
 			this.__addCSBHash(uid, encryptedCSB);
-			this.createAuxFolder(encryptedCSB);
+			this.encryptedCSB = encryptedCSB;
+
+			fs.stat(path.join(localFolder, ".privateSky", "dseed"), (err, stats)=>{
+				if(err){
+					console.log("error");
+					this.createAuxFolder();
+				}else{
+					this.swarm("interaction", "readPin", flowsUtils.noTries);
+				}
+			})
 		});
 	},
 
-	createAuxFolder: function (encryptedCSBStream) {
-		$$.ensureFolderExists(path.join(localFolder, ".privateSky"), validator.reportOrContinue(this, "writeCSB", "Failed to create folder .privateSky", encryptedCSBStream));
+	validatePin: function (pin, noTries) {
+		validator.validatePin(localFolder, this, "writeCSB", pin, noTries);
 	},
 
-	writeCSB: function (encryptedMasterStream) {
-		fs.writeFile(utils.generatePath(localFolder, this.dseed), encryptedMasterStream, validator.reportOrContinue(this, "createRootCSB", "Failed to write masterCSB to disk"));
+	createAuxFolder: function () {
+		$$.ensureFolderExists(path.join(localFolder, ".privateSky"), validator.reportOrContinue(this, "writeCSB", "Failed to create folder .privateSky"));
 	},
 
-	createRootCSB: function () {
-		RootCSB.loadWithDseed(localFolder, this.dseed, validator.reportOrContinue(this, "loadRawCSB", "Failed to create rootCSB"));
+
+	writeCSB: function () {
+		console.log("WriteCSB");
+		fs.writeFile(utils.generatePath(localFolder, this.insertedDseed), this.encryptedCSB, validator.reportOrContinue(this, "createRootCSBWithDseed", "Failed to write masterCSB to disk"));
+	},
+
+	createRootCSBWithDseed: function () {
+		console.log("createRoot");
+		RootCSB.loadWithDseed(localFolder, this.insertedDseed, validator.reportOrContinue(this, "loadRawCSB", "Failed to create rootCSB with dseed"));
 	},
 
 	loadRawCSB: function (rootCSB) {
-		this.rootCSB = rootCSB;
+		console.log("loadRawCSB");
 		this.asyncDispatcher = new AsyncDispatcher((errs, succs) => {
 			this.hashCage.saveHash(this.hashObj, (err) => {
 				if(err) {
@@ -67,21 +88,29 @@ $$.swarm.describe("restore", {
 				this.swarm('interaction', 'printInfo', 'All CSBs have been restored.');
 			});
 		});
-		this.rootCSB.loadRawCSB('', validator.reportOrContinue(this, "checkCSBStatus", "Failed to load RawCSB"));
+		rootCSB.loadRawCSB('', validator.reportOrContinue(this, "checkCSBStatus", "Failed to load RawCSB", rootCSB));
 	},
 
-	checkCSBStatus: function (rawCSB) {
+	checkCSBStatus: function (rawCSB, rootCSB) {
 		this.rawCSB = rawCSB;
 		const meta = this.rawCSB.getAsset('global.CSBMeta', 'meta');
-		if(meta.isMaster){
-			this.saveDseed();
-		}else{
-			this.createMasterCSB();
+		if(this.rootCSB){
+			console.log("about to attach CSB");
+			this.attachCSB();
+
+		}else {
+			if (meta.isMaster) {
+				console.log("is master");
+				this.rootCSB = rootCSB;
+				this.saveDseed();
+			} else {
+				this.createMasterCSB();
+			}
 		}
 	},
 
 	saveDseed: function () {
-		this.dseedCage.saveDseed(flowsUtils.defaultPin, this.dseed, validator.reportOrContinue(this, "collectFiles", "Failed to save dseed", this.rawCSB, this.dseed, '', 'master'));
+		this.insertedDseedCage.saveDseed(flowsUtils.defaultPin, this.insertedDseed, validator.reportOrContinue(this, "collectFiles", "Failed to save dseed", this.rawCSB, this.insertedDseed, '', 'master'));
 	},
 
 
@@ -91,21 +120,16 @@ $$.swarm.describe("restore", {
 		const dseed = Seed.generateCompactForm(Seed.deriveSeed(seed));
 		this.swarm("interaction", "printSensitiveInfo", seed, flowsUtils.defaultPin);
 		this.rootCSB = RootCSB.createNew(localFolder, dseed);
-		this.dseedCage.saveDseed(flowsUtils.defaultPin, dseed, validator.reportOrContinue(this, "insertCSBAlias", "Failed to save master dseed "));
+		this.insertedDseedCage.saveDseed(flowsUtils.defaultPin, dseed, validator.reportOrContinue(this, "attachCSB", "Failed to save master dseed "));
 	},
 
-	insertCSBAlias: function () {
-		this.swarm("interaction", "insertAlias");
-	},
-
-	attachCSB: function (CSBAlias) {
-		this.CSBAlias = CSBAlias;
-		this.__attachCSB(this.rootCSB, this.CSBAlias, this.seed, this.dseed, validator.reportOrContinue(this, 'saveRawCSB', 'Failed to attach rawCSB'));
+	attachCSB: function () {
+		this.__attachCSB(this.rootCSB, this.CSBPath, this.CSBAlias, this.seed, this.insertedDseed, validator.reportOrContinue(this, 'saveRawCSB', 'Failed to attach rawCSB'));
 
 	},
 
 	saveRawCSB: function () {
-		this.rootCSB.saveRawCSB(this.rawCSB, this.CSBAlias, validator.reportOrContinue(this, "collectFiles", "Failed to save CSB", this.rawCSB, this.dseed, this.CSBAlias, this.CSBAlias));
+		this.rootCSB.saveRawCSB(this.rawCSB, this.CSBPath, validator.reportOrContinue(this, "collectFiles", "Failed to save CSB", this.rawCSB, this.insertedDseed, this.CSBAlias));
 	},
 
 	collectFiles: function(rawCSB, dseed, currentPath, alias, callback) {
@@ -220,13 +244,18 @@ $$.swarm.describe("restore", {
 
 	},
 
-	__attachCSB: function (rootCSB, alias, seed, dseed, callback) {
-		rootCSB.loadAssetFromPath(alias, (err, csbRef)=>{
+	__attachCSB: function (rootCSB, CSBPath, CSBAlias, seed, dseed, callback) {
+		console.log("CSBPath", CSBPath);
+		console.log("CSBAlias", CSBAlias);
+		console.log("seed", seed);
+		console.log("dseed", dseed);
+
+		rootCSB.loadAssetFromPath(CSBPath, (err, csbRef)=>{
 			if(err){
 				return callback(err);
 			}
-			csbRef.init(alias, seed, dseed);
-			rootCSB.saveAssetToPath(alias, csbRef, callback);
+			csbRef.init(CSBAlias, seed, dseed);
+			rootCSB.saveAssetToPath(CSBPath, csbRef, callback);
 
 		})
 	}

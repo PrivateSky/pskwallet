@@ -122,18 +122,7 @@ function doRestore(CSBPath) {
 			console.log(seed.toString(), '\n');
 			console.log("The default pin is:", defaultPin, '\n');
 		},
-
-		insertAlias: function (){
-			utils.insertText('CSB alias', (err, aliasCSB)=>{
-				if (err) {
-					throw err;
-				}
-
-				this.swarm('attachCSB', aliasCSB);
-			})
-		}
-
-
+		readPin: readPin
 	});
 }
 
