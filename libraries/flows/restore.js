@@ -14,7 +14,7 @@ const AsyncDispatcher = require('../../utils/AsyncDispatcher');
 
 
 $$.swarm.describe("restore", {
-	start: function (url = 'master') {
+	start: function (url) {
 		const {CSBPath, alias} = utils.processUrl(url, 'global.CSBReference');
 		this.CSBPath = CSBPath;
 		this.CSBAlias = alias;
@@ -50,7 +50,6 @@ $$.swarm.describe("restore", {
 
 			fs.stat(path.join(localFolder, ".privateSky", "dseed"), (err, stats)=>{
 				if(err){
-					console.log("error");
 					this.createAuxFolder();
 				}else{
 					this.swarm("interaction", "readPin", flowsUtils.noTries);
@@ -69,17 +68,14 @@ $$.swarm.describe("restore", {
 
 
 	writeCSB: function () {
-		console.log("WriteCSB");
 		fs.writeFile(utils.generatePath(localFolder, this.insertedDseed), this.encryptedCSB, validator.reportOrContinue(this, "createRootCSBWithDseed", "Failed to write masterCSB to disk"));
 	},
 
 	createRootCSBWithDseed: function () {
-		console.log("createRoot");
 		RootCSB.loadWithDseed(localFolder, this.insertedDseed, validator.reportOrContinue(this, "loadRawCSB", "Failed to create rootCSB with dseed"));
 	},
 
 	loadRawCSB: function (rootCSB) {
-		console.log("loadRawCSB");
 		this.asyncDispatcher = new AsyncDispatcher((errs, succs) => {
 			this.hashCage.saveHash(this.hashObj, (err) => {
 				if(err) {
@@ -95,12 +91,9 @@ $$.swarm.describe("restore", {
 		this.rawCSB = rawCSB;
 		const meta = this.rawCSB.getAsset('global.CSBMeta', 'meta');
 		if(this.rootCSB){
-			console.log("about to attach CSB");
 			this.attachCSB();
-
 		}else {
 			if (meta.isMaster) {
-				console.log("is master");
 				this.rootCSB = rootCSB;
 				this.saveDseed();
 			} else {
@@ -245,10 +238,6 @@ $$.swarm.describe("restore", {
 	},
 
 	__attachCSB: function (rootCSB, CSBPath, CSBAlias, seed, dseed, callback) {
-		console.log("CSBPath", CSBPath);
-		console.log("CSBAlias", CSBAlias);
-		console.log("seed", seed);
-		console.log("dseed", dseed);
 
 		rootCSB.loadAssetFromPath(CSBPath, (err, csbRef)=>{
 			if(err){

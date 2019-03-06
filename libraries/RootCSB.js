@@ -70,11 +70,12 @@ function RootCSB(localFolder, currentRawCSB, dseed) {
 			}
 
 			const csbMeta = currentRawCSB.getAsset('global.CSBMeta', 'meta');
+			const isMaster = typeof csbMeta.isMaster === 'undefined' ? true : csbMeta.isMaster;
 			if(!csbMeta.id) {
-				csbMeta.init($$.uidGenerator.safe_uuid(), true);
+				csbMeta.init($$.uidGenerator.safe_uuid());
+				csbMeta.setIsMaster(isMaster);
 				currentRawCSB.saveAsset(csbMeta);
 			}
-
 			return __writeRawCSB(currentRawCSB, dseed, callback);
 		}
 
@@ -99,9 +100,11 @@ function RootCSB(localFolder, currentRawCSB, dseed) {
 						if(err) {
 							return callback(err);
 						}
-						const asset = rawCSB.getAsset("global.CSBMeta", "meta");
-						asset.init(csbRef.getMetadata('swarmId'), false);
-						rawCSB.saveAsset(asset);
+						const csbMeta = rawCSB.getAsset("global.CSBMeta", "meta");
+						const isMaster = typeof csbMeta.isMaster === 'undefined' ? false : csbMeta.isMaster;
+						csbMeta.init(csbRef.getMetadata('swarmId'));
+						csbMeta.setIsMaster(isMaster);
+						rawCSB.saveAsset(csbMeta);
 						__writeRawCSB(rawCSB, csbReference.dseed, callback);
 					});
 				});
@@ -352,8 +355,9 @@ function loadWithDseed(localFolder, masterDseed, callback) {
 	});
 }
 
-function createNew(localFolder, masterDseed) {
-	return new RootCSB(localFolder, new RawCSB(), masterDseed);
+function createNew(localFolder, masterDseed, rawCSB) {
+	rawCSB = rawCSB || new RawCSB();
+	return new RootCSB(localFolder, rawCSB, masterDseed);
 }
 
 function writeNewMasterCSB(localFolder, masterDseed, callback) {
