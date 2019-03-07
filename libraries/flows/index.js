@@ -9,6 +9,7 @@ module.exports = $$.library(function () {
     require('./listCSBs');
     require('./resetPin');
     require('./restore');
+    require('./receive');
 	require('./saveBackup');
     require('./setPin');
 });
