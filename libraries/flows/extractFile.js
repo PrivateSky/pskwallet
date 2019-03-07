@@ -27,7 +27,7 @@ $$.swarm.describe("extractFile", {
 				return this.swarm("interaction", "handleError", err, "Failed to decrypt file" + filePath);
 			}
 
-			this.swarm("interaction", "printInfo", fileNames, this.alias + " was successfully extracted. ");
+			this.swarm("interaction", "printInfo", this.alias + " was successfully extracted. ");
 		})
 	}
 });
