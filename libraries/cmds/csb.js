@@ -131,7 +131,7 @@ function doAttachFile(url, filePath) {
 		readPin: readPin,
 		printInfo: generateMessagePrinter(),
 		handleError: generateErrorHandler(),
-		onProgress: function (progress) {
+		reportProgress: function (progress) {
 			console.log("progress:", progress.toFixed(2));
 		}
 	})
