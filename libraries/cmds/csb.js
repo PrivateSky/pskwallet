@@ -142,7 +142,10 @@ function doExtractFile(url){
 	is.startSwarm("extractFile", "start", url).on({
 		readPin: readPin,
 		printInfo: generateMessagePrinter(),
-		handleError:generateErrorHandler()
+		handleError:generateErrorHandler(),
+		__return__: function (fileNames) {
+			//TODO process fileNames in browser
+		}
 	});
 }
 
