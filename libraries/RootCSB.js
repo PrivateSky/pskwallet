@@ -3,6 +3,7 @@ const fs = require('fs');
 const crypto = require('pskcrypto');
 const Seed = require('../utils/Seed');
 const utils = require('../utils/utils');
+const flowsUtils = require('../utils/flowsUtils');
 const DseedCage = require('../utils/DseedCage');
 const HashCage  = require('../utils/HashCage');
 
@@ -19,11 +20,6 @@ function RootCSB(localFolder, currentRawCSB, dseed) {
 		throw new Error('Missing required parameters');
 	}
 
-	let config = {
-		backup : ["http://localhost:8080"],
-		pin    : "12345678",
-		noTries: 3
-	};
 
 	const hashCage = new HashCage(localFolder);
 	
@@ -86,28 +82,37 @@ function RootCSB(localFolder, currentRawCSB, dseed) {
 				callback(err);
 			}
 			if(!csbReference.dseed) {
-				const seed = Seed.create(config.backup);
-				const localSeed = Seed.generateCompactForm(seed);
-				const localDseed = Seed.generateCompactForm(Seed.deriveSeed(localSeed));
-				csbReference.init(splitPath.assetAid, localSeed, localDseed);
-
-				this.saveAssetToPath(CSBPath, csbReference, (err) => {
-					if(err) {
+				const backupCage = new DseedCage(localFolder);
+				backupCage.loadDseedBackups(flowsUtils.defaultPin, (err, dseed, backups) => {
+					if (err && err.code !== 'ENOENT') {
 						return callback(err);
 					}
 
-					this.loadAssetFromPath(CSBPath, (err, csbRef) => {
+					backups = backups || flowsUtils.defaultBackup;
+					const seed = Seed.create(backups);
+					const localSeed = Seed.generateCompactForm(seed);
+					const localDseed = Seed.generateCompactForm(Seed.deriveSeed(localSeed));
+					csbReference.init(splitPath.assetAid, localSeed, localDseed);
+
+					this.saveAssetToPath(CSBPath, csbReference, (err) => {
 						if(err) {
 							return callback(err);
 						}
-						const csbMeta = rawCSB.getAsset("global.CSBMeta", "meta");
-						const isMaster = typeof csbMeta.isMaster === 'undefined' ? false : csbMeta.isMaster;
-						csbMeta.init(csbRef.getMetadata('swarmId'));
-						csbMeta.setIsMaster(isMaster);
-						rawCSB.saveAsset(csbMeta);
-						__writeRawCSB(rawCSB, csbReference.dseed, callback);
+
+						this.loadAssetFromPath(CSBPath, (err, csbRef) => {
+							if(err) {
+								return callback(err);
+							}
+							const csbMeta = rawCSB.getAsset("global.CSBMeta", "meta");
+							const isMaster = typeof csbMeta.isMaster === 'undefined' ? false : csbMeta.isMaster;
+							csbMeta.init(csbRef.getMetadata('swarmId'));
+							csbMeta.setIsMaster(isMaster);
+							rawCSB.saveAsset(csbMeta);
+							__writeRawCSB(rawCSB, csbReference.dseed, callback);
+						});
 					});
 				});
+
 			} else {
 				__writeRawCSB(rawCSB, csbReference.dseed, callback);
 			}
@@ -322,9 +327,17 @@ function createRootCSB(localFolder, masterRawCSB, masterSeed, masterDseed, pin, 
 	}
 }
 function loadWithPin(localFolder, pin, callback) {
-	new DseedCage(localFolder).loadDseed(pin, (err, diskDseed) => {
+	new DseedCage(localFolder).loadDseedBackups(pin, (err, diskDseed, backups) => {
 		if (err) {
 			return callback(err);
+		}
+
+		if(!diskDseed && (!backups || backups.length === 0)){
+			return callback();
+		}
+
+		if(!diskDseed){
+			return callback(undefined, undefined, undefined, backups);
 		}
 
 		const rootCSB = new RootCSB(localFolder, null, diskDseed);
@@ -332,7 +345,7 @@ function loadWithPin(localFolder, pin, callback) {
 			if(err){
 				return callback(err);
 			}
-			callback(null, rootCSB, diskDseed);
+			callback(undefined, rootCSB, diskDseed, backups);
 		});
 	});
 }

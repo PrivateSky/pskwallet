@@ -29,6 +29,18 @@ function generateMessagePrinter(){
 	}
 }
 
+
+function doAddBackup(backupUrl, localFolder) {
+	is.startSwarm("addBackup", "start", backupUrl, localFolder).on({
+		readPin: readPin,
+		createPin: function(defaultPin, noTries){
+			this.swarm('addBackup', defaultPin, noTries);
+		},
+		handleError: generateErrorHandler(),
+		printInfo: generateMessagePrinter()
+	})
+}
+
 function doSetPin() {
 	is.startSwarm("setPin", "start").on({
 		readPin: readPin,
@@ -52,8 +64,8 @@ function doCreateCsb(CSBPath) {
                 this.swarm("validatePin", pin, noTries);
             })
         },
-        createPin: function (defaultPin) {
-            this.swarm("createMasterCSB", defaultPin);
+        createPin: function (defaultPin, backups) {
+            this.swarm("createMasterCSB", defaultPin, backups);
         },
 		printInfo: generateMessagePrinter(),
 		printSensitiveInfo: function (seed, defaultPin) {
@@ -172,6 +184,7 @@ function doReceive(endpoint, channel) {
 }
 
 addCommand("set", "pin", doSetPin,  "\t\t\t\t\t |change the pin"); //seteaza la csb-ul master
+addCommand("add", "backup", doAddBackup, "<backupUrl> <localFolder> \t\t\t\t |add a new backupUrl to the existent list of backups"); //creaza un nou CSB si il adaugi in csb-ul master
 addCommand("create", "csb", doCreateCsb, "<url> \t\t\t\t |create a new CSB having the alias <aliasCsb>"); //creaza un nou CSB si il adaugi in csb-ul master
 addCommand("save", "backup", doSaveBackup,"<url>\t\t\t\t |saveData all csbs at address <url>");
 addCommand("restore", null, doRestore, "<url>\t\t\t\t |restore the csb  or archive having the name <alias> from one \n\t\t\t\t\t\t\t  of the addresses stored in backup\n");

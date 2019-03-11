@@ -8,7 +8,7 @@ $$.swarm.describe("listCSBs", {
 		this.CSBPath = CSBPath;
 
         this.dseedCage = new DseedCage(localFolder);
-        this.dseedCage.loadDseed(flowsUtils.defaultPin, (err, dseed) => {
+        this.dseedCage.loadDseedBackups(flowsUtils.defaultPin, (err, dseed, backups) => {
             if (err) {
                 this.swarm("interaction", "noMasterCSBExists");
             } else {

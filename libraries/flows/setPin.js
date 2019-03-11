@@ -21,11 +21,11 @@ $$.swarm.describe("setPin", {
 	actualizePin: function (newPin) {
 		this.dseedCage = new DseedCage(localFolder);
 
-		this.dseedCage.loadDseed(this.oldPin, validator.reportOrContinue(this, "saveDseed", "Failed to load dseed.", newPin));
+		this.dseedCage.loadDseedBackups(this.oldPin, validator.reportOrContinue(this, "saveDseed", "Failed to load dseed.", newPin));
 	},
 
-	saveDseed: function (dseed, pin) {
-		this.dseedCage.saveDseed(pin, dseed, validator.reportOrContinue(this, "printSuccessMsg", "Failed to save dseed"));
+	saveDseed: function (dseed, backups = [], pin) {
+		this.dseedCage.saveDseedBackups(pin, dseed, backups, validator.reportOrContinue(this, "printSuccessMsg", "Failed to save dseed"));
 	},
 
 	printSuccessMsg: function () {

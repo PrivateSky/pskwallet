@@ -103,7 +103,7 @@ $$.swarm.describe("restore", {
 	},
 
 	saveDseed: function () {
-		this.insertedDseedCage.saveDseed(flowsUtils.defaultPin, this.insertedDseed, validator.reportOrContinue(this, "collectFiles", "Failed to save dseed", this.rawCSB, this.insertedDseed, '', 'master'));
+		this.insertedDseedCage.saveDseedBackups(flowsUtils.defaultPin, this.insertedDseed, undefined, validator.reportOrContinue(this, "collectFiles", "Failed to save dseed", this.rawCSB, this.insertedDseed, '', 'master'));
 	},
 
 
@@ -113,7 +113,7 @@ $$.swarm.describe("restore", {
 		const dseed = Seed.generateCompactForm(Seed.deriveSeed(seed));
 		this.swarm("interaction", "printSensitiveInfo", seed, flowsUtils.defaultPin);
 		this.rootCSB = RootCSB.createNew(localFolder, dseed);
-		this.insertedDseedCage.saveDseed(flowsUtils.defaultPin, dseed, validator.reportOrContinue(this, "attachCSB", "Failed to save master dseed "));
+		this.insertedDseedCage.saveDseedBackups(flowsUtils.defaultPin, dseed, undefined, validator.reportOrContinue(this, "attachCSB", "Failed to save master dseed "));
 	},
 
 	attachCSB: function () {

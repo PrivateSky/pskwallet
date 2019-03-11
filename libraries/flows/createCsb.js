@@ -10,9 +10,9 @@ $$.swarm.describe("createCsb", {
         this.localFolder = localFolder;
         this.CSBPath = CSBPath;
         this.dseedCage = new DseedCage(this.localFolder);
-        this.dseedCage.loadDseed(flowsUtils.defaultPin, (err, dseed) => {
-            if (err) {
-                this.swarm("interaction", "createPin", flowsUtils.defaultPin);
+        this.dseedCage.loadDseedBackups(flowsUtils.defaultPin, (err, dseed, backups) => {
+            if (!dseed) {
+                this.swarm("interaction", "createPin", flowsUtils.defaultPin, backups);
             } else {
                 this.swarm("interaction", "readPin", flowsUtils.noTries);
             }
@@ -22,6 +22,7 @@ $$.swarm.describe("createCsb", {
         this.CSBPath = CSBPath;
         this.rootCSB = RootCSB.loadWithDseed(this.localFolder, dseed, validator.reportOrContinue(this, 'createCSB', 'Failed to load master with provided dseed'));
     },
+
     withoutPin: function (CSBPath, backups, localFolder = process.cwd(), isMaster = false) {
         this.localFolder = localFolder;
         this.CSBPath = CSBPath;
@@ -31,6 +32,7 @@ $$.swarm.describe("createCsb", {
         }
         this.createMasterCSB(undefined, backups);
     },
+
     validatePin: function (pin, noTries) {
         validator.validatePin(this.localFolder, this, "createCSB", pin, noTries);
     },
@@ -50,7 +52,7 @@ $$.swarm.describe("createCsb", {
         this.rootCSB = RootCSB.createNew(this.localFolder, this.dseed, rawCSB);
 
         if (pin) {
-            this.dseedCage.saveDseed(pin, this.dseed, validator.reportOrContinue(this, "createCSB", "Failed to save dseed "));
+            this.dseedCage.saveDseedBackups(pin, this.dseed, backups, validator.reportOrContinue(this, "createCSB", "Failed to save dseed "));
         } else {
             this.createCSB();
         }
