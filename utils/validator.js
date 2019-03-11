@@ -7,10 +7,8 @@ module.exports.validatePin = function (localFolder, swarm, phaseName, pin, noTri
 			swarm.swarm("interaction", "readPin", noTries-1);
 		}else{
 			if(!dseed){
-				console.log("undefined Dseed");
 				args.push(backups);
 			}else {
-				console.log("rootCSB");
 				swarm.rootCSB = rootCSB;
 				swarm.dseed = dseed;
 				args.push(backups);
