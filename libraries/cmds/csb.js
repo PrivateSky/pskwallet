@@ -33,8 +33,8 @@ function generateMessagePrinter(){
 function doAddBackup(backupUrl, localFolder) {
 	is.startSwarm("addBackup", "start", backupUrl, localFolder).on({
 		readPin: readPin,
-		createPin: function(defaultPin, noTries){
-			this.swarm('addBackup', defaultPin, noTries);
+		createPin: function(defaultPin){
+			this.swarm('addBackup', defaultPin);
 		},
 		handleError: generateErrorHandler(),
 		printInfo: generateMessagePrinter()
