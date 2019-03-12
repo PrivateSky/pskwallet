@@ -17,6 +17,9 @@ function DseedCage(localFolder) {
 				}
 
 				dseedBackups = JSON.parse(dseedBackups.toString());
+				if (!Buffer.isBuffer(dseedBackups.dseed)) {
+					dseedBackups.dseed = Buffer.from(dseedBackups.dseed);
+				}
 				callback(undefined, dseedBackups.dseed, dseedBackups.backups);
 			});
 		});

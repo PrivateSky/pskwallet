@@ -34,7 +34,8 @@ $$.swarm.describe("saveBackup", {
 		});
 	},
 
-	loadHashFile: function() {
+	loadHashFile: function(pin, backups) {
+		this.backups = backups;
 		this.hashCage = new HashCage(this.localFolder);
 		this.hashCage.loadHash(validator.reportOrContinue(this, 'readEncryptedMaster', 'Failed to load hash file'));
 	},
@@ -106,8 +107,14 @@ $$.swarm.describe("saveBackup", {
 
 	__categorize: function(files) {
 		const categories = {};
+
 		files.forEach(({dseed, alias}) => {
-			const backups = Seed.getBackupUrls(dseed);
+			let backups;
+			if(!this.backups || this.backups.length === 0) {
+				backups = Seed.getBackupUrls(dseed);
+			}else{
+				backups = this.backups;
+			}
 			backups.forEach((backup) =>{
 				if(!categories[backup]) {
 					categories[backup] = {};
