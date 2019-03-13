@@ -17,7 +17,7 @@ function DseedCage(localFolder) {
 				}
 
 				dseedBackups = JSON.parse(dseedBackups.toString());
-				if (!Buffer.isBuffer(dseedBackups.dseed)) {
+				if (typeof dseedBackups.dseed !=='undefined' && !Buffer.isBuffer(dseedBackups.dseed)) {
 					dseedBackups.dseed = Buffer.from(dseedBackups.dseed);
 				}
 				callback(undefined, dseedBackups.dseed, dseedBackups.backups);
@@ -26,7 +26,6 @@ function DseedCage(localFolder) {
 	}
 
 	function saveDseedBackups(pin, dseed, backups, callback) {
-		// backups = backups || JSON.stringify([]);
 		$$.ensureFolderExists(dseedFolder, (err) => {
 			if (err) {
 				return callback(err);
