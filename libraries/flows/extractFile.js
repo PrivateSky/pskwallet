@@ -22,6 +22,11 @@ $$.swarm.describe("extractFile", {
 	
 	decryptFile: function (fileReference, rawCSB) {
 		const filePath = utils.generatePath(localFolder, Buffer.from(fileReference.dseed));
+
+		crypto.on('progress', (progress) => {
+            this.swarm('interaction', 'reportProgress', progress);
+        });
+
 		crypto.decryptStream(filePath, localFolder, Buffer.from(fileReference.dseed), (err, fileNames) => {
 			if(err){
 				return this.swarm("interaction", "handleError", err, "Failed to decrypt file" + filePath);
