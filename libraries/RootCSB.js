@@ -60,32 +60,30 @@ function RootCSB(localFolder, currentRawCSB, dseed) {
 
     this.saveRawCSB = function (rawCSB, CSBPath, callback) {
         // save master
-        const backupCage = new DseedCage(localFolder);
-        backupCage.loadDseedBackups(flowsUtils.defaultPin, (err, dseed, backupUrls) => {
-            if (err && err.code !== 'ENOENT') {
-                return callback(err);
+        if (!CSBPath || CSBPath === '') {
+            if (rawCSB) {
+                currentRawCSB = rawCSB;
             }
 
-            backupUrls = backupUrls || [flowsUtils.defaultBackup];
+            __initializeAssets(currentRawCSB);
+            return __writeRawCSB(currentRawCSB, dseed, callback);
+        }
 
-            if (!CSBPath || CSBPath === '') {
-                if (rawCSB) {
-                    currentRawCSB = rawCSB;
-                }
-
-                __initializeAssets(currentRawCSB, undefined, backupUrls);
-                return __writeRawCSB(currentRawCSB, dseed, callback);
+        // save csb in hierarchy
+        const splitPath = __splitPath(CSBPath);
+        this.loadAssetFromPath(CSBPath, (err, csbReference) => {
+            if (err) {
+                callback(err);
             }
+            if (!csbReference.dseed) {
+                const backupCage = new DseedCage(localFolder);
+                backupCage.loadDseedBackups(flowsUtils.defaultPin, (err, dseed, backups) => {
+                    if (err && err.code !== 'ENOENT') {
+                        return callback(err);
+                    }
 
-            // save csb in hierarchy
-            const splitPath = __splitPath(CSBPath);
-            this.loadAssetFromPath(CSBPath, (err, csbReference) => {
-                if (err) {
-                    callback(err);
-                }
-                if (!csbReference.dseed) {
-
-                    const seed = Seed.create(backupUrls);
+                    backups = backups || [flowsUtils.defaultBackup];
+                    const seed = Seed.create(backups);
                     const localSeed = Seed.generateCompactForm(seed);
                     const localDseed = Seed.generateCompactForm(Seed.deriveSeed(localSeed));
                     csbReference.init(splitPath.assetAid, localSeed, localDseed);
@@ -99,17 +97,15 @@ function RootCSB(localFolder, currentRawCSB, dseed) {
                             if (err) {
                                 return callback(err);
                             }
-
-                            __initializeAssets(rawCSB, csbRef, backupUrls);
-
+                            __initializeAssets(rawCSB, csbRef, backups);
                             __writeRawCSB(rawCSB, csbReference.dseed, callback);
                         });
                     });
+                });
 
-                } else {
-                    __writeRawCSB(rawCSB, csbReference.dseed, callback);
-                }
-            });
+            } else {
+                __writeRawCSB(rawCSB, csbReference.dseed, callback);
+            }
         });
     };
 
@@ -283,12 +279,6 @@ function RootCSB(localFolder, currentRawCSB, dseed) {
     }
 
     function __initializeAssets(rawCSB, csbRef, backupUrls) {
-        backupUrls.forEach(url => {
-            const uid = $$.uidGenerator.safe_uuid();
-            const backup = rawCSB.getAsset('global.Backup', uid);
-            backup.init(uid, url);
-            rawCSB.saveAsset(backup);
-        });
 
         let csbMeta;
         let isMaster;
@@ -302,6 +292,13 @@ function RootCSB(localFolder, currentRawCSB, dseed) {
                 rawCSB.saveAsset(csbMeta);
             }
         } else {
+            backupUrls.forEach(url => {
+                const uid = $$.uidGenerator.safe_uuid();
+                const backup = rawCSB.getAsset('global.Backup', uid);
+                backup.init(uid, url);
+                rawCSB.saveAsset(backup);
+            });
+
             isMaster = typeof csbMeta.isMaster === 'undefined' ? false : csbMeta.isMaster;
             csbMeta.init(csbRef.getMetadata('swarmId'));
             csbMeta.setIsMaster(isMaster);
