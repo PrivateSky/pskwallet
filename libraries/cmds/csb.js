@@ -155,6 +155,9 @@ function doExtractFile(url){
 		readPin: readPin,
 		printInfo: generateMessagePrinter(),
 		handleError:generateErrorHandler(),
+        reportProgress: function (progress) {
+            console.log("progress:", progress.toFixed(2));
+        },
 		__return__: function (fileNames) {
 			//TODO process fileNames in browser
 		}
