@@ -239,14 +239,21 @@ $$.swarm.describe("restore", {
 
 	__attachCSB: function (rootCSB, CSBPath, CSBAlias, seed, dseed, callback) {
 
-		rootCSB.loadAssetFromPath(CSBPath, (err, csbRef)=>{
+		rootCSB.loadRawCSB(CSBPath, (err, rawCSB)=>{
 			if(err){
-				return callback(err);
-			}
-			csbRef.init(CSBAlias, seed, dseed);
-			rootCSB.saveAssetToPath(CSBPath, csbRef, callback);
+				rootCSB.loadAssetFromPath(CSBPath, (err, csbRef)=>{
+					if(err){
+						return callback(err);
+					}
+					csbRef.init(CSBAlias, seed, dseed);
+					rootCSB.saveAssetToPath(CSBPath, csbRef, callback);
 
-		})
+				})
+			}else{
+				callback(new Error(`A CSB having the alias ${CSBAlias} already exists.`));
+			}
+		});
+
 	}
 });
 
