@@ -14,7 +14,7 @@ const AsyncDispatcher = require('../../utils/AsyncDispatcher');
 
 
 $$.swarm.describe("restore", {
-	start: function (url) {
+	start: function (url = 'master') {
 		const {CSBPath, alias} = utils.processUrl(url, 'global.CSBReference');
 		this.CSBPath = CSBPath;
 		this.CSBAlias = alias;
