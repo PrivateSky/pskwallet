@@ -8,7 +8,7 @@ const DseedCage = require("../../utils/DseedCage");
 $$.swarm.describe("createCsb", {
     start: function (CSBPath, localFolder = process.cwd()) {
         this.localFolder = localFolder;
-        this.CSBPath = CSBPath;
+        this.CSBPath = CSBPath || '';
         this.dseedCage = new DseedCage(this.localFolder);
         this.dseedCage.loadDseedBackups(flowsUtils.defaultPin, (err, dseed, backups) => {
             if (!dseed) {
@@ -52,7 +52,8 @@ $$.swarm.describe("createCsb", {
         this.rootCSB = RootCSB.createNew(this.localFolder, this.dseed, rawCSB);
 
         if (pin) {
-            this.dseedCage.saveDseedBackups(pin, this.dseed, backups, validator.reportOrContinue(this, "createCSB", "Failed to save dseed "));
+            const nextPhase = (this.CSBPath === '' || typeof this.CSBPath === 'undefined') ? 'saveRawCSB' : 'createCSB';
+            this.dseedCage.saveDseedBackups(pin, this.dseed, backups, validator.reportOrContinue(this, nextPhase, "Failed to save dseed "));
         } else {
             this.createCSB();
         }
@@ -64,10 +65,16 @@ $$.swarm.describe("createCsb", {
         meta.init();
         meta.setIsMaster(false);
         rawCSB.saveAsset(meta);
-        this.rootCSB.saveRawCSB(rawCSB, this.CSBPath, validator.reportOrContinue(this, "printSuccessMsg", "Failed to save raw CSB"));
+        this.saveRawCSB(rawCSB);
     },
 
-    printSuccessMsg: function () {
+    saveRawCSB: function (rawCSB) {
+        this.rootCSB.saveRawCSB(rawCSB, this.CSBPath, validator.reportOrContinue(this, "printSuccess", "Failed to save raw CSB"));
+
+    },
+
+
+    printSuccess: function () {
         let message = "Successfully saved CSB at path " + this.CSBPath;
         if (!this.CSBPath || this.CSBPath === '') {
             message = 'Successfully saved CSB root';
