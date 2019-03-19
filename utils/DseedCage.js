@@ -15,8 +15,12 @@ function DseedCage(localFolder) {
 				if (err) {
 					return callback(err);
 				}
+				try{
+					dseedBackups = JSON.parse(dseedBackups.toString());
+				}catch (e) {
+					return callback(e);
+				}
 
-				dseedBackups = JSON.parse(dseedBackups.toString());
 				if (typeof dseedBackups.dseed !=='undefined' && !Buffer.isBuffer(dseedBackups.dseed)) {
 					dseedBackups.dseed = Buffer.from(dseedBackups.dseed);
 				}
