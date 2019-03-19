@@ -6,7 +6,11 @@ const utils = require('../utils/utils');
 const flowsUtils = require('../utils/flowsUtils');
 const DseedCage = require('../utils/DseedCage');
 const HashCage = require('../utils/HashCage');
+const CSBCache = require("./CSBCache");
+const EventEmitter = require('events');
 
+let rawCSBCache = new CSBCache(10);
+let instances = {};
 
 /**
  *
@@ -22,6 +26,11 @@ function RootCSB(localFolder, currentRawCSB, dseed) {
 
 
     const hashCage = new HashCage(localFolder);
+    const event = new EventEmitter();
+    this.on = event.on;
+    this.off = event.removeListener;
+    this.removeAllListeners = event.removeAllListeners;
+    this.emit = event.emit;
 
     this.getMidRoot = function (CSBPath, callback) {
         throw new Error('Not implemented');
@@ -51,9 +60,11 @@ function RootCSB(localFolder, currentRawCSB, dseed) {
         }
 
         this.loadAssetFromPath(CSBPath, (err, asset, rawCSB) => {
+
             if (err) {
                 return callback(err);
             }
+
             __loadRawCSB(asset.dseed, callback)
         })
     };
@@ -98,7 +109,14 @@ function RootCSB(localFolder, currentRawCSB, dseed) {
                                 return callback(err);
                             }
                             __initializeAssets(rawCSB, csbRef, backups);
-                            __writeRawCSB(rawCSB, csbReference.dseed, callback);
+                            __writeRawCSB(rawCSB, csbReference.dseed, (err)=>{
+                                if (err) {
+                                    return callback(err);
+                                }
+
+                                this.emit('end');
+                                callback();
+                            });
                         });
                     });
                 });
@@ -308,23 +326,6 @@ function RootCSB(localFolder, currentRawCSB, dseed) {
 }
 
 
-function GenericCache(size) {
-
-    let cache = {};
-
-    this.load = function (uid) {
-        return undefined;
-        // return cache[uid];
-    };
-
-    this.put = function (uid, obj) {
-        cache[uid] = obj;
-    }
-
-}
-
-let rawCSBCache = new GenericCache(10);
-
 function createRootCSB(localFolder, masterRawCSB, masterSeed, masterDseed, pin, callback) {
     if (masterSeed && !masterDseed) {
         return loadWithSeed(localFolder, masterSeed, callback);
@@ -358,7 +359,13 @@ function loadWithPin(localFolder, pin, callback) {
             return callback(undefined, undefined, undefined, backups);
         }
 
-        const rootCSB = new RootCSB(localFolder, null, diskDseed);
+        const key = crypto.generateSafeUid(diskDseed, localFolder);
+        if(!instances[key]){
+            instances[key] = new RootCSB(localFolder, null, diskDseed);
+        }
+
+        const rootCSB = instances[key];
+
         rootCSB.loadRawCSB('', (err) => {
             if (err) {
                 return callback(err);
@@ -377,7 +384,12 @@ function loadWithDseed(localFolder, masterDseed, callback) {
     if (typeof masterDseed === 'object' && !Buffer.isBuffer(masterDseed)) {
         masterDseed = Seed.generateCompactForm(masterDseed);
     }
-    const rootCSB = new RootCSB(localFolder, null, masterDseed);
+    const key = crypto.generateSafeUid(masterDseed, localFolder);
+    if(!instances[key]){
+        instances[key] = new RootCSB(localFolder, null, masterDseed);
+    }
+
+    const rootCSB = instances[key];
     rootCSB.loadRawCSB('', (err) => {
         if (err) {
             return callback(err);
@@ -388,7 +400,12 @@ function loadWithDseed(localFolder, masterDseed, callback) {
 
 function createNew(localFolder, masterDseed, rawCSB) {
     rawCSB = rawCSB || new RawCSB();
-    return new RootCSB(localFolder, rawCSB, masterDseed);
+    const key = crypto.generateSafeUid(masterDseed, localFolder);
+    if(!instances[key]){
+        instances[key] = new RootCSB(localFolder, rawCSB, masterDseed);
+    }
+
+    return instances[key];
 }
 
 function writeNewMasterCSB(localFolder, masterDseed, callback) {
@@ -396,7 +413,12 @@ function writeNewMasterCSB(localFolder, masterDseed, callback) {
         callback(new Error('Missing required arguments'));
     }
 
-    const rootCSB = new RootCSB(localFolder, null, masterDseed);
+    const key = crypto.generateSafeUid(masterDseed, localFolder);
+    if(!instances[key]){
+        instances[key] = new RootCSB(localFolder, null, masterDseed);
+    }
+
+    const rootCSB = instances[key];
     rootCSB.saveRawCSB(new RawCSB(), '', callback);
 }
 
