@@ -1,47 +1,33 @@
-var path = require("path");
 const utils = require("./../../utils/flowsUtils");
-const crypto = require("pskcrypto");
-const fs = require("fs");
+const RootCSB = require("../RootCSB");
+const Seed = require("../../utils/Seed");
+const DseedCage = require("../../utils/DseedCage");
 
 $$.swarm.describe("resetPin", {
-	start: function () {
-		this.swarm("interaction", "readSeed", 3);
-	},
+    start: function (localFolder = process.cwd()) {
+        this.localFolder = localFolder;
+        this.swarm("interaction", "readSeed", utils.noTries);
+    },
 
-	checkSeedValidity: function (seed) {
-		var self = this;
-		self.seed = seed;
-		fs.access(utils.Paths.auxFolder, function (err) {
-			if(err){
-				fs.mkdir(utils.Paths.auxFolder, function (err) {
-					if(err){
-						self.swarm("interaction", "handleError", err, "Failed to create .privateSky folder");
-						return;
-					}
-					self.swarm("interaction", "readPin");
-				})
-			}else{
-				utils.checkSeedIsValid(seed, function (err, status) {
-					if(err) {
-						self.swarm("interaction", "handleError", null, "Seed is invalid", true);
-					}else{
-						self.swarm("interaction", "readPin");
-					}
-				})
-			}
-		});
+    validateSeed: function (seed, noTries) {
+        RootCSB.loadWithSeed(this.localFolder, seed, (err, rootCSB) => {
+            if (err) {
+                this.swarm("interaction", "readSeed", noTries-1);
+            }else{
+                this.dseed = Seed.generateCompactForm(Seed.deriveSeed(seed));
+                this.swarm("interaction", "insertPin", utils.noTries);
+            }
+        });
+    },
 
+    actualizePin: function (pin) {
+        const dseedCage = new DseedCage(this.localFolder);
+        dseedCage.saveDseedBackups(pin, this.dseed, undefined, (err)=>{
+            if(err){
+                return this.swarm("interaction", "handleError", "Failed to save dseed.");
+            }
 
-	},
-
-	updateData: function (pin) {
-		var self = this;
-		crypto.saveData(crypto.deriveSeed(Buffer.from(this.seed, "base64")), pin, utils.Paths.Dseed, function (err) {
-			if(err){
-				self.swarm("interaction", "printInfo", err, "Failed to saveData dseed");
-				return;
-			}
-			self.swarm("interaction", "printInfo","The pin has been successfully changed");
-		});
-	}
+            this.swarm("interaction", "printInfo", "The pin has been changed successfully.");
+        })
+    }
 });
