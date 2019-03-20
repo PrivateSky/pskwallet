@@ -1,7 +1,6 @@
 $$.loadLibrary("flows", require("../flows"));
 const is = require("interact").createInteractionSpace();
 const utils = require('../../utils/consoleUtils');
-const path = require("path");
 
 function readPin(noTries) {
 	if(noTries < 3 && noTries > 0){
@@ -49,6 +48,34 @@ function doSetPin() {
 				this.swarm("actualizePin", newPin);
 			});
 		},
+		handleError: generateErrorHandler(),
+		printInfo: generateMessagePrinter()
+	})
+}
+
+
+function doResetPin() {
+	is.startSwarm("resetPin", "start").on({
+		readSeed: function (noTries) {
+			utils.insertPassword("Enter seed:", noTries, (err, seed) =>{
+				if (err) {
+					throw err;
+				}
+				if(noTries < 3 && noTries > 0){
+					console.log("Invalid pin");
+					console.log("Try again");
+				}
+
+				this.swarm("validateSeed", seed, noTries);
+			});
+		},
+
+		insertPin: function (noTries) {
+			utils.insertPassword("Insert new pin:", noTries, (err, newPin)=>{
+				this.swarm("actualizePin", newPin);
+			});
+		},
+		handleError: generateErrorHandler(),
 		printInfo: generateMessagePrinter()
 	})
 }
@@ -74,26 +101,6 @@ function doCreateCsb(CSBPath) {
 			console.log("The default pin is:", defaultPin, '\n');
 		}
 	});
-}
-
-
-function doResetPin(){
-	is.startSwarm("resetPin", "start").on({
-		readSeed:function(){
-			var self = this;
-			utils.insertPassword("Enter seed: ", 3, function (err, seed) {
-				self.swarm("checkSeedValidity", seed);
-			});
-		},
-		readPin: function () {
-			var self = this;
-			utils.insertPassword("Enter a new pin: ", 3, function (err, pin) {
-				self.swarm("updateData", pin);
-			});
-		},
-		printInfo: generateMessagePrinter(),
-		handleError: generateErrorHandler()
-	})
 }
 
 function doSaveBackup(CSBPath) {
@@ -164,8 +171,8 @@ function doExtractFile(url){
 	});
 }
 
-function doListCSBs(CSBPath) {
-	is.startSwarm("listCSBs", "start", CSBPath).on({
+function doListCSBs(CSBPath, localFolder) {
+	is.startSwarm("listCSBs", "start", CSBPath, localFolder).on({
 		readPin: readPin,
 		printInfo: generateMessagePrinter(),
 		handleError: generateErrorHandler(),
@@ -186,6 +193,27 @@ function doReceive(endpoint, channel) {
 	})
 }
 
+function doPeriodicBackup(seed){
+	setInterval(() => {
+		is.startSwarm("saveBackup", "withSeed", seed).on({
+			handleError: generateErrorHandler(),
+			csbBackupReport: function({errors, successes}) {
+				if(errors.length === 0 && successes.length === 0) {
+					console.log('All CSBs are already backed up');
+				}
+
+				errors.forEach(({alias, backupURL}) => {
+					console.log(`Error while saving file ${alias} on ${backupURL}`);
+				});
+
+				successes.forEach(({alias, backupURL}) => {
+					console.log(`Successfully backed up file ${alias} on ${backupURL}`);
+				});
+			}
+		})
+	}, 5000);
+}
+
 addCommand("set", "pin", doSetPin,  "\t\t\t\t\t |change the pin"); //seteaza la csb-ul master
 addCommand("add", "backup", doAddBackup, "<backupUrl> <localFolder> \t\t\t\t |add a new backupUrl to the existent list of backups"); //creaza un nou CSB si il adaugi in csb-ul master
 addCommand("create", "csb", doCreateCsb, "<url> \t\t\t\t |create a new CSB having the alias <aliasCsb>"); //creaza un nou CSB si il adaugi in csb-ul master
@@ -196,3 +224,4 @@ addCommand("extract", "file", doExtractFile, "<url> \t\t\t |decrypt file/folder/
 addCommand("list", "csbs", doListCSBs, "<url> \t\t\t\t |show all child csbs in the csb <aliasCsb>; if <aliasCsb> \n\t\t\t\t\t\t\t  is not provided, the command will print all the csbs \n\t\t\t\t\t\t\t  in the current folder\n");
 addCommand("attach", "file", doAttachFile, "<url> <filePath>\t\t\t |add file <filepath> to pskdb pointed by <url>");
 addCommand("receive", null, doReceive, "<endpoint> <channel>\t\t\t |wait for seed at endpoint <endpoint> on channel <channel>");
+addCommand("auto", 'backup', doPeriodicBackup, "<seed> \t\t\t |wait for seed at endpoint <endpoint> on channel <channel>");

@@ -1,24 +1,15 @@
 const flowsUtils = require("./../../utils/flowsUtils");
 const validator = require("../../utils/validator");
-const DseedCage = require("../../utils/DseedCage");
-const localFolder = process.cwd();
 
 $$.swarm.describe("listCSBs", {
-	start: function (CSBPath) {
-		this.CSBPath = CSBPath;
-
-        this.dseedCage = new DseedCage(localFolder);
-        this.dseedCage.loadDseedBackups(flowsUtils.defaultPin, (err, dseed, backups) => {
-            if (err) {
-                this.swarm("interaction", "noMasterCSBExists");
-            } else {
-                this.swarm("interaction", "readPin", flowsUtils.noTries);
-            }
-        });
+	start: function (CSBPath, localFolder = process.cwd()) {
+		this.localFolder = localFolder;
+		this.CSBPath = CSBPath || '';
+		this.swarm("interaction", "readPin", flowsUtils.noTries);
 	},
 
 	validatePin: function (pin, noTries) {
-		validator.validatePin(localFolder, this, 'loadRawCSB', pin, noTries);
+		validator.validatePin(this.localFolder, this, 'loadRawCSB', pin, noTries);
 	},
 
 	loadRawCSB: function () {
