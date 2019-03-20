@@ -92,11 +92,10 @@ $$.swarm.describe("restore", {
     },
 
     checkCSBStatus: function (rawCSB, rootCSB) {
-
         this.rawCSB = rawCSB;
         const meta = this.rawCSB.getAsset('global.CSBMeta', 'meta');
         if (this.rootCSB) {
-            this.attachCSB();
+            this.attachCSB(this.rootCSB, this.CSBPath, this.CSBAlias, this.seed, this.insertedDseed);
         } else {
             if (meta.isMaster) {
                 this.rootCSB = rootCSB;
@@ -114,17 +113,17 @@ $$.swarm.describe("restore", {
 
 
     createMasterCSB: function () {
-
         const seed = Seed.generateCompactForm(Seed.create(this.backupUrls || flowsUtils.defaultBackup));
         const dseed = Seed.generateCompactForm(Seed.deriveSeed(seed));
         this.swarm("interaction", "printSensitiveInfo", seed, flowsUtils.defaultPin);
         this.rootCSB = RootCSB.createNew(localFolder, dseed);
-        this.insertedDseedCage.saveDseedBackups(flowsUtils.defaultPin, dseed, undefined, validator.reportOrContinue(this, "collectFiles", "Failed to save master dseed ", this.rawCSB, dseed, '', 'master'));
+        this.insertedDseedCage.saveDseedBackups(flowsUtils.defaultPin, dseed, undefined, validator.reportOrContinue(this, "attachCSB", "Failed to save master dseed ", this.rootCSB, this.CSBPath, this.CSBAlias, this.seed, this.insertedDseed));
     },
 
-    attachCSB: function () {
 
-        this.__attachCSB(this.rootCSB, this.CSBPath, this.CSBAlias, this.seed, this.insertedDseed, validator.reportOrContinue(this, 'loadRestoredRawCSB', 'Failed to attach rawCSB'));
+
+    attachCSB: function (rootCSB, CSBPath, CSBAlias, seed, dseed) {
+        this.__attachCSB(rootCSB, CSBPath, CSBAlias, seed, dseed, validator.reportOrContinue(this, 'loadRestoredRawCSB', 'Failed to attach rawCSB'));
 
     },
 
