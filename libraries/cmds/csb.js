@@ -178,6 +178,9 @@ function doListCSBs(CSBPath, localFolder) {
 		handleError: generateErrorHandler(),
 		__return__ : function (csbAliases) {
 			console.log(csbAliases);
+		},
+        noMasterCSBExists:function(){
+			console.log("No master CSB exists")
 		}
 	})
 }

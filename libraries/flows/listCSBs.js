@@ -1,11 +1,25 @@
 const flowsUtils = require("./../../utils/flowsUtils");
 const validator = require("../../utils/validator");
+const fs = require("fs");
 
 $$.swarm.describe("listCSBs", {
 	start: function (CSBPath, localFolder = process.cwd()) {
 		this.localFolder = localFolder;
 		this.CSBPath = CSBPath || '';
-		this.swarm("interaction", "readPin", flowsUtils.noTries);
+		this.checkCSBExistence();
+	},
+
+    checkCSBExistence:function(){
+        let dseedPath = ".privateSky/dseed";
+		fs.access(dseedPath,(err)=>{
+			if(err){
+                this.swarm("interaction", "noMasterCSBExists");
+			}
+			else
+			{
+                this.swarm("interaction", "readPin", flowsUtils.noTries);
+			}
+		});
 	},
 
 	validatePin: function (pin, noTries) {
