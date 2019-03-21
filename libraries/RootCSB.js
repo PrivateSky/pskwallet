@@ -87,40 +87,32 @@ function RootCSB(localFolder, currentRawCSB, dseed) {
                 callback(err);
             }
             if (!csbReference.dseed) {
-                const backupCage = new DseedCage(localFolder);
-                backupCage.loadDseedBackups(flowsUtils.defaultPin, (err, dseed, backups) => {
-                    if (err && err.code !== 'ENOENT') {
+                const backups = Seed.getBackupUrls(dseed);
+                const seed = Seed.create(backups);
+                const localSeed = Seed.generateCompactForm(seed);
+                const localDseed = Seed.generateCompactForm(Seed.deriveSeed(localSeed));
+                csbReference.init(splitPath.assetAid, localSeed, localDseed);
+
+                this.saveAssetToPath(CSBPath, csbReference, (err) => {
+                    if (err) {
                         return callback(err);
                     }
 
-                    backups = backups || [flowsUtils.defaultBackup];
-                    const seed = Seed.create(backups);
-                    const localSeed = Seed.generateCompactForm(seed);
-                    const localDseed = Seed.generateCompactForm(Seed.deriveSeed(localSeed));
-                    csbReference.init(splitPath.assetAid, localSeed, localDseed);
-
-                    this.saveAssetToPath(CSBPath, csbReference, (err) => {
+                    this.loadAssetFromPath(CSBPath, (err, csbRef) => {
                         if (err) {
                             return callback(err);
                         }
-
-                        this.loadAssetFromPath(CSBPath, (err, csbRef) => {
+                        __initializeAssets(rawCSB, csbRef, backups);
+                        __writeRawCSB(rawCSB, csbReference.dseed, (err) => {
                             if (err) {
                                 return callback(err);
                             }
-                            __initializeAssets(rawCSB, csbRef, backups);
-                            __writeRawCSB(rawCSB, csbReference.dseed, (err)=>{
-                                if (err) {
-                                    return callback(err);
-                                }
 
-                                this.emit('end');
-                                callback();
-                            });
+                            this.emit('end');
+                            callback();
                         });
                     });
                 });
-
             } else {
                 __writeRawCSB(rawCSB, csbReference.dseed, callback);
             }
@@ -360,7 +352,7 @@ function loadWithPin(localFolder, pin, callback) {
         }
 
         const key = crypto.generateSafeUid(diskDseed, localFolder);
-        if(!instances[key]){
+        if (!instances[key]) {
             instances[key] = new RootCSB(localFolder, null, diskDseed);
         }
 
@@ -385,7 +377,7 @@ function loadWithDseed(localFolder, masterDseed, callback) {
         masterDseed = Seed.generateCompactForm(masterDseed);
     }
     const key = crypto.generateSafeUid(masterDseed, localFolder);
-    if(!instances[key]){
+    if (!instances[key]) {
         instances[key] = new RootCSB(localFolder, null, masterDseed);
     }
 
@@ -401,7 +393,7 @@ function loadWithDseed(localFolder, masterDseed, callback) {
 function createNew(localFolder, masterDseed, rawCSB) {
     rawCSB = rawCSB || new RawCSB();
     const key = crypto.generateSafeUid(masterDseed, localFolder);
-    if(!instances[key]){
+    if (!instances[key]) {
         instances[key] = new RootCSB(localFolder, rawCSB, masterDseed);
     }
 
@@ -414,7 +406,7 @@ function writeNewMasterCSB(localFolder, masterDseed, callback) {
     }
 
     const key = crypto.generateSafeUid(masterDseed, localFolder);
-    if(!instances[key]){
+    if (!instances[key]) {
         instances[key] = new RootCSB(localFolder, null, masterDseed);
     }
 

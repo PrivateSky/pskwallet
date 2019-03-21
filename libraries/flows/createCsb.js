@@ -5,19 +5,21 @@ const RawCSB = require("../RawCSB");
 const validator = require("../../utils/validator");
 const DseedCage = require("../../utils/DseedCage");
 
+
 $$.swarm.describe("createCsb", {
     start: function (CSBPath, localFolder = process.cwd()) {
         this.localFolder = localFolder;
         this.CSBPath = CSBPath || '';
         this.dseedCage = new DseedCage(this.localFolder);
-        this.dseedCage.loadDseedBackups(flowsUtils.defaultPin, (err, dseed, backups) => {
-            if (!dseed) {
-                this.swarm("interaction", "createPin", flowsUtils.defaultPin, backups);
+        validator.checkMasterCSBExists(localFolder, (err, status)=>{
+            if(err){
+                this.swarm("interaction", "createPin", flowsUtils.defaultPin);
             } else {
                 this.swarm("interaction", "readPin", flowsUtils.noTries);
             }
         });
     },
+
     withDseed: function (CSBPath, dseed) {
         this.CSBPath = CSBPath;
         this.rootCSB = RootCSB.loadWithDseed(this.localFolder, dseed, validator.reportOrContinue(this, 'createCSB', 'Failed to load master with provided dseed'));
