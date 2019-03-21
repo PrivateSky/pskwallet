@@ -10,7 +10,6 @@ $$.swarm.describe("createCsb", {
     start: function (CSBPath, localFolder = process.cwd()) {
         this.localFolder = localFolder;
         this.CSBPath = CSBPath || '';
-        this.dseedCage = new DseedCage(this.localFolder);
         validator.checkMasterCSBExists(localFolder, (err, status)=>{
             if(err){
                 this.swarm("interaction", "createPin", flowsUtils.defaultPin);
@@ -39,7 +38,14 @@ $$.swarm.describe("createCsb", {
         validator.validatePin(this.localFolder, this, "createCSB", pin, noTries);
     },
 
-    createMasterCSB: function (pin, backups) {
+    loadBackups: function (pin) {
+        this.pin = pin;
+        this.dseedCage = new DseedCage(this.localFolder);
+        this.dseedCage.loadDseedBackups(this.pin, validator.reportOrContinue(this, "createMasterCSB"))
+    },
+
+    createMasterCSB: function (dseed, backups) {
+        console.log("createMaster");
         const seed = Seed.generateCompactForm(Seed.create(backups || flowsUtils.defaultBackup));
         this.dseed = Seed.generateCompactForm(Seed.deriveSeed(seed));
         this.swarm("interaction", "printSensitiveInfo", seed, flowsUtils.defaultPin);
@@ -53,15 +59,16 @@ $$.swarm.describe("createCsb", {
         rawCSB.saveAsset(meta);
         this.rootCSB = RootCSB.createNew(this.localFolder, this.dseed, rawCSB);
 
-        if (pin) {
+        if (this.pin) {
             const nextPhase = (this.CSBPath === '' || typeof this.CSBPath === 'undefined') ? 'saveRawCSB' : 'createCSB';
-            this.dseedCage.saveDseedBackups(pin, this.dseed, backups, validator.reportOrContinue(this, nextPhase, "Failed to save dseed "));
+            this.dseedCage.saveDseedBackups(this.pin, this.dseed, backups, validator.reportOrContinue(this, nextPhase, "Failed to save dseed "));
         } else {
             this.createCSB();
         }
     },
 
-    createCSB: function () {
+    createCSB: function (pin) {
+        this.pin = pin;
         const rawCSB = new RawCSB();
         const meta = rawCSB.getAsset("global.CSBMeta", "meta");
         meta.init();

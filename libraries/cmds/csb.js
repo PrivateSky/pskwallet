@@ -91,8 +91,8 @@ function doCreateCsb(CSBPath) {
                 this.swarm("validatePin", pin, noTries);
             })
         },
-        createPin: function (defaultPin, backups) {
-            this.swarm("createMasterCSB", defaultPin, backups);
+        createPin: function (defaultPin) {
+            this.swarm("loadBackups", defaultPin);
         },
 		printInfo: generateMessagePrinter(),
 		printSensitiveInfo: function (seed, defaultPin) {

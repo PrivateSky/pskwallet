@@ -33,7 +33,7 @@ module.exports.reportOrContinue = function(swarm, phaseName, errorMessage, ...ar
 };
 
 module.exports.checkMasterCSBExists = function (localFolder, callback) {
-	fs.stat(path.join(localFolder, ".privateSky/dseed"), (err, stats)=>{
+	fs.stat(path.join(localFolder, ".privateSky/hash"), (err, stats)=>{
 		if(err){
 			return callback(err, false);
 		}
