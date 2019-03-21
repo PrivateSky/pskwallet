@@ -1,4 +1,6 @@
 const RootCSB = require("../libraries/RootCSB");
+const fs = require("fs");
+const path = require("path");
 
 
 module.exports.validatePin = function (localFolder, swarm, phaseName, pin, noTries, ...args) {
@@ -28,4 +30,14 @@ module.exports.reportOrContinue = function(swarm, phaseName, errorMessage, ...ar
 			}
 		}
 	}
+};
+
+module.exports.checkMasterCSBExists = function (localFolder, callback) {
+	fs.stat(path.join(localFolder, ".privateSky/dseed"), (err, stats)=>{
+		if(err){
+			return callback(err, false);
+		}
+
+		return callback(undefined, true);
+	})
 };
