@@ -45,7 +45,6 @@ $$.swarm.describe("createCsb", {
     },
 
     createMasterCSB: function (dseed, backups) {
-        console.log("createMaster");
         const seed = Seed.generateCompactForm(Seed.create(backups || flowsUtils.defaultBackup));
         this.dseed = Seed.generateCompactForm(Seed.deriveSeed(seed));
         this.swarm("interaction", "printSensitiveInfo", seed, flowsUtils.defaultPin);
