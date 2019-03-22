@@ -8,6 +8,7 @@ const DseedCage = require("../../utils/DseedCage");
 
 $$.swarm.describe("createCsb", {
     start: function (CSBPath, localFolder = process.cwd()) {
+        console.log("start");
         this.localFolder = localFolder;
         this.CSBPath = CSBPath || '';
         validator.checkMasterCSBExists(localFolder, (err, status)=>{
@@ -28,10 +29,10 @@ $$.swarm.describe("createCsb", {
         this.localFolder = localFolder;
         this.CSBPath = CSBPath;
         this.isMaster = isMaster;
-        if (backups.length === 0) {
-            backups = flowsUtils.defaultBackup;
+        if (typeof backups ==='undefined' || backups.length === 0) {
+            backups = [flowsUtils.defaultBackup];
         }
-        this.createMasterCSB(undefined, backups);
+        this.createMasterCSB(backups);
     },
 
     validatePin: function (pin, noTries) {
@@ -41,10 +42,16 @@ $$.swarm.describe("createCsb", {
     loadBackups: function (pin) {
         this.pin = pin;
         this.dseedCage = new DseedCage(this.localFolder);
-        this.dseedCage.loadDseedBackups(this.pin, validator.reportOrContinue(this, "createMasterCSB"))
+        this.dseedCage.loadDseedBackups(this.pin, (err, dseedBackups) => {
+            if(err){
+                this.createMasterCSB();
+            }else{
+                this.createMasterCSB(dseedBackups.backups);
+            }
+        });
     },
 
-    createMasterCSB: function (dseed, backups) {
+    createMasterCSB: function (backups) {
         const seed = Seed.generateCompactForm(Seed.create(backups || flowsUtils.defaultBackup));
         this.dseed = Seed.generateCompactForm(Seed.deriveSeed(seed));
         this.swarm("interaction", "printSensitiveInfo", seed, flowsUtils.defaultPin);

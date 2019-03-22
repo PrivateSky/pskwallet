@@ -1,15 +1,15 @@
  function CSBCache(maxSize) {
 
-    let cache = {};
+     let cache = {};
     let size = 0;
     const clearingRatio = 0.5;
 
 
     this.load = function (uid) {
-        // if (cache[uid]) {
-        //     cache[uid].count += 1;
-        //     return cache[uid].instance;
-        // }
+        if (cache[uid]) {
+            cache[uid].count += 1;
+            return cache[uid].instance;
+        }
 
         return undefined;
     };

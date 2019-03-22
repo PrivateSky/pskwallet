@@ -91,6 +91,7 @@ function doCreateCsb(CSBPath) {
                 this.swarm("validatePin", pin, noTries);
             })
         },
+		handleError: generateErrorHandler(),
         createPin: function (defaultPin) {
             this.swarm("loadBackups", defaultPin);
         },

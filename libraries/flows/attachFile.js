@@ -22,6 +22,12 @@ $$.swarm.describe("attachFile", { //url: CSB1/CSB2/aliasFile
         validator.validatePin(this.localFolder, this, 'loadFileReference', pin, noTries);
     },
 
+
+    withSeed: function (seed, url, filePath, localFolder) {
+        const dseed = Seed.generateCompactForm(Seed.deriveSeed(seed));
+        this.withDseed(dseed, url, filePath, localFolder);
+    },
+
     withDseed: function (dseed, url, filePath, localFolder = process.cwd()) {
         const {CSBPath, alias} = utils.processUrl(url, 'FileReference');
         this.CSBPath = CSBPath;
