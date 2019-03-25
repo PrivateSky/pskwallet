@@ -8,7 +8,6 @@ const DseedCage = require("../../utils/DseedCage");
 
 $$.swarm.describe("createCsb", {
     start: function (CSBPath, localFolder = process.cwd()) {
-        console.log("start");
         this.localFolder = localFolder;
         this.CSBPath = CSBPath || '';
         validator.checkMasterCSBExists(localFolder, (err, status)=>{
