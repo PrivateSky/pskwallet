@@ -10,8 +10,8 @@ $$.swarm.describe("createCsb", {
     start: function (CSBPath, localFolder = process.cwd()) {
         this.localFolder = localFolder;
         this.CSBPath = CSBPath || '';
-        validator.checkMasterCSBExists(localFolder, (err, status)=>{
-            if(err){
+        validator.checkMasterCSBExists(localFolder, (err, status) => {
+            if (err) {
                 this.swarm("interaction", "createPin", flowsUtils.defaultPin);
             } else {
                 this.swarm("interaction", "readPin", flowsUtils.noTries);
@@ -19,19 +19,31 @@ $$.swarm.describe("createCsb", {
         });
     },
 
-    withDseed: function (CSBPath, dseed) {
-        this.CSBPath = CSBPath;
-        this.rootCSB = RootCSB.loadWithDseed(this.localFolder, dseed, validator.reportOrContinue(this, 'createCSB', 'Failed to load master with provided dseed'));
-    },
-
-    withoutPin: function (CSBPath, backups, localFolder = process.cwd(), isMaster = false) {
+    withoutPin: function (CSBPath, backups, localFolder = process.cwd(), seed, isMaster = false) {
         this.localFolder = localFolder;
         this.CSBPath = CSBPath;
         this.isMaster = isMaster;
-        if (typeof backups ==='undefined' || backups.length === 0) {
+        if (typeof backups === 'undefined' || backups.length === 0) {
             backups = [flowsUtils.defaultBackup];
         }
-        this.createMasterCSB(backups);
+        validator.checkMasterCSBExists(localFolder, (err, status) => {
+            if (err) {
+                this.createMasterCSB(backups);
+            } else {
+                this.withSeed(CSBPath, seed);
+            }
+        });
+
+    },
+
+    withSeed: function (CSBPath, seed) {
+        const dseed = Seed.generateCompactForm(Seed.deriveSeed(seed));
+        this.withDseed(CSBPath, dseed);
+    },
+
+    withDseed: function (CSBPath, dseed) {
+        this.CSBPath = CSBPath;
+        RootCSB.loadWithDseed(this.localFolder, dseed, validator.reportOrContinue(this, 'createCSB', 'Failed to load master with provided dseed'));
     },
 
     validatePin: function (pin, noTries) {
@@ -42,9 +54,9 @@ $$.swarm.describe("createCsb", {
         this.pin = pin;
         this.dseedCage = new DseedCage(this.localFolder);
         this.dseedCage.loadDseedBackups(this.pin, (err, dseedBackups) => {
-            if(err){
+            if (err) {
                 this.createMasterCSB();
-            }else{
+            } else {
                 this.createMasterCSB(dseedBackups.backups);
             }
         });
@@ -72,8 +84,8 @@ $$.swarm.describe("createCsb", {
         }
     },
 
-    createCSB: function (pin) {
-        this.pin = pin;
+    createCSB: function (rootCSB) {
+        this.rootCSB = this.rootCSB || rootCSB;
         const rawCSB = new RawCSB();
         const meta = rawCSB.getAsset("global.CSBMeta", "meta");
         meta.init();
@@ -94,6 +106,6 @@ $$.swarm.describe("createCsb", {
             message = 'Successfully saved CSB root';
         }
         this.swarm("interaction", "printInfo", message);
-        this.swarm('interaction', '__return__');
+        this.swarm('interaction', '__return__', this.rootCSB);
     }
 });
