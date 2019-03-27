@@ -19,9 +19,9 @@ $$.swarm.describe("saveBackup", {
         validator.validatePin(this.localFolder, this, "loadHashFile", pin, noTries);
     },
 
-    withSeed: function (seed) {
+    withSeed: function (seed, localFolder = process.cwd()) {
         const dseed = Seed.generateCompactForm(Seed.deriveSeed(seed));
-        this.withDseed(dseed);
+        this.withDseed(dseed, localFolder);
     },
 
     withDseed: function (dseed, localFolder = process.cwd()) {
