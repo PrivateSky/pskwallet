@@ -26,6 +26,7 @@ $$.swarm.describe("createCsb", {
         if (typeof backups === 'undefined' || backups.length === 0) {
             backups = [flowsUtils.defaultBackup];
         }
+
         validator.checkMasterCSBExists(localFolder, (err, status) => {
             if (err) {
                 this.createMasterCSB(backups);
@@ -75,12 +76,11 @@ $$.swarm.describe("createCsb", {
         }
         rawCSB.saveAsset(meta);
         this.rootCSB = RootCSB.createNew(this.localFolder, this.dseed, rawCSB);
-
+        const nextPhase = (this.CSBPath === '' || typeof this.CSBPath === 'undefined') ? 'saveRawCSB' : 'createCSB';
         if (this.pin) {
-            const nextPhase = (this.CSBPath === '' || typeof this.CSBPath === 'undefined') ? 'saveRawCSB' : 'createCSB';
             this.dseedCage.saveDseedBackups(this.pin, this.dseed, backups, validator.reportOrContinue(this, nextPhase, "Failed to save dseed "));
         } else {
-            this.createCSB();
+            this[nextPhase]();
         }
     },
 

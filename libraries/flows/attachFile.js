@@ -42,6 +42,7 @@ $$.swarm.describe("attachFile", { //url: CSB1/CSB2/aliasFile
 
             this.rootCSB = rootCSB;
             this.dseed = dseed;
+            this.backups = Seed.getBackupUrls(dseed);
             this.loadFileReference();
 
         });
@@ -62,7 +63,7 @@ $$.swarm.describe("attachFile", { //url: CSB1/CSB2/aliasFile
             return;
         }
 
-        const seed = Seed.generateCompactForm(Seed.create(flowsUtils.defaultBackup));
+        const seed = Seed.generateCompactForm(Seed.create(this.backups || flowsUtils.defaultBackup));
         const dseed = Seed.generateCompactForm(Seed.deriveSeed(seed));
         this.fileID = utils.generatePath(this.localFolder, dseed);
         crypto.on('progress', (progress) => {
