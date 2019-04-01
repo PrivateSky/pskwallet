@@ -10,6 +10,7 @@ $$.swarm.describe("resetPin", {
     },
 
     validateSeed: function (seed, noTries) {
+        try{
         RootCSB.loadWithSeed(this.localFolder, seed, (err, rootCSB) => {
             if (err) {
                 this.swarm("interaction", "readSeed", noTries-1);
@@ -18,6 +19,9 @@ $$.swarm.describe("resetPin", {
                 this.swarm("interaction", "insertPin", utils.noTries);
             }
         });
+        } catch (e) {
+            return this.swarm('interaction', 'handleError', new Error('Invalid seed'));
+        }
     },
 
     actualizePin: function (pin) {
