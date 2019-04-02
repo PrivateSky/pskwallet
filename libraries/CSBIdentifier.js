@@ -9,7 +9,7 @@ function CSBIdentifier(id, backupUrls, keyLen = 32) {
     let encSeed;
     let encDseed;
 
-    init(id);
+    init();
 
     this.getSeed = function () {
         if(!seed){
@@ -70,7 +70,15 @@ function CSBIdentifier(id, backupUrls, keyLen = 32) {
 
 
     this.getBackupUrls = function () {
+        if(seed){
+            return seed.backup;
+        }
 
+        if(dseed){
+            return dseed.backup;
+        }
+
+        throw new Error("Backup URLs could not be retrieved. Access is denied");
     };
 
     //------------------------------ internal methods ------------------------------
