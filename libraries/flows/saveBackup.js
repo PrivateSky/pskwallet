@@ -1,11 +1,10 @@
 const utils = require("./../../utils/utils");
-const crypto = require("pskcrypto");
 const fs = require("fs");
-const Seed = require('../../utils/Seed');
 const validator = require("../../utils/validator");
 const HashCage = require('../../utils/HashCage');
 const AsyncDispatcher = require("../../utils/AsyncDispatcher");
 const RootCSB = require('../RootCSB');
+const CSBIdentifier = require('../CSBIdentifier');
 const path = require('path');
 
 
@@ -19,22 +18,16 @@ $$.swarm.describe("saveBackup", {
         validator.validatePin(this.localFolder, this, "loadHashFile", pin, noTries);
     },
 
-    withSeed: function (seed, localFolder = process.cwd()) {
-        const dseed = Seed.generateCompactForm(Seed.deriveSeed(seed));
-        this.withDseed(dseed, localFolder);
-    },
-
-    withDseed: function (dseed, localFolder = process.cwd()) {
+    withCSBIdentifier: function (id, localFolder = process.cwd()) {
         this.localFolder = localFolder;
-        this.dseed = dseed;
-        RootCSB.loadWithDseed(localFolder, dseed, (err, rootCSB) => {
+        this.csbIdentifier = new CSBIdentifier(id);
+        RootCSB.loadWithIdentifier(localFolder, this.csbIdentifier, (err, rootCSB) => {
             if (err) {
                 this.swarm('interaction', 'handleError', err, 'Failed to load root CSB');
                 return;
             }
 
             this.rootCSB = rootCSB;
-
             this.loadHashFile();
         });
     },
@@ -44,16 +37,18 @@ $$.swarm.describe("saveBackup", {
         this.hashCage = new HashCage(this.localFolder);
         this.hashCage.loadHash(validator.reportOrContinue(this, 'readEncryptedMaster', 'Failed to load hash file'));
     },
+
     readEncryptedMaster: function (hashFile) {
         this.hashFile = hashFile;
-        this.masterID = utils.generatePath(this.localFolder, this.dseed);
-        fs.readFile(this.masterID, validator.reportOrContinue(this, 'createRootCSB', 'Failed to read masterCSB.'));
+        this.masterID = utils.generatePath(this.localFolder, this.csbIdentifier);
+        fs.readFile(this.masterID, validator.reportOrContinue(this, 'loadMasterRawCSB', 'Failed to read masterCSB.'));
     },
 
 
-    createRootCSB: function () {
+    loadMasterRawCSB: function () {
         this.rootCSB.loadRawCSB('', validator.reportOrContinue(this, "dispatcher", "Failed to load masterCSB"));
     },
+
     dispatcher: function (rawCSB) {
         this.asyncDispatcher = new AsyncDispatcher((errors, results) => {
             if (errors.length > 0) {
@@ -64,11 +59,11 @@ $$.swarm.describe("saveBackup", {
         });
 
         this.asyncDispatcher.dispatch(() => {
-            this.collectCSBs(rawCSB, this.dseed, '', 'master');
+            this.collectCSBs(rawCSB, this.csbIdentifier, '', 'master');
         });
     },
 
-    collectCSBs: function (rawCSB, dseed, currentPath, alias) {
+    collectCSBs: function (rawCSB, csbIdentifier, currentPath, alias) {
         const listCSBs = rawCSB.getAllAssets('global.CSBReference');
 
         const nextArguments = [];
@@ -76,26 +71,27 @@ $$.swarm.describe("saveBackup", {
 
         listCSBs.forEach(CSBReference => {
             const nextPath = currentPath + '/' + CSBReference.alias;
-            const nextDseed = Buffer.from(CSBReference.dseed);
+            const nextCSBIdentifier = new CSBIdentifier(CSBReference.dseed);
             const nextAlias = CSBReference.alias;
             this.rootCSB.loadRawCSB(nextPath, (err, nextRawCSB) => {
 
-                nextArguments.push([nextRawCSB, nextDseed, nextPath, nextAlias]);
+                nextArguments.push([nextRawCSB, nextCSBIdentifier, nextPath, nextAlias]);
                 if (++counter === listCSBs.length) {
                     nextArguments.forEach(args => {
                         this.asyncDispatcher.dispatch(() => {
                             this.collectCSBs(...args);
                         });
                     });
-                    this.asyncDispatcher.markOneAsFinished(undefined, {rawCSB, dseed, alias});
+                    this.asyncDispatcher.markOneAsFinished(undefined, {rawCSB, csbIdentifier, alias});
                 }
             });
         });
 
         if (listCSBs.length === 0) {
-            this.asyncDispatcher.markOneAsFinished(undefined, {rawCSB, dseed, alias});
+            this.asyncDispatcher.markOneAsFinished(undefined, {rawCSB, csbIdentifier, alias});
         }
     },
+
     collectFiles: function (collectedCSBs) {
         this.asyncDispatcher = new AsyncDispatcher((errors, newResults) => {
             if (errors.length > 0) {
@@ -105,7 +101,7 @@ $$.swarm.describe("saveBackup", {
         });
 
         this.asyncDispatcher.emptyDispatch(collectedCSBs.length);
-        collectedCSBs.forEach(({rawCSB, dseed, alias}) => {
+        collectedCSBs.forEach(({rawCSB, csbIdentifier, alias}) => {
             this.__collectFiles(rawCSB, alias);
         });
 
@@ -113,11 +109,10 @@ $$.swarm.describe("saveBackup", {
 
     __categorize: function (files) {
         const categories = {};
-
-        files.forEach(({dseed, alias}) => {
+        files.forEach(({csbIdentifier, alias}) => {
             let backups;
             if (!this.backups || this.backups.length === 0) {
-                backups = Seed.getBackupUrls(dseed);
+                backups = csbIdentifier.getBackupUrls();
             } else {
                 backups = this.backups;
             }
@@ -125,7 +120,7 @@ $$.swarm.describe("saveBackup", {
                 if (!categories[backup]) {
                     categories[backup] = {};
                 }
-                categories[backup][crypto.generateSafeUid(dseed)] = alias;
+                categories[backup][csbIdentifier.getUid()] = alias;
             })
         });
 
@@ -161,7 +156,6 @@ $$.swarm.describe("saveBackup", {
         this.asyncDispatcher.emptyDispatch(files.length);
         files.forEach(file => {
             const fileStream = fs.createReadStream(path.join(this.localFolder, file));
-
             const backupURL = backupAddress + '/CSB/' + file;
             $$.remote.doHttpPost(backupURL, fileStream, (err, res) => {
                 if (err) {
@@ -180,8 +174,8 @@ $$.swarm.describe("saveBackup", {
         this.asyncDispatcher.emptyDispatch(files.length);
         files.forEach(FileReference => {
             const alias = FileReference.alias;
-            const dseed = Buffer.from(FileReference.dseed);
-            this.asyncDispatcher.markOneAsFinished(undefined, {dseed, alias})
+            const csbIdentifier = new CSBIdentifier(FileReference.dseed);
+            this.asyncDispatcher.markOneAsFinished(undefined, {csbIdentifier, alias})
         });
         this.asyncDispatcher.markOneAsFinished();
     }

@@ -25,7 +25,7 @@ $$.swarm.describe("addBackup", {
         backups = backups || [];
         backups.push(this.backupUrl);
         const dseedCage = new DseedCage(this.localFolder);
-        dseedCage.saveDseedBackups(pin, this.dseed, backups, validator.reportOrContinue(this, 'finish', "Failed to save backups"));
+        dseedCage.saveDseedBackups(pin, this.csbIdentifier, backups, validator.reportOrContinue(this, 'finish', "Failed to save backups"));
     },
 
     finish: function () {

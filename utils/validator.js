@@ -4,17 +4,15 @@ const path = require("path");
 
 
 module.exports.validatePin = function (localFolder, swarm, phaseName, pin, noTries, ...args) {
-	RootCSB.createRootCSB(localFolder, null, null, null, pin, (err, rootCSB, dseed, backups) =>{
+	RootCSB.createRootCSB(localFolder, undefined, undefined, pin, (err, rootCSB, csbIdentifier, backups) =>{
 		if(err){
-			swarm.swarm("interaction", "readPin", noTries-1);
+			swarm.swarm("interaction", "readPin", noTries - 1);
 		}else{
-			if(!dseed){
-				args.push(backups);
-			}else {
+			if(csbIdentifier){
 				swarm.rootCSB = rootCSB;
-				swarm.dseed = dseed;
-				args.push(backups);
+				swarm.csbIdentifier = csbIdentifier;
 			}
+			args.push(backups);
 			swarm[phaseName](pin, ...args);
 		}
 	});

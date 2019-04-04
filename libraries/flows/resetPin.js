@@ -1,7 +1,7 @@
 const utils = require("./../../utils/flowsUtils");
 const RootCSB = require("../RootCSB");
-const Seed = require("../../utils/Seed");
 const DseedCage = require("../../utils/DseedCage");
+const CSBIdentifier = require("../CSBIdentifier");
 
 $$.swarm.describe("resetPin", {
     start: function (localFolder = process.cwd()) {
@@ -11,14 +11,14 @@ $$.swarm.describe("resetPin", {
 
     validateSeed: function (seed, noTries) {
         try{
-        RootCSB.loadWithSeed(this.localFolder, seed, (err, rootCSB) => {
-            if (err) {
-                this.swarm("interaction", "readSeed", noTries-1);
-            }else{
-                this.dseed = Seed.generateCompactForm(Seed.deriveSeed(seed));
-                this.swarm("interaction", "insertPin", utils.noTries);
-            }
-        });
+            this.csbIdentifier = new CSBIdentifier(seed);
+            RootCSB.loadWithIdentifier(this.localFolder, this.csbIdentifier, (err, rootCSB) => {
+                if (err) {
+                    this.swarm("interaction", "readSeed", noTries - 1);
+                }else{
+                    this.swarm("interaction", "insertPin", utils.noTries);
+                }
+            });
         } catch (e) {
             return this.swarm('interaction', 'handleError', new Error('Invalid seed'));
         }
@@ -26,7 +26,7 @@ $$.swarm.describe("resetPin", {
 
     actualizePin: function (pin) {
         const dseedCage = new DseedCage(this.localFolder);
-        dseedCage.saveDseedBackups(pin, this.dseed, undefined, (err)=>{
+        dseedCage.saveDseedBackups(pin, this.csbIdentifier, undefined, (err)=>{
             if(err){
                 return this.swarm("interaction", "handleError", "Failed to save dseed.");
             }

@@ -1,8 +1,7 @@
 module.exports.utils  = require("./utils/flowsUtils");
 const RootCSB = require('./libraries/RootCSB');
 module.exports.createRootCSB = RootCSB.createRootCSB;
-module.exports.loadWithDseed = RootCSB.loadWithDseed;
-module.exports.loadWithSeed  = RootCSB.loadWithSeed;
+module.exports.loadWithIdentifier = RootCSB.loadWithIdentifier;
 module.exports.loadWithPin   = RootCSB.loadWithPin;
 module.exports.writeNewMasterCSB = RootCSB.writeNewMasterCSB;
 module.exports.RootCSB = RootCSB;

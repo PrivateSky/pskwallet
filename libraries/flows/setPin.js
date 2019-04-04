@@ -21,9 +21,8 @@ $$.swarm.describe("setPin", {
         this.dseedCage.loadDseedBackups(this.oldPin, validator.reportOrContinue(this, "saveDseed", "Failed to load dseed.", newPin));
     },
 
-    saveDseed: function (dseed, backups, pin) {
-
-        this.dseedCage.saveDseedBackups(pin, dseed, backups, validator.reportOrContinue(this, "successState", "Failed to save dseed"));
+    saveDseed: function (csbIdentifier, backups, pin) {
+        this.dseedCage.saveDseedBackups(pin, csbIdentifier, backups, validator.reportOrContinue(this, "successState", "Failed to save dseed"));
     },
 
     successState: function () {

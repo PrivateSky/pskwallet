@@ -34,18 +34,18 @@ function CSBIdentifier(id, backupUrls, keyLen = 32) {
 
     this.getUid = function () {
         if(uid){
-            return generateCompactForm(uid);
+            return generateCompactForm(uid).toString();
         }
 
         if(dseed){
             uid = computeUid(dseed);
-            return generateCompactForm(uid);
+            return generateCompactForm(uid).toString();
         }
 
         if(seed){
             dseed = deriveSeed(seed);
             uid = computeUid(dseed);
-            return generateCompactForm(uid);
+            return generateCompactForm(uid).toString();
         }
 
         throw new Error("Cannot return uid");
@@ -95,7 +95,7 @@ function CSBIdentifier(id, backupUrls, keyLen = 32) {
     }
 
     function classifyId() {
-        if(id && typeof id !== "string" && !Buffer.isBuffer(id)) {
+        if (typeof id !== "string" && !Buffer.isBuffer(id) && !(typeof id === "object" && !Buffer.isBuffer(id))) {
             throw new Error(`Id must be a string or a buffer. The type provided was ${typeof id}`);
         }
 
@@ -216,6 +216,10 @@ function CSBIdentifier(id, backupUrls, keyLen = 32) {
         }
 
         if(typeof compactId !== "string"){
+            if (typeof compactId === "object" && !Buffer.isBuffer(compactId)) {
+                compactId = Buffer.from(compactId);
+            }
+
             compactId = compactId.toString();
         }
 

@@ -1,10 +1,9 @@
 const flowsUtils = require('../../utils/flowsUtils');
-const Seed = require('../../utils/Seed');
 const RootCSB = require("../RootCSB");
 const RawCSB = require("../RawCSB");
 const validator = require("../../utils/validator");
 const DseedCage = require("../../utils/DseedCage");
-
+const CSBIdentifier = require("../CSBIdentifier");
 
 $$.swarm.describe("createCsb", {
     start: function (CSBPath, localFolder = process.cwd()) {
@@ -31,20 +30,16 @@ $$.swarm.describe("createCsb", {
             if (err) {
                 this.createMasterCSB(backups);
             } else {
-                this.withSeed(CSBPath, seed);
+                const csbIdentifier = new CSBIdentifier(seed);
+                this.withCSBIdentifier(CSBPath, csbIdentifier);
             }
         });
 
     },
 
-    withSeed: function (CSBPath, seed) {
-        const dseed = Seed.generateCompactForm(Seed.deriveSeed(seed));
-        this.withDseed(CSBPath, dseed);
-    },
-
-    withDseed: function (CSBPath, dseed) {
+    withCSBIdentifier: function (CSBPath, csbIdentifier) {
         this.CSBPath = CSBPath;
-        RootCSB.loadWithDseed(this.localFolder, dseed, validator.reportOrContinue(this, 'createCSB', 'Failed to load master with provided dseed'));
+        RootCSB.loadWithIdentifier(this.localFolder, csbIdentifier, validator.reportOrContinue(this, 'createCSB', 'Failed to load master with provided dseed'));
     },
 
     validatePin: function (pin, noTries) {
@@ -54,19 +49,20 @@ $$.swarm.describe("createCsb", {
     loadBackups: function (pin) {
         this.pin = pin;
         this.dseedCage = new DseedCage(this.localFolder);
-        this.dseedCage.loadDseedBackups(this.pin, (err, dseedBackups) => {
+        this.dseedCage.loadDseedBackups(this.pin, (err, csbIdentifier, backups) => {
             if (err) {
                 this.createMasterCSB();
             } else {
-                this.createMasterCSB(dseedBackups.backups);
+                this.createMasterCSB(backups);
             }
         });
     },
 
     createMasterCSB: function (backups) {
-        const seed = Seed.generateCompactForm(Seed.create(backups || flowsUtils.defaultBackup));
-        this.dseed = Seed.generateCompactForm(Seed.deriveSeed(seed));
-        this.swarm("interaction", "printSensitiveInfo", seed, flowsUtils.defaultPin);
+        this.csbIdentifier = new CSBIdentifier(undefined, backups || flowsUtils.defaultBackup);
+
+        this.swarm("interaction", "printSensitiveInfo", this.csbIdentifier.getSeed(), flowsUtils.defaultPin);
+
         const rawCSB = new RawCSB();
         const meta = rawCSB.getAsset('global.CSBMeta', 'meta');
         meta.init();
@@ -75,10 +71,10 @@ $$.swarm.describe("createCsb", {
             meta.setIsMaster(this.isMaster);
         }
         rawCSB.saveAsset(meta);
-        this.rootCSB = RootCSB.createNew(this.localFolder, this.dseed, rawCSB);
+        this.rootCSB = RootCSB.createNew(this.localFolder, this.csbIdentifier, rawCSB);
         const nextPhase = (this.CSBPath === '' || typeof this.CSBPath === 'undefined') ? 'saveRawCSB' : 'createCSB';
         if (this.pin) {
-            this.dseedCage.saveDseedBackups(this.pin, this.dseed, backups, validator.reportOrContinue(this, nextPhase, "Failed to save dseed "));
+            this.dseedCage.saveDseedBackups(this.pin, this.csbIdentifier, backups, validator.reportOrContinue(this, nextPhase, "Failed to save dseed "));
         } else {
             this[nextPhase]();
         }
@@ -106,6 +102,6 @@ $$.swarm.describe("createCsb", {
             message = 'Successfully saved CSB root';
         }
         this.swarm("interaction", "printInfo", message);
-        this.swarm('interaction', '__return__', this.rootCSB);
+        this.swarm('interaction', '__return__');
     }
 });

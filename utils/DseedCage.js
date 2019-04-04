@@ -1,5 +1,6 @@
 const crypto = require('pskcrypto');
 const path = require('path');
+const CSBIdentifier = require("../libraries/CSBIdentifier");
 
 function DseedCage(localFolder) {
 	const dseedFolder = path.join(localFolder, '.privateSky');
@@ -21,20 +22,27 @@ function DseedCage(localFolder) {
 					return callback(e);
 				}
 
-				if (typeof dseedBackups.dseed !=='undefined' && !Buffer.isBuffer(dseedBackups.dseed)) {
+				let csbIdentifier;
+				if (dseedBackups.dseed && !Buffer.isBuffer(dseedBackups.dseed)) {
 					dseedBackups.dseed = Buffer.from(dseedBackups.dseed);
+					csbIdentifier = new CSBIdentifier(dseedBackups.dseed);
 				}
-				callback(undefined, dseedBackups.dseed, dseedBackups.backups);
+
+				callback(undefined, csbIdentifier, dseedBackups.backups);
 			});
 		});
 	}
 
-	function saveDseedBackups(pin, dseed, backups, callback) {
+	function saveDseedBackups(pin, csbIdentifier, backups, callback) {
 		$$.ensureFolderExists(dseedFolder, (err) => {
 			if (err) {
 				return callback(err);
 			}
 
+			let dseed;
+			if(csbIdentifier){
+				dseed = csbIdentifier.getDseed();
+			}
 			const dseedBackups = JSON.stringify({
 				dseed,
 				backups

@@ -2,6 +2,7 @@ const flowsUtils = require("./../../utils/flowsUtils");
 const validator = require("../../utils/validator");
 const fs = require("fs");
 const RootCSB = require("../RootCSB");
+const CSBIdentifier = require("../CSBIdentifier");
 const Seed = require("../../utils/Seed");
 
 $$.swarm.describe("listCSBs", {
@@ -17,20 +18,15 @@ $$.swarm.describe("listCSBs", {
         });
     },
 
-    withSeed: function (seed, CSBPath = '', localFolder = process.cwd()) {
-        const dseed = Seed.generateCompactForm(Seed.deriveSeed(seed));
-        this.withDseed(dseed, CSBPath, localFolder);
-    },
-
-    withDseed: function (dseed, CSBPath = '', localFolder = process.cwd()) {
-        this.dseed = dseed;
+    withCSBIdentifier: function (id, CSBPath = '', localFolder = process.cwd()) {
+        this.csbIdentifier = new CSBIdentifier(id);
         this.CSBPath = CSBPath;
         this.localFolder = localFolder;
-        this.createRootCSB();
+        this.loadMasterRawCSB();
     },
 
-    createRootCSB: function () {
-        RootCSB.loadWithDseed(this.localFolder, this.dseed, validator.reportOrContinue(this, "loadRawCSB", "Failed to create RootCSB."));
+    loadMasterRawCSB: function () {
+        RootCSB.loadWithIdentifier(this.localFolder, this.csbIdentifier, validator.reportOrContinue(this, "loadRawCSB", "Failed to create RootCSB."));
     },
 
     validatePin: function (pin, noTries) {

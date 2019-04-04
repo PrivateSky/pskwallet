@@ -2,10 +2,11 @@ const flowsUtils = require("./../../utils/flowsUtils");
 const utils = require("./../../utils/utils");
 const crypto = require("pskcrypto");
 const validator = require("../../utils/validator");
+const CSBIdentifier = require("../CSBIdentifier");
 
-const localFolder = process.cwd();
 $$.swarm.describe("extractFile", {
-	start: function (url) {
+	start: function (url, localFolder = process.cwd()) {
+		this.localFolder = localFolder;
 		const {CSBPath, alias} = utils.processUrl(url, 'global.FileReference');
 		this.CSBPath = CSBPath;
 		this.alias = alias;
@@ -13,21 +14,22 @@ $$.swarm.describe("extractFile", {
 	},
 
 	validatePin: function (pin, noTries) {
-		validator.validatePin(localFolder, this, "loadFileAsset", pin, noTries);
+		validator.validatePin(this.localFolder, this, "loadFileAsset", pin, noTries);
 	},
 
 	loadFileAsset: function () {
 		this.rootCSB.loadAssetFromPath(this.CSBPath, validator.reportOrContinue(this, "decryptFile", "Failed to load file asset " + this.alias));
 	},
 	
-	decryptFile: function (fileReference, rawCSB) {
-		const filePath = utils.generatePath(localFolder, Buffer.from(fileReference.dseed));
+	decryptFile: function (fileReference) {
+		const csbIdentifier = new CSBIdentifier(fileReference.dseed);
+		const filePath = utils.generatePath(this.localFolder, csbIdentifier);
 
 		crypto.on('progress', (progress) => {
             this.swarm('interaction', 'reportProgress', progress);
         });
 
-		crypto.decryptStream(filePath, localFolder, Buffer.from(fileReference.dseed), (err, fileNames) => {
+		crypto.decryptStream(filePath, this.localFolder, csbIdentifier.getDseed(), (err, fileNames) => {
 			if(err){
 				return this.swarm("interaction", "handleError", err, "Failed to decrypt file" + filePath);
 			}
