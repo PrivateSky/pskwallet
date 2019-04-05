@@ -63,12 +63,22 @@ $$.swarm.describe("restore", {
             this.encryptedCSB = encryptedCSB;
 
             validator.checkMasterCSBExists(this.localFolder, (err, status) => {
-                if (err) {
+                if (status === false) {
                     this.createAuxFolder();
-                } else if (typeof this.localCSBIdentifier !== "undefined") {
-                    this.writeCSB();
+                } else if (this.localCSBIdentifier) {
+                    if (!this.CSBAlias) {
+                        utils.deleteRecursively(this.localFolder, true, (err) => {
+                            return this.swarm("interaction", "handleError", new Error("No CSB alias was specified"));
+                        });
+                    }else{
+                        this.writeCSB();
+                    }
                 } else {
-                    this.swarm("interaction", "readPin", flowsUtils.noTries);
+                    if (!this.CSBAlias) {
+                        return this.swarm("interaction", "handleError", new Error("No CSB alias was specified"));
+                    } else {
+                        this.swarm("interaction", "readPin", flowsUtils.noTries);
+                    }
                 }
             });
         });
@@ -258,12 +268,7 @@ $$.swarm.describe("restore", {
     },
 
     __attachCSB: function (rootCSB, CSBPath, CSBAlias, csbIdentifier, callback) {
-        if (!CSBAlias || typeof CSBAlias === "undefined") {
-            utils.deleteRecursively(this.localFolder, true, (err) => {
-                if (err) {
-                    this.swarm("interaction", "handleError", err, `Failed to delete the content of ${this.localFolder}`);
-                }
-            });
+        if (!CSBAlias) {
             return callback(new Error("No CSB alias was specified"));
         }
 
