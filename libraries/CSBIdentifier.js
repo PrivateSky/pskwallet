@@ -185,7 +185,7 @@ function CSBIdentifier(id, backupUrls, keyLen = 32) {
         if (backup) {
             compactId += '|' + Buffer.from(JSON.stringify(backup)).toString('base64');
         }
-        return Buffer.from(encodeURIComponent(Buffer.from(compactId)));
+        return Buffer.from(encodeURIComponent(compactId));
     }
 
     function encrypt(id, encryptionKey) {

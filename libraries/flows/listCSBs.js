@@ -3,7 +3,6 @@ const validator = require("../../utils/validator");
 const fs = require("fs");
 const RootCSB = require("../RootCSB");
 const CSBIdentifier = require("../CSBIdentifier");
-const Seed = require("../../utils/Seed");
 
 $$.swarm.describe("listCSBs", {
     start: function (CSBPath, localFolder = process.cwd()) {
