@@ -1,4 +1,3 @@
-const flowsUtils = require("../utils/flowsUtils");
 const crypto = require("pskcrypto");
 
 
@@ -236,28 +235,6 @@ function CSBIdentifier(id, backupUrls, keyLen = 32) {
 
         return id;
     }
-
-    function isValidForm(id) {
-        try {
-            if (typeof id === 'string' || Buffer.isBuffer(id)) {
-                id = load(id);
-            }
-
-            if (id.tag !== 's' && id.tag !== 'd' && id.tag !== 'es' && id.tag !== 'ed' && id.tag !== 'u') {
-                return false;
-            }
-
-            if (!Buffer.isBuffer(id.random)) {
-                return false;
-            }
-
-            return !((id.tag === 's' || id.tag === 'd') && (!id.backup || id.backup.length === 0));
-
-        } catch (e) {
-            return false;
-        }
-    }
-
 }
 
 module.exports = CSBIdentifier;
