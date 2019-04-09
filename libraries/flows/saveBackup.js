@@ -5,6 +5,7 @@ const HashCage = require('../../utils/HashCage');
 const AsyncDispatcher = require("../../utils/AsyncDispatcher");
 const RootCSB = require('../RootCSB');
 const CSBIdentifier = require('../CSBIdentifier');
+const BackupEngine = require('../BackupEngine');
 const path = require('path');
 
 
@@ -109,8 +110,8 @@ $$.swarm.describe("saveBackup", {
 
     __categorize: function (files) {
         const categories = {};
+        let backups;
         files.forEach(({csbIdentifier, alias}) => {
-            let backups;
             if (!this.backups || this.backups.length === 0) {
                 backups = csbIdentifier.getBackupUrls();
             } else {
@@ -128,6 +129,7 @@ $$.swarm.describe("saveBackup", {
             this.swarm('interaction', 'csbBackupReport', {errors, successes});
         });
 
+        this.backupEngine = BackupEngine.getBackupEngine(backups);
 
         Object.entries(categories).forEach(([backupURL, filesNames]) => {
             this.filterFiles(backupURL, filesNames);
@@ -142,12 +144,12 @@ $$.swarm.describe("saveBackup", {
             }
         });
         this.asyncDispatcher.emptyDispatch();
-        $$.remote.doHttpPost(backupURL + "/CSB/compareVersions", JSON.stringify(filesToUpdate), (err, modifiedFiles) => {
+
+        this.backupEngine.compareVersions(filesToUpdate, (err, modifiedFiles) => {
             if (err) {
                 this.asyncDispatcher.markOneAsFinished(new Error('Failed to connect to ' + backupURL));
                 return;
             }
-
             this.__backupFiles(JSON.parse(modifiedFiles), backupURL, filesNames);
         });
     },
@@ -157,7 +159,7 @@ $$.swarm.describe("saveBackup", {
         files.forEach(file => {
             const fileStream = fs.createReadStream(path.join(this.localFolder, file));
             const backupURL = backupAddress + '/CSB/' + file;
-            $$.remote.doHttpPost(backupURL, fileStream, (err, res) => {
+            this.backupEngine.save(new CSBIdentifier(file), fileStream, (err, res) => {
                 if (err) {
                     return this.asyncDispatcher.markOneAsFinished({alias: aliases[file], backupURL: backupURL});
                 }

@@ -7,6 +7,7 @@ const validator = require("../../utils/validator");
 const DseedCage = require("../../utils/DseedCage");
 const RootCSB = require('../RootCSB');
 const CSBIdentifier = require('../CSBIdentifier');
+const BackupEngine = require('../BackupEngine');
 const HashCage = require('../../utils/HashCage');
 const AsyncDispatcher = require('../../utils/AsyncDispatcher');
 
@@ -50,16 +51,14 @@ $$.swarm.describe("restore", {
         }
 
         this.backupUrls = backupUrls;
+        this.backupEngine = BackupEngine.getBackupEngine(this.backupUrls);
         this.restoreDseedCage = new DseedCage(this.localFolder);
-        const uid = this.csbRestoreIdentifier.getUid();
-
-        backupUrls = backupUrls.map(url => url + '/CSB/' + uid);
-        this.__tryDownload(backupUrls, 0, (err, encryptedCSB) => {
+        this.backupEngine.load(this.csbRestoreIdentifier, (err, encryptedCSB) => {
             if (err) {
                 return this.swarm("interaction", "handleError", err, "Failed to restore CSB");
             }
 
-            this.__addCSBHash(uid, encryptedCSB);
+            this.__addCSBHash(this.csbRestoreIdentifier.getUid(), encryptedCSB);
             this.encryptedCSB = encryptedCSB;
 
             validator.checkMasterCSBExists(this.localFolder, (err, status) => {
@@ -171,9 +170,8 @@ $$.swarm.describe("restore", {
         listFiles.forEach(fileReference => {
             const csbIdentifier = new CSBIdentifier(fileReference.dseed);
             const fileAlias = fileReference.alias;
-            const urls = csbIdentifier.getBackupUrls().map(url => url + '/CSB/' + csbIdentifier.getUid());
             asyncDispatcher.emptyDispatch();
-            this.__tryDownload(urls, 0, (err, encryptedFile) => {
+            this.backupEngine.load(csbIdentifier, (err, encryptedFile) => {
                 if (err) {
                     return this.swarm('interaction', 'handleError', err, 'Could not download file ' + fileAlias);
                 }
@@ -208,9 +206,8 @@ $$.swarm.describe("restore", {
                 const nextCSBIdentifier = new CSBIdentifier(CSBReference.dseed);
                 const nextAlias = CSBReference.alias;
                 const csbUid = nextCSBIdentifier.getUid();
-                const nextURLs = csbIdentifier.getBackupUrls().map(url => url + '/CSB/' + csbUid);
                 this.asyncDispatcher.emptyDispatch();
-                this.__tryDownload(nextURLs, 0, (err, encryptedCSB) => {
+                this.backupEngine.load(nextCSBIdentifier, (err, encryptedCSB) => {
                     if (err) {
                         return this.swarm('interaction', 'handleError', err, 'Could not download CSB ' + nextAlias);
                     }
