@@ -1,3 +1,5 @@
+const AsyncDispatcher = require("../utils/AsyncDispatcher");
+
 function BackupEngineBuilder() {
     const resolvers = {};
     this.addResolver = function (name, resolver) {
@@ -16,6 +18,10 @@ function BackupEngineBuilder() {
 function BackupEngine(urls, resolvers) {
 
     this.save = function (csbIdentifier, dataStream, callback) {
+        console.log("save Function");
+        const asyncDispatcher = new AsyncDispatcher(callback);
+        asyncDispatcher.dispatchEmpty(urls.length);
+
         for (url of urls) {
             resolverForUrl(url, (err, resolver) => {
                 if(err){
@@ -27,7 +33,15 @@ function BackupEngine(urls, resolvers) {
                         return callback(err);
                     }
 
-                    resolver.save(url, csbIdentifier, dataStream, callback);
+
+                    resolver.save(url, csbIdentifier, dataStream, (err) => {
+                        if (err) {
+                            asyncDispatcher.markOneAsFinished(err);
+                            return;
+                        }
+
+                        asyncDispatcher.markOneAsFinished();
+                    });
                 });
             });
         }
@@ -53,28 +67,21 @@ function BackupEngine(urls, resolvers) {
     };
 
     this.compareVersions = function (fileList, callback) {
-        for (url of urls) {
-            resolverForUrl(url, (err, resolver) => {
+        console.log("BAckup engine, compare versions");
+        const url = urls[0];
+        resolverForUrl(url, (err, resolver) => {
+            if (err) {
+                return callback(err);
+            }
+
+            resolver.auth(url, undefined, (err) => {
                 if (err) {
                     return callback(err);
                 }
 
-                resolver.auth(url, undefined, (err) => {
-                    if (err) {
-                        return callback(err);
-                    }
-
-                    resolver.compareVersions(url, fileList, (err, modifiedFiles) => {
-                        if (err) {
-                            return callback(err);
-                        }
-
-                        callback(undefined, modifiedFiles);
-                    });
-                });
-
+                resolver.compareVersions(url, fileList, callback);
             });
-        }
+        });
     };
 
     //------------------------------------------------ INTERNAL METHODS ------------------------------------------------
@@ -104,6 +111,7 @@ function BackupEngine(urls, resolvers) {
     function match(str1, str2) {
         return str1.includes(str2) || str2.includes(str1);
     }
+
 
     function tryDownload(csbIdentifier, version, index, callback) {
         if (index === urls.length) {
@@ -143,10 +151,10 @@ function EVFSResolver() {
     };
 
     this.save = function(url, csbIdentifier, dataStream, callback) {
+        console.log("EVFS save");
         if (!isAuthenticated) {
             return callback(new Error('Unauthenticated'));
         }
-
         $$.remote.doHttpPost(url + "/CSB/" + csbIdentifier.getUid(), dataStream, (err, res) => {
             if (err) {
                 return callback(err);

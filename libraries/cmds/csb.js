@@ -109,17 +109,22 @@ function doSaveBackup(CSBPath) {
 		readPin: readPin,
 		handleError: generateErrorHandler(),
 		csbBackupReport: function({errors, successes}) {
-			if(errors.length === 0 && successes.length === 0) {
+			if(!errors && !successes) {
 				console.log('All CSBs are already backed up');
 			}
 
-			errors.forEach(({alias, backupURL}) => {
-				console.log(`Error while saving file ${alias} on ${backupURL}`);
-			});
+			if(Array.isArray(errors)) {
+				errors.forEach(({alias, backupURL}) => {
+					console.log(`Error while saving file ${alias} on ${backupURL}`);
+				});
+			}
 
-			successes.forEach(({alias, backupURL}) => {
-				console.log(`Successfully backed up file ${alias} on ${backupURL}`);
-			});
+			if(Array.isArray(successes)) {
+				successes.forEach(({alias, backupURL}) => {
+					console.log(`Successfully backed up file ${alias} on ${backupURL}`);
+				});
+			}
+
 		}
 	});
 }

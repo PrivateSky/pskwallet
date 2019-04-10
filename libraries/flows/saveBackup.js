@@ -52,16 +52,21 @@ $$.swarm.describe("saveBackup", {
 
     dispatcher: function (rawCSB) {
         this.asyncDispatcher = new AsyncDispatcher((errors, results) => {
-            if (errors.length > 0) {
+            if (errors && errors.length > 0) {
                 this.swarm('interaction', 'handleError', JSON.stringify(errors, null, '\t'), 'Failed to collect all CSBs');
                 return;
             }
+
+            if(!results) {
+                results = [];
+            }
+
             this.collectFiles(results);
         });
 
-        this.asyncDispatcher.dispatch(() => {
-            this.collectCSBs(rawCSB, this.csbIdentifier, '', 'master');
-        });
+        this.asyncDispatcher.dispatchEmpty();
+        this.collectCSBs(rawCSB, this.csbIdentifier, '', 'master');
+
     },
 
     collectCSBs: function (rawCSB, csbIdentifier, currentPath, alias) {
@@ -79,9 +84,8 @@ $$.swarm.describe("saveBackup", {
                 nextArguments.push([nextRawCSB, nextCSBIdentifier, nextPath, nextAlias]);
                 if (++counter === listCSBs.length) {
                     nextArguments.forEach(args => {
-                        this.asyncDispatcher.dispatch(() => {
-                            this.collectCSBs(...args);
-                        });
+                        this.asyncDispatcher.dispatchEmpty();
+                        this.collectCSBs(...args);
                     });
                     this.asyncDispatcher.markOneAsFinished(undefined, {rawCSB, csbIdentifier, alias});
                 }
@@ -95,13 +99,18 @@ $$.swarm.describe("saveBackup", {
 
     collectFiles: function (collectedCSBs) {
         this.asyncDispatcher = new AsyncDispatcher((errors, newResults) => {
-            if (errors.length > 0) {
+            if (errors && errors.length > 0) {
                 this.swarm('interaction', 'handleError', JSON.stringify(errors, null, '\t'), 'Failed to collect files attached to CSBs');
             }
+
+            if(!newResults) {
+                newResults = [];
+            }
+
             this.__categorize(collectedCSBs.concat(newResults));
         });
 
-        this.asyncDispatcher.emptyDispatch(collectedCSBs.length);
+        this.asyncDispatcher.dispatchEmpty(collectedCSBs.length);
         collectedCSBs.forEach(({rawCSB, csbIdentifier, alias}) => {
             this.__collectFiles(rawCSB, alias);
         });
@@ -131,9 +140,8 @@ $$.swarm.describe("saveBackup", {
 
         this.backupEngine = BackupEngine.getBackupEngine(backups);
 
-        Object.entries(categories).forEach(([backupURL, filesNames]) => {
-            this.filterFiles(backupURL, filesNames);
-        });
+        const [backupURL, filesNames] = Object.entries(categories)[0];
+        this.filterFiles(backupURL, filesNames);
     },
 
     filterFiles: function (backupURL, filesNames) {
@@ -143,7 +151,7 @@ $$.swarm.describe("saveBackup", {
                 filesToUpdate[fileName] = this.hashFile[fileName];
             }
         });
-        this.asyncDispatcher.emptyDispatch();
+        this.asyncDispatcher.dispatchEmpty();
 
         this.backupEngine.compareVersions(filesToUpdate, (err, modifiedFiles) => {
             if (err) {
@@ -155,7 +163,7 @@ $$.swarm.describe("saveBackup", {
     },
 
     __backupFiles: function (files, backupAddress, aliases) {
-        this.asyncDispatcher.emptyDispatch(files.length);
+        this.asyncDispatcher.dispatchEmpty(files.length);
         files.forEach(file => {
             const fileStream = fs.createReadStream(path.join(this.localFolder, file));
             const backupURL = backupAddress + '/CSB/' + file;
@@ -173,7 +181,7 @@ $$.swarm.describe("saveBackup", {
 
     __collectFiles: function (rawCSB, csbAlias) {
         const files = rawCSB.getAllAssets('global.FileReference');
-        this.asyncDispatcher.emptyDispatch(files.length);
+        this.asyncDispatcher.dispatchEmpty(files.length);
         files.forEach(FileReference => {
             const alias = FileReference.alias;
             const csbIdentifier = new CSBIdentifier(FileReference.dseed);
