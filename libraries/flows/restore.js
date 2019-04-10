@@ -170,7 +170,7 @@ $$.swarm.describe("restore", {
         listFiles.forEach(fileReference => {
             const csbIdentifier = new CSBIdentifier(fileReference.dseed);
             const fileAlias = fileReference.alias;
-            asyncDispatcher.emptyDispatch();
+            asyncDispatcher.dispatchEmpty();
             this.backupEngine.load(csbIdentifier, (err, encryptedFile) => {
                 if (err) {
                     return this.swarm('interaction', 'handleError', err, 'Could not download file ' + fileAlias);
@@ -196,7 +196,7 @@ $$.swarm.describe("restore", {
         let counter = 0;
 
         if (listCSBs.length === 0) {
-            this.asyncDispatcher.emptyDispatch();
+            this.asyncDispatcher.dispatchEmpty();
             this.asyncDispatcher.markOneAsFinished();
         }
 
@@ -206,7 +206,7 @@ $$.swarm.describe("restore", {
                 const nextCSBIdentifier = new CSBIdentifier(CSBReference.dseed);
                 const nextAlias = CSBReference.alias;
                 const csbUid = nextCSBIdentifier.getUid();
-                this.asyncDispatcher.emptyDispatch();
+                this.asyncDispatcher.dispatchEmpty();
                 this.backupEngine.load(nextCSBIdentifier, (err, encryptedCSB) => {
                     if (err) {
                         return this.swarm('interaction', 'handleError', err, 'Could not download CSB ' + nextAlias);
