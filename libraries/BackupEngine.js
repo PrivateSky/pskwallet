@@ -18,7 +18,6 @@ function BackupEngineBuilder() {
 function BackupEngine(urls, resolvers) {
 
     this.save = function (csbIdentifier, dataStream, callback) {
-        console.log("save Function");
         const asyncDispatcher = new AsyncDispatcher(callback);
         asyncDispatcher.dispatchEmpty(urls.length);
 
@@ -67,7 +66,6 @@ function BackupEngine(urls, resolvers) {
     };
 
     this.compareVersions = function (fileList, callback) {
-        console.log("BAckup engine, compare versions");
         const url = urls[0];
         resolverForUrl(url, (err, resolver) => {
             if (err) {
@@ -151,7 +149,6 @@ function EVFSResolver() {
     };
 
     this.save = function(url, csbIdentifier, dataStream, callback) {
-        console.log("EVFS save");
         if (!isAuthenticated) {
             return callback(new Error('Unauthenticated'));
         }
