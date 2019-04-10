@@ -1,32 +1,9 @@
 
 function AsyncDispatcher(finalCallback) {
-	const results = [];
-	const errors = [];
+	let results = [];
+	let errors = [];
 
 	let started = 0;
-
-	function dispatch(fn) {
-		++started;
-		fn(function (err, res) {
-			if(err) {
-				errors.push(err);
-			}
-
-			if(arguments.length > 2) {
-				arguments[0] = undefined;
-				res = arguments;
-			}
-
-			if(typeof res !== "undefined") {
-				results.push(res);
-			}
-
-
-			if(--started <= 0) {
-				finalCallback(errors, results);
-			}
-		});
-	}
 
 	function markOneAsFinished(err, res) {
 		if(err) {
@@ -43,7 +20,7 @@ function AsyncDispatcher(finalCallback) {
 		}
 
 		if(--started <= 0) {
-			finalCallback(errors, results);
+            callCallback()
 		}
 	}
 
@@ -51,8 +28,19 @@ function AsyncDispatcher(finalCallback) {
 		started += amount;
 	}
 
+	function callCallback() {
+	    if(errors.length === 0) {
+	        errors = undefined;
+        }
+
+	    if(results.length === 0) {
+	        results = undefined;
+        }
+
+        finalCallback(errors, results)
+    }
+
 	return {
-		dispatch,
 		dispatchEmpty,
 		markOneAsFinished
 	}
