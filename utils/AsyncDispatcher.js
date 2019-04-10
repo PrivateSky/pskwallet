@@ -47,13 +47,13 @@ function AsyncDispatcher(finalCallback) {
 		}
 	}
 
-	function emptyDispatch(amount = 1) {
+	function dispatchEmpty(amount = 1) {
 		started += amount;
 	}
 
 	return {
 		dispatch,
-		emptyDispatch,
+		dispatchEmpty,
 		markOneAsFinished
 	}
 }
