@@ -52,21 +52,15 @@ $$.swarm.describe("saveBackup", {
 
     dispatcher: function (rawCSB) {
         this.asyncDispatcher = new AsyncDispatcher((errors, results) => {
-            if (errors && errors.length > 0) {
+            if (errors) {
                 this.swarm('interaction', 'handleError', JSON.stringify(errors, null, '\t'), 'Failed to collect all CSBs');
                 return;
             }
-
-            if(!results) {
-                results = [];
-            }
-
             this.collectFiles(results);
         });
 
         this.asyncDispatcher.dispatchEmpty();
         this.collectCSBs(rawCSB, this.csbIdentifier, '', 'master');
-
     },
 
     collectCSBs: function (rawCSB, csbIdentifier, currentPath, alias) {
@@ -99,14 +93,13 @@ $$.swarm.describe("saveBackup", {
 
     collectFiles: function (collectedCSBs) {
         this.asyncDispatcher = new AsyncDispatcher((errors, newResults) => {
-            if (errors && errors.length > 0) {
+            if (errors) {
                 this.swarm('interaction', 'handleError', JSON.stringify(errors, null, '\t'), 'Failed to collect files attached to CSBs');
             }
 
-            if(!newResults) {
+            if (!newResults) {
                 newResults = [];
             }
-
             this.__categorize(collectedCSBs.concat(newResults));
         });
 
@@ -119,8 +112,8 @@ $$.swarm.describe("saveBackup", {
 
     __categorize: function (files) {
         const categories = {};
-        let backups;
         files.forEach(({csbIdentifier, alias}) => {
+            let backups;
             if (!this.backups || this.backups.length === 0) {
                 backups = csbIdentifier.getBackupUrls();
             } else {
@@ -138,10 +131,10 @@ $$.swarm.describe("saveBackup", {
             this.swarm('interaction', 'csbBackupReport', {errors, successes});
         });
 
-        this.backupEngine = BackupEngine.getBackupEngine(backups);
-
-        const [backupURL, filesNames] = Object.entries(categories)[0];
-        this.filterFiles(backupURL, filesNames);
+        this.backupEngine = BackupEngine.getBackupEngine();
+        Object.entries(categories).forEach(([backupURL, filesNames]) => {
+            this.filterFiles(backupURL, filesNames);
+        });
     },
 
     filterFiles: function (backupURL, filesNames) {
@@ -152,12 +145,12 @@ $$.swarm.describe("saveBackup", {
             }
         });
         this.asyncDispatcher.dispatchEmpty();
-
-        this.backupEngine.compareVersions(filesToUpdate, (err, modifiedFiles) => {
+        this.backupEngine.compareVersions(backupURL, filesToUpdate, (err, modifiedFiles) => {
             if (err) {
                 this.asyncDispatcher.markOneAsFinished(new Error('Failed to connect to ' + backupURL));
                 return;
             }
+
             this.__backupFiles(JSON.parse(modifiedFiles), backupURL, filesNames);
         });
     },
@@ -167,7 +160,7 @@ $$.swarm.describe("saveBackup", {
         files.forEach(file => {
             const fileStream = fs.createReadStream(path.join(this.localFolder, file));
             const backupURL = backupAddress + '/CSB/' + file;
-            this.backupEngine.save(new CSBIdentifier(file), fileStream, (err, res) => {
+            this.backupEngine.save(backupAddress, new CSBIdentifier(file), fileStream, (err, res) => {
                 if (err) {
                     return this.asyncDispatcher.markOneAsFinished({alias: aliases[file], backupURL: backupURL});
                 }

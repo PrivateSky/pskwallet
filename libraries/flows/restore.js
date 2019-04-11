@@ -51,14 +51,14 @@ $$.swarm.describe("restore", {
         }
 
         this.backupUrls = backupUrls;
-        this.backupEngine = BackupEngine.getBackupEngine(this.backupUrls);
         this.restoreDseedCage = new DseedCage(this.localFolder);
-        this.backupEngine.load(this.csbRestoreIdentifier, (err, encryptedCSB) => {
+        this.backupEngine = new BackupEngine.getBackupEngine();
+        this.__tryDownload(backupUrls, this.csbRestoreIdentifier, 0, (err, encryptedCSB) => {
             if (err) {
                 return this.swarm("interaction", "handleError", err, "Failed to restore CSB");
             }
 
-            this.__addCSBHash(this.csbRestoreIdentifier.getUid(), encryptedCSB);
+            this.__addCSBHash(this.csbRestoreIdentifier, encryptedCSB);
             this.encryptedCSB = encryptedCSB;
 
             validator.checkMasterCSBExists(this.localFolder, (err, status) => {
@@ -170,13 +170,14 @@ $$.swarm.describe("restore", {
         listFiles.forEach(fileReference => {
             const csbIdentifier = new CSBIdentifier(fileReference.dseed);
             const fileAlias = fileReference.alias;
+            const urls = csbIdentifier.getBackupUrls();
             asyncDispatcher.dispatchEmpty();
-            this.backupEngine.load(csbIdentifier, (err, encryptedFile) => {
+            this.__tryDownload(urls, csbIdentifier,  0, (err, encryptedFile) => {
                 if (err) {
                     return this.swarm('interaction', 'handleError', err, 'Could not download file ' + fileAlias);
                 }
 
-                this.__addCSBHash(csbIdentifier.getUid(), encryptedFile);
+                this.__addCSBHash(csbIdentifier, encryptedFile);
 
                 fs.writeFile(utils.generatePath(this.localFolder, csbIdentifier), encryptedFile, (err) => {
                     if (err) {
@@ -205,14 +206,14 @@ $$.swarm.describe("restore", {
                 const nextPath = currentPath + '/' + CSBReference.alias;
                 const nextCSBIdentifier = new CSBIdentifier(CSBReference.dseed);
                 const nextAlias = CSBReference.alias;
-                const csbUid = nextCSBIdentifier.getUid();
+                const nextURLs = csbIdentifier.getBackupUrls();
                 this.asyncDispatcher.dispatchEmpty();
-                this.backupEngine.load(nextCSBIdentifier, (err, encryptedCSB) => {
+                this.__tryDownload(nextURLs, nextCSBIdentifier, 0, (err, encryptedCSB) => {
                     if (err) {
                         return this.swarm('interaction', 'handleError', err, 'Could not download CSB ' + nextAlias);
                     }
 
-                    this.__addCSBHash(csbUid, encryptedCSB);
+                    this.__addCSBHash(nextCSBIdentifier, encryptedCSB);
 
                     fs.writeFile(utils.generatePath(this.localFolder, nextCSBIdentifier), encryptedCSB, (err) => {
                         if (err) {
@@ -240,16 +241,15 @@ $$.swarm.describe("restore", {
         }
     },
 
-    __tryDownload(urls, index, callback) {
+    __tryDownload(urls, csbIdentifier, index, callback) {
         if (index === urls.length) {
             return callback(new Error('Could not download resource'));
         }
 
         const url = urls[index];
-
-        $$.remote.doHttpGet(url, (err, resource) => {
+        this.backupEngine.load(url, csbIdentifier, (err, resource) => {
             if (err) {
-                return this.__tryDownload(urls, ++index, callback);
+                return this.__tryDownload(urls, csbIdentifier, ++index, callback);
             }
 
             callback(undefined, resource);
@@ -257,10 +257,10 @@ $$.swarm.describe("restore", {
 
     },
 
-    __addCSBHash: function (csbUid, encryptedCSB) {
+    __addCSBHash: function (csbIdentifier, encryptedCSB) {
         const pskHash = new crypto.PskHash();
         pskHash.update(encryptedCSB);
-        this.hashObj[csbUid] = pskHash.digest().toString('hex');
+        this.hashObj[csbIdentifier.getUid()] = pskHash.digest().toString('hex');
 
     },
 

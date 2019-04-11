@@ -6,6 +6,10 @@ const path = require('path');
 
 $$.swarm.describe("addBackup", {
     start: function (backupUrl, localFolder = process.cwd()) {
+        if(!backupUrl){
+            return this.swarm("interaction", "handleError", new Error("No backup url provided"));
+        }
+
         this.localFolder = localFolder;
         this.backupUrl = backupUrl;
         fs.stat(path.join(this.localFolder, ".privateSky", 'dseed'), (err, stats)=>{
