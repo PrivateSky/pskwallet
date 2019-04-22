@@ -115,13 +115,17 @@ function doSaveBackup(CSBPath) {
 
 			if(Array.isArray(errors)) {
 				errors.forEach(({alias, backupURL}) => {
-					console.log(`Error while saving file ${alias} on ${backupURL}`);
+					backupURL.forEach(backup => {
+						console.log(`Error while saving file ${alias} on ${backup}`);
+					});
 				});
 			}
 
 			if(Array.isArray(successes)) {
 				successes.forEach(({alias, backupURL}) => {
-					console.log(`Successfully backed up file ${alias} on ${backupURL}`);
+					backupURL.forEach(backup =>{
+						console.log(`Successfully backed up file ${alias} on ${backup}`);
+					})
 				});
 			}
 

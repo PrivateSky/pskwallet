@@ -11,6 +11,7 @@ function EVFSResolver() {
         if (!isAuthenticated) {
             return callback(new Error('Unauthenticated'));
         }
+
         $$.remote.doHttpPost(url + "/CSB/" + csbIdentifier.getUid(), dataStream, (err, res) => {
             if (err) {
                 return callback(err);
@@ -44,7 +45,7 @@ function EVFSResolver() {
         if (!isAuthenticated) {
             return callback(new Error('Unauthenticated'));
         }
-        console.log("Get versions", url + "/CSB/" + csbIdentifier.getUid() + "/versions");
+
         $$.remote.doHttpGet(url + "/CSB/" + csbIdentifier.getUid() + "/versions", (err, versions) => {
             if (err) {
                 return callback(err);

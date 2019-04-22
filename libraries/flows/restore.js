@@ -52,8 +52,9 @@ $$.swarm.describe("restore", {
 
         this.backupUrls = backupUrls;
         this.restoreDseedCage = new DseedCage(this.localFolder);
-        this.backupEngine = new BackupEngine.getBackupEngine();
-        this.__tryDownload(backupUrls, this.csbRestoreIdentifier, 0, (err, encryptedCSB) => {
+        const backupEngine = new BackupEngine.getBackupEngine(this.backupUrls);
+
+        backupEngine.load(this.csbRestoreIdentifier, (err, encryptedCSB) => {
             if (err) {
                 return this.swarm("interaction", "handleError", err, "Failed to restore CSB");
             }
@@ -69,7 +70,7 @@ $$.swarm.describe("restore", {
                         utils.deleteRecursively(this.localFolder, true, (err) => {
                             return this.swarm("interaction", "handleError", new Error("No CSB alias was specified"));
                         });
-                    }else{
+                    } else {
                         this.writeCSB();
                     }
                 } else {
@@ -171,8 +172,9 @@ $$.swarm.describe("restore", {
             const csbIdentifier = new CSBIdentifier(fileReference.dseed);
             const fileAlias = fileReference.alias;
             const urls = csbIdentifier.getBackupUrls();
+            const backupEngine = BackupEngine.getBackupEngine(urls);
             asyncDispatcher.dispatchEmpty();
-            this.__tryDownload(urls, csbIdentifier,  0, (err, encryptedFile) => {
+            backupEngine.load(csbIdentifier, (err, encryptedFile) => {
                 if (err) {
                     return this.swarm('interaction', 'handleError', err, 'Could not download file ' + fileAlias);
                 }
@@ -207,8 +209,9 @@ $$.swarm.describe("restore", {
                 const nextCSBIdentifier = new CSBIdentifier(CSBReference.dseed);
                 const nextAlias = CSBReference.alias;
                 const nextURLs = csbIdentifier.getBackupUrls();
+                const backupEngine = BackupEngine.getBackupEngine(nextURLs);
                 this.asyncDispatcher.dispatchEmpty();
-                this.__tryDownload(nextURLs, nextCSBIdentifier, 0, (err, encryptedCSB) => {
+                backupEngine.load(nextCSBIdentifier, (err, encryptedCSB) => {
                     if (err) {
                         return this.swarm('interaction', 'handleError', err, 'Could not download CSB ' + nextAlias);
                     }
@@ -290,9 +293,6 @@ $$.swarm.describe("restore", {
                 callback(new Error(`A CSB having the alias ${CSBAlias} already exists.`));
             }
         });
-
     }
-
-
 });
 

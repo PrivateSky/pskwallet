@@ -1,5 +1,6 @@
 const AsyncDispatcher = require("../utils/AsyncDispatcher");
 const EVFSResolver = require("./backupResolvers/EVFSResolver");
+const crypto = require("pskcrypto");
 
 function BackupEngineBuilder() {
     const resolvers = {};
@@ -7,81 +8,63 @@ function BackupEngineBuilder() {
         resolvers[name] = resolver;
     };
 
-    this.getBackupEngine = function () {
-        return new BackupEngine(resolvers);
+    this.getBackupEngine = function(urls) {
+        if (!urls || urls.length === 0) {
+            throw new Error("No url was provided");
+        }
+
+        return new BackupEngine(urls, resolvers);
     }
 }
 
-function BackupEngine(resolvers) {
+function BackupEngine(urls, resolvers) {
 
-    this.save = function (url, csbIdentifier, dataStream, callback) {
+    this.save = function (csbIdentifier, dataStream, callback) {
         const asyncDispatcher = new AsyncDispatcher(callback);
-        resolverForUrl(url, (err, resolver) => {
-            if (err) {
-                return callback(err);
-            }
-
-            resolver.auth(url, undefined, (err) => {
-                if (err) {
+        asyncDispatcher.dispatchEmpty(urls.length);
+        for (let url of urls) {
+            resolverForUrl(url, (err, resolver) => {
+                if(err){
                     return callback(err);
                 }
-
-                resolver.save(url, csbIdentifier, dataStream, (err) => {
-                    if (err) {
-                        asyncDispatcher.markOneAsFinished(err);
-                        return;
-                    }
-
-                    asyncDispatcher.markOneAsFinished();
-                });
-            });
-        });
-    };
-
-    this.load = function (url, csbIdentifier, version, callback) {
-        if (typeof version === "function") {
-            callback = version;
-        }
-
-        resolverForUrl(url, (err, resolver) => {
-            if (err) {
-                return callback(err);
-            }
-
-            resolver.auth(url, undefined, (err) => {
-                if (err) {
-                    return callback(err);
-                }
-
-                resolver.load(url, csbIdentifier, (err, resource) => {
+                resolver.auth(url, undefined,(err) => {
                     if (err) {
                         return callback(err);
                     }
 
-                    callback(undefined, resource);
+                    resolver.save(url, csbIdentifier, dataStream, (err) => {
+                        if (err) {
+                            asyncDispatcher.markOneAsFinished(err);
+                            return;
+                        }
+                        asyncDispatcher.markOneAsFinished(undefined, url);
+                    });
                 });
             });
-
-        });
+        }
     };
 
-    this.getVersions = function (url, csbIdentifier, callback) {
-        resolverForUrl(url, (err, resolver) => {
+    this.load = function (csbIdentifier, version, callback) {
+        if (typeof version === "function") {
+            callback = version;
+            version = "";
+        }
+
+        tryDownload(csbIdentifier, version, 0, (err, resource) => {
             if (err) {
                 return callback(err);
             }
 
-            resolver.auth(url, undefined, (err) => {
-                if (err) {
-                    return callback(err);
-                }
-
-                resolver.getVersions(url, csbIdentifier, callback);
-            });
+            callback(undefined, resource);
         });
     };
 
-    this.compareVersions = function (url, fileList, callback) {
+    this.getVersions = function (csbIdentifier, callback) {
+
+    };
+
+    this.compareVersions = function (fileList, callback) {
+        const url = urls[0];
         resolverForUrl(url, (err, resolver) => {
             if (err) {
                 return callback(err);
@@ -100,15 +83,22 @@ function BackupEngine(resolvers) {
     //------------------------------------------------ INTERNAL METHODS ------------------------------------------------
 
     function resolverForUrl(url, callback) {
-        Object.entries(resolvers).forEach(([name, resolver]) => {
-            if (match(name, url)) {
-                return callback(undefined, resolver);
-            }
-        });
+        const keys = Object.keys(resolvers);
+        let resolver;
+        let i;
 
-        const resolver = resolvers['evfs'];
-        if (!resolver) {
-            return callback(new Error(`No resolver matches the url ${url}`));
+        for (i = 0; i < keys.length; ++i) {
+            if (match(keys[i], url)) {
+                resolver = resolvers[keys[i]];
+                break;
+            }
+        }
+
+        if (i === keys.length) {
+            resolver = resolvers['evfs'];
+            if (!resolver) {
+                return callback(new Error(`No resolver matches the url ${url}`));
+            }
         }
 
         callback(undefined, resolver);
@@ -116,6 +106,35 @@ function BackupEngine(resolvers) {
 
     function match(str1, str2) {
         return str1.includes(str2) || str2.includes(str1);
+    }
+
+
+    function tryDownload(csbIdentifier, version, index, callback) {
+        if (index === urls.length) {
+            return callback(new Error("Failed to download resource"));
+        }
+
+        const url = urls[index];
+        resolverForUrl(url, (err, resolver) => {
+            if (err) {
+                return callback(err);
+            }
+
+            resolver.auth(url, undefined, (err) => {
+                if (err) {
+                    return tryDownload(csbIdentifier, version, ++index, callback);
+                }
+
+                resolver.load(url, csbIdentifier, version, (err, resource) =>{
+                    if (err) {
+                        return tryDownload(csbIdentifier, version, ++index, callback);
+                    }
+
+                    callback(undefined, resource);
+                });
+            });
+
+        });
     }
 }
 
@@ -126,7 +145,7 @@ const engineBuilder = new BackupEngineBuilder();
 engineBuilder.addResolver('evfs', new EVFSResolver());
 
 module.exports = {
-    getBackupEngine: function () {
-        return engineBuilder.getBackupEngine();
+    getBackupEngine: function (urls) {
+        return engineBuilder.getBackupEngine(urls);
     }
 };

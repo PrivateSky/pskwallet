@@ -112,60 +112,58 @@ $$.swarm.describe("saveBackup", {
 
     __categorize: function (files) {
         const categories = {};
+        let backups;
         files.forEach(({csbIdentifier, alias}) => {
-            let backups;
             if (!this.backups || this.backups.length === 0) {
                 backups = csbIdentifier.getBackupUrls();
             } else {
                 backups = this.backups;
             }
-            backups.forEach((backup) => {
-                if (!categories[backup]) {
-                    categories[backup] = {};
-                }
-                categories[backup][csbIdentifier.getUid()] = alias;
-            })
+            const uid = csbIdentifier.getUid();
+            categories[uid] = {backups, alias}
         });
 
         this.asyncDispatcher = new AsyncDispatcher((errors, successes) => {
             this.swarm('interaction', 'csbBackupReport', {errors, successes});
         });
 
-        this.backupEngine = BackupEngine.getBackupEngine();
-        Object.entries(categories).forEach(([backupURL, filesNames]) => {
-            this.filterFiles(backupURL, filesNames);
-        });
+        this.backupEngine = BackupEngine.getBackupEngine(backups);
+        this.filterFiles(categories);
+        // Object.entries(categories).forEach(([uid, {alias, backups}]) => {
+        //     this.filterFiles(uid, alias, backups);
+        // });
     },
 
-    filterFiles: function (backupURL, filesNames) {
+    filterFiles: function (filesBackups) {
         let filesToUpdate = {};
-        Object.keys(this.hashFile).forEach(fileName => {
-            if (filesNames[fileName]) {
-                filesToUpdate[fileName] = this.hashFile[fileName];
+        Object.keys(this.hashFile).forEach(uid => {
+            if (filesBackups[uid]) {
+                filesToUpdate[uid] = this.hashFile[uid];
             }
         });
+
         this.asyncDispatcher.dispatchEmpty();
-        this.backupEngine.compareVersions(backupURL, filesToUpdate, (err, modifiedFiles) => {
+        this.backupEngine.compareVersions(filesToUpdate, (err, modifiedFiles) => {
             if (err) {
-                this.asyncDispatcher.markOneAsFinished(new Error('Failed to connect to ' + backupURL));
-                return;
+                return this.swarm("interaction", "handleError", err, "Failed to retrieve list of modified files");
             }
 
-            this.__backupFiles(JSON.parse(modifiedFiles), backupURL, filesNames);
+            this.__backupFiles(JSON.parse(modifiedFiles), filesBackups);
         });
     },
 
-    __backupFiles: function (files, backupAddress, aliases) {
+    __backupFiles: function (files, filesBackups) {
         this.asyncDispatcher.dispatchEmpty(files.length);
         files.forEach(file => {
             const fileStream = fs.createReadStream(path.join(this.localFolder, file));
-            const backupURL = backupAddress + '/CSB/' + file;
-            this.backupEngine.save(backupAddress, new CSBIdentifier(file), fileStream, (err, res) => {
+            const backupUrls = filesBackups[file].backups;
+            const backupEngine = BackupEngine.getBackupEngine(backupUrls);
+            backupEngine.save(new CSBIdentifier(file), fileStream, (err, url) => {
                 if (err) {
-                    return this.asyncDispatcher.markOneAsFinished({alias: aliases[file], backupURL: backupURL});
+                    return  this.asyncDispatcher.markOneAsFinished({alias: filesBackups[file].alias, backupURL: url});
                 }
 
-                this.asyncDispatcher.markOneAsFinished(undefined, {alias: aliases[file], backupURL: backupURL});
+                this.asyncDispatcher.markOneAsFinished(undefined, {alias: filesBackups[file].alias, backupURL: url});
             });
         });
 
