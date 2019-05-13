@@ -6,10 +6,10 @@
 
 
     this.load = function (uid) {
-        if (cache[uid]) {
-            cache[uid].count += 1;
-            return cache[uid].instance;
-        }
+        // if (cache[uid]) {
+        //     cache[uid].count += 1;
+        //     return cache[uid].instance;
+        // }
 
         return undefined;
     };
