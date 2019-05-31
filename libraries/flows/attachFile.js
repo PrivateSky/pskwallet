@@ -67,7 +67,7 @@ $$.swarm.describe("attachFile", { //url: CSB1/CSB2/aliasFile
 
     saveFileReference: function (fileReference, csbIdentifier) {
         crypto.removeAllListeners('progress');
-        fileReference.init(this.alias, csbIdentifier.getSeed(), csbIdentifier.getDseed());
+        fileReference.init(this.alias, csbIdentifier.getSeed(), csbIdentifier.getDseed(), this.filePath);
         this.rootCSB.saveAssetToPath(this.CSBPath, fileReference, validator.reportOrContinue(this, 'computeHash', "Failed to save file", this.fileID));
     },
 

@@ -1,5 +1,5 @@
 const AsyncDispatcher = require("../utils/AsyncDispatcher");
-const EVFSResolver = require("./backupResolvers/EVFSResolver");
+const EVFSResolver = require("./backupResolvers/EDFSResolvers");
 const crypto = require("pskcrypto");
 
 function BackupEngineBuilder() {

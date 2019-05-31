@@ -1,14 +1,14 @@
 
-function EVFSResolver() {
-    let isAuthenticated = false;
+function EDFSResolvers() {
 
-    this.auth = function (url, authObj, callback) {
-        isAuthenticated = true;
-        callback();
+    this.auth = function (url, credentials, callback) {
+        const authObj = {};
+        authObj.isAuthenticated = true;
+        callback(undefined, authObj);
     };
 
-    this.save = function (url, csbIdentifier, dataStream, callback) {
-        if (!isAuthenticated) {
+    this.save = function (authObj, url, csbIdentifier, dataStream, callback) {
+        if (!authObj.isAuthenticated) {
             return callback(new Error('Unauthenticated'));
         }
 
@@ -21,8 +21,8 @@ function EVFSResolver() {
         });
     };
 
-    this.load = function (url, csbIdentifier, version, callback) {
-        if (!isAuthenticated) {
+    this.load = function (authObj, url, csbIdentifier, version, callback) {
+        if (!authObj.isAuthenticated) {
             return callback(new Error('Unauthenticated'));
         }
 
@@ -41,8 +41,8 @@ function EVFSResolver() {
 
     };
 
-    this.getVersions = function (url, csbIdentifier, callback) {
-        if (!isAuthenticated) {
+    this.getVersions = function (authObj, url, csbIdentifier, callback) {
+        if (!authObj.isAuthenticated) {
             return callback(new Error('Unauthenticated'));
         }
 
@@ -55,8 +55,8 @@ function EVFSResolver() {
         });
     };
 
-    this.compareVersions = function (url, filesList, callback) {
-        if (!isAuthenticated) {
+    this.compareVersions = function (authObj, url, filesList, callback) {
+        if (!authObj.isAuthenticated) {
             return callback(new Error('Unauthenticated'));
         }
 
@@ -70,4 +70,4 @@ function EVFSResolver() {
     }
 }
 
-module.exports = EVFSResolver;
+module.exports = EDFSResolvers;
