@@ -14,7 +14,7 @@ function insertPassword(prompt, noTries, callback){
 				console.log("Try again");
 				insertPassword(prompt, noTries-1, callback);
 			}else{
-				callback(null, pin);
+				return callback(null, pin);
 			}
 		});
 	}

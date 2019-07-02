@@ -23,7 +23,7 @@ $$.swarm.describe("createCsb", {
         this.CSBPath = CSBPath;
         this.isMaster = isMaster;
         if (typeof backups === 'undefined' || backups.length === 0) {
-            backups = [flowsUtils.defaultBackup];
+            backups = [ flowsUtils.defaultBackup ];
         }
 
         validator.checkMasterCSBExists(localFolder, (err, status) => {

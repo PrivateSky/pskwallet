@@ -8,8 +8,11 @@ function readPin(noTries) {
 		console.log("Try again");
 	}
 	utils.insertPassword("Insert pin:", noTries, (err, pin) => {
+		if (err) {
+			console.log(err);
+		}
 		this.swarm("validatePin", pin, noTries);
-	})
+	});
 }
 
 function generateErrorHandler(){
@@ -19,13 +22,13 @@ function generateErrorHandler(){
 		} else{
 			console.log("Error", info, err);
 		}
-	}
+	};
 }
 
 function generateMessagePrinter(){
 	return function(message){
 		console.log(message);
-	}
+	};
 }
 
 
@@ -37,7 +40,7 @@ function doAddBackup(backupUrl, localFolder) {
 		},
 		handleError: generateErrorHandler(),
 		printInfo: generateMessagePrinter()
-	})
+	});
 }
 
 function doSetPin() {
@@ -45,12 +48,15 @@ function doSetPin() {
 		readPin: readPin,
 		enterNewPin: function () {
 			utils.insertPassword("Insert new pin:", 3, (err, newPin)=>{
+				if (err) {
+					console.log(err);
+				}
 				this.swarm("actualizePin", newPin);
 			});
 		},
 		handleError: generateErrorHandler(),
 		printInfo: generateMessagePrinter()
-	})
+	});
 }
 
 
@@ -72,12 +78,15 @@ function doResetPin() {
 
 		insertPin: function (noTries) {
 			utils.insertPassword("Insert new pin:", noTries, (err, newPin)=>{
+				if (err) {
+					console.log(err);
+				}
 				this.swarm("actualizePin", newPin);
 			});
 		},
 		handleError: generateErrorHandler(),
 		printInfo: generateMessagePrinter()
-	})
+	});
 }
 
 function doCreateCsb(CSBPath) {
@@ -88,8 +97,11 @@ function doCreateCsb(CSBPath) {
                 console.log("Try again");
             }
             utils.insertPassword("Insert pin:", noTries, (err, pin) => {
+				if (err) {
+					console.log(err);
+				}
                 this.swarm("validatePin", pin, noTries);
-            })
+            });
         },
 		handleError: generateErrorHandler(),
         createPin: function (defaultPin) {
@@ -115,7 +127,7 @@ function doSaveBackup(CSBPath) {
 
 			if(Array.isArray(errors)) {
 				errors.forEach(({alias, backupURL}) => {
-					backupURL.forEach(backup => {
+					backupURL.forEach((backup) => {
 						console.log(`Error while saving file ${alias} on ${backup}`);
 					});
 				});
@@ -123,9 +135,9 @@ function doSaveBackup(CSBPath) {
 
 			if(Array.isArray(successes)) {
 				successes.forEach(({alias, backupURL}) => {
-					backupURL.forEach(backup =>{
+					backupURL.forEach((backup) =>{
 						console.log(`Successfully backed up file ${alias} on ${backup}`);
-					})
+					});
 				});
 			}
 
@@ -163,7 +175,7 @@ function doAttachFile(url, filePath) {
 		reportProgress: function (progress) {
 			console.log("progress:", progress.toFixed(2));
 		}
-	})
+	});
 }
 
 
@@ -174,9 +186,11 @@ function doExtractFile(url){
 		handleError:generateErrorHandler(),
         reportProgress: function (progress) {
             console.log("progress:", progress.toFixed(2));
-        },
+		}
+		,
 		__return__: function (fileNames) {
 			//TODO process fileNames in browser
+            console.log("Empty function");
 		}
 	});
 }
@@ -190,9 +204,9 @@ function doListCSBs(CSBPath, localFolder) {
 			console.log(csbAliases);
 		},
         noMasterCSBExists:function(){
-			console.log("No master CSB exists")
+			console.log("No master CSB exists");
 		}
-	})
+	});
 }
 
 function doReceive(endpoint, channel) {
@@ -203,7 +217,7 @@ function doReceive(endpoint, channel) {
 			console.log("The following string represents the seed. Please save it.\n");
 			console.log(seed.toString(), '\n');
 		}
-	})
+	});
 }
 
 function doPeriodicBackup(seed){
@@ -223,7 +237,7 @@ function doPeriodicBackup(seed){
 					console.log(`Successfully backed up file ${alias} on ${backupURL}`);
 				});
 			}
-		})
+		});
 	}, 5000);
 }
 

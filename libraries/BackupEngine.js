@@ -1,6 +1,6 @@
 const AsyncDispatcher = require("../utils/AsyncDispatcher");
 const EVFSResolver = require("./backupResolvers/EVFSResolver");
-const crypto = require("pskcrypto");
+// const crypto = require("pskcrypto");
 
 function BackupEngineBuilder() {
     const resolvers = {};
@@ -14,7 +14,7 @@ function BackupEngineBuilder() {
         }
 
         return new BackupEngine(urls, resolvers);
-    }
+    };
 }
 
 function BackupEngine(urls, resolvers) {
@@ -22,12 +22,12 @@ function BackupEngine(urls, resolvers) {
     this.save = function (csbIdentifier, dataStream, callback) {
         const asyncDispatcher = new AsyncDispatcher(callback);
         asyncDispatcher.dispatchEmpty(urls.length);
-        for (let url of urls) {
+        for (const url of urls) {
             resolverForUrl(url, (err, resolver) => {
                 if(err){
                     return callback(err);
                 }
-                resolver.auth(url, undefined,(err) => {
+                resolver.auth(url, undefined, (err) => {
                     if (err) {
                         return callback(err);
                     }
@@ -60,7 +60,7 @@ function BackupEngine(urls, resolvers) {
     };
 
     this.getVersions = function (csbIdentifier, callback) {
-
+        console.log("Empty function");
     };
 
     this.compareVersions = function (fileList, callback) {

@@ -27,7 +27,7 @@ module.exports.reportOrContinue = function(swarm, phaseName, errorMessage, ...ar
 					swarm[phaseName](...res, ...args);
 			}
 		}
-	}
+	};
 };
 
 module.exports.checkMasterCSBExists = function (localFolder, callback) {
@@ -37,5 +37,5 @@ module.exports.checkMasterCSBExists = function (localFolder, callback) {
 		}
 
 		return callback(undefined, true);
-	})
+	});
 };

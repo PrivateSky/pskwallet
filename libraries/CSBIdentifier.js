@@ -6,13 +6,13 @@ function CSBIdentifier(id, backupUrls, keyLen = 32) {
     let dseed;
     let uid;
     let encSeed;
-    let encDseed;
+    // let encDseed;
 
     init();
 
     this.getSeed = function () {
         if(!seed){
-            throw new Error("Cannot return seed. Access is denied.")
+            throw new Error("Cannot return seed. Access is denied.");
         }
 
         return generateCompactForm(seed);
@@ -28,7 +28,7 @@ function CSBIdentifier(id, backupUrls, keyLen = 32) {
             return generateCompactForm(dseed);
         }
 
-        throw new Error("Cannot return derived seed. Access is denied.")
+        throw new Error("Cannot return derived seed. Access is denied.");
     };
 
     this.getUid = function () {
@@ -123,9 +123,9 @@ function CSBIdentifier(id, backupUrls, keyLen = 32) {
 
 
     function create() {
-        let localSeed = {};
+        const localSeed = {};
         if (!Array.isArray(backupUrls)) {
-            backupUrls = [backupUrls];
+            backupUrls = [ backupUrls ];
         }
 
         localSeed.tag    = 's';

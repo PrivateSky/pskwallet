@@ -67,7 +67,7 @@ function EVFSResolver() {
 
             callback(undefined, modifiedFiles);
         });
-    }
+    };
 }
 
 module.exports = EVFSResolver;

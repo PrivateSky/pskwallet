@@ -21,7 +21,7 @@ $$.swarm.describe("restore", {
             this.CSBAlias = alias;
         }
 
-        this.swarm("interaction", "readSeed")
+        this.swarm("interaction", "readSeed");
     },
 
     withSeed: function (url, localFolder = process.cwd(), seedRestore, localSeed) {
@@ -45,7 +45,7 @@ $$.swarm.describe("restore", {
         this.csbRestoreIdentifier = new CSBIdentifier(restoreSeed);
         let backupUrls;
         try {
-            backupUrls = this.csbRestoreIdentifier.getBackupUrls()
+            backupUrls = this.csbRestoreIdentifier.getBackupUrls();
         } catch (e) {
             return this.swarm('interaction', 'handleError', new Error('Invalid seed'));
         }
@@ -63,11 +63,17 @@ $$.swarm.describe("restore", {
             this.encryptedCSB = encryptedCSB;
 
             validator.checkMasterCSBExists(this.localFolder, (err, status) => {
+                if (err) {
+                    console.log(err);
+                }
                 if (status === false) {
                     this.createAuxFolder();
                 } else if (this.localCSBIdentifier) {
                     if (!this.CSBAlias) {
                         utils.deleteRecursively(this.localFolder, true, (err) => {
+                            if (err) {
+                                console.log(err);
+                            }
                             return this.swarm("interaction", "handleError", new Error("No CSB alias was specified"));
                         });
                     } else {
@@ -103,7 +109,7 @@ $$.swarm.describe("restore", {
 
     loadRawCSB: function (rootCSB) {
 
-        this.asyncDispatcher = new AsyncDispatcher((errs, succs) => {
+        this.asyncDispatcher = new AsyncDispatcher(( errs, succs) => {
             this.hashCage.saveHash(this.hashObj, (err) => {
                 if (err) {
                     return this.swarm('interaction', 'handleError', err, 'Failed to save hashObj');
@@ -160,7 +166,7 @@ $$.swarm.describe("restore", {
         const asyncDispatcher = new AsyncDispatcher((errs, succs) => {
             this.collectCSBs(rawCSB, csbIdentifier, currentPath, alias);
             if (callback) {
-                callback(errs, succs);
+                return callback(errs, succs);
             }
         });
 
@@ -168,7 +174,7 @@ $$.swarm.describe("restore", {
             asyncDispatcher.markOneAsFinished();
         }
 
-        listFiles.forEach(fileReference => {
+        listFiles.forEach((fileReference) => {
             const csbIdentifier = new CSBIdentifier(fileReference.dseed);
             const fileAlias = fileReference.alias;
             const urls = csbIdentifier.getBackupUrls();
@@ -204,7 +210,7 @@ $$.swarm.describe("restore", {
         }
 
         if (listCSBs && listCSBs.length > 0) {
-            listCSBs.forEach(CSBReference => {
+            listCSBs.forEach((CSBReference) => {
                 const nextPath = currentPath + '/' + CSBReference.alias;
                 const nextCSBIdentifier = new CSBIdentifier(CSBReference.dseed);
                 const nextAlias = CSBReference.alias;
@@ -228,17 +234,17 @@ $$.swarm.describe("restore", {
                             if (err) {
                                 return this.swarm('interaction', 'handleError', err, 'Failed to load CSB ' + nextAlias);
                             }
-                            nextArguments.push([nextRawCSB, nextCSBIdentifier, nextPath, nextAlias]);
+                            nextArguments.push([ nextRawCSB, nextCSBIdentifier, nextPath, nextAlias ]);
 
                             if (++counter === listCSBs.length) {
-                                nextArguments.forEach(args => {
+                                nextArguments.forEach((args) => {
                                     this.collectFiles(...args, () => {
                                         this.asyncDispatcher.markOneAsFinished(undefined, alias);
                                     });
                                 });
                             }
                         });
-                    })
+                    });
                 });
             });
         }
@@ -288,9 +294,9 @@ $$.swarm.describe("restore", {
                         callback();
                     });
 
-                })
+                });
             } else {
-                callback(new Error(`A CSB having the alias ${CSBAlias} already exists.`));
+                return callback(new Error(`A CSB having the alias ${CSBAlias} already exists.`));
             }
         });
     }

@@ -1,8 +1,8 @@
-var path = require("path");
+// var path = require("path");
 
 const utils = require("./../../utils/flowsUtils");
-const crypto = require("pskcrypto");
-var fs = require("fs");
+// const crypto = require("pskcrypto");
+// var fs = require("fs");
 
 $$.swarm.describe("addCsb", {
 	start: function (aliasCsb, aliasDestCsb) {
@@ -18,13 +18,13 @@ $$.swarm.describe("addCsb", {
 			}else {
 				self.addCsb(pin, self.aliasCsb);
 			}
-		})
+		});
 	},
 	addCsb: function (pin, aliasCSb, aliasDestCsb, callback) {
 		var self = this;
 		utils.getCsb(pin, aliasCSb, function (err, parentCsb) {
 			if(err){
-				self.swarm("interaction", "handleError", err, "Failed to get csb", )
+				self.swarm("interaction", "handleError", err, "Failed to get csb");
 			}
 		});
 	}

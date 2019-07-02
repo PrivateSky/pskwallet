@@ -1,6 +1,6 @@
 const flowsUtils = require("./../../utils/flowsUtils");
 const validator = require("../../utils/validator");
-const fs = require("fs");
+// const fs = require("fs");
 const RootCSB = require("../RootCSB");
 const CSBIdentifier = require("../CSBIdentifier");
 
@@ -41,10 +41,10 @@ $$.swarm.describe("listCSBs", {
 
     getCSBs: function (rawCSB) {
         const csbReferences = rawCSB.getAllAssets('global.CSBReference');
-        const csbsAliases = csbReferences.map(ref => ref.alias);
+        const csbsAliases = csbReferences.map((ref) => ref.alias);
 
         const fileReferences = rawCSB.getAllAssets('global.FileReference');
-        const filesAliases = fileReferences.map(ref => ref.alias);
+        const filesAliases = fileReferences.map((ref) => ref.alias);
 
         this.swarm("interaction", "__return__", {
             csbs: csbsAliases,

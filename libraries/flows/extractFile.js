@@ -36,6 +36,6 @@ $$.swarm.describe("extractFile", {
 
 			this.swarm("interaction", "printInfo", this.alias + " was successfully extracted. ");
 			this.swarm("interaction", "__return__", fileNames);
-		})
+		});
 	}
 });

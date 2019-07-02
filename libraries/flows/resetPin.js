@@ -32,6 +32,6 @@ $$.swarm.describe("resetPin", {
             }
 
             this.swarm("interaction", "printInfo", "The pin has been changed successfully.");
-        })
+        });
     }
 });

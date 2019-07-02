@@ -1,7 +1,7 @@
 const flowsUtils = require("./../../utils/flowsUtils");
-const urils = require("./../../utils/utils");
+// const urils = require("./../../utils/utils");
 const crypto = require("pskcrypto");
-var fs = require("fs");
+// var fs = require("fs");
 const path = require("path");
 const validator = require("../../utils/validator");
 $$.swarm.describe("embedFile", {

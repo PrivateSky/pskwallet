@@ -69,15 +69,17 @@ $$.swarm.describe("saveBackup", {
         const nextArguments = [];
         let counter = 0;
 
-        listCSBs.forEach(CSBReference => {
+        listCSBs.forEach((CSBReference) => {
             const nextPath = currentPath + '/' + CSBReference.alias;
             const nextCSBIdentifier = new CSBIdentifier(CSBReference.dseed);
             const nextAlias = CSBReference.alias;
             this.rootCSB.loadRawCSB(nextPath, (err, nextRawCSB) => {
-
-                nextArguments.push([nextRawCSB, nextCSBIdentifier, nextPath, nextAlias]);
+                if (err) {
+                    console.log(err);
+                }
+                nextArguments.push([ nextRawCSB, nextCSBIdentifier, nextPath, nextAlias ]);
                 if (++counter === listCSBs.length) {
-                    nextArguments.forEach(args => {
+                    nextArguments.forEach((args) => {
                         this.asyncDispatcher.dispatchEmpty();
                         this.collectCSBs(...args);
                     });
@@ -120,7 +122,7 @@ $$.swarm.describe("saveBackup", {
                 backups = this.backups;
             }
             const uid = csbIdentifier.getUid();
-            categories[uid] = {backups, alias}
+            categories[uid] = {backups, alias};
         });
 
         this.asyncDispatcher = new AsyncDispatcher((errors, successes) => {
@@ -135,8 +137,8 @@ $$.swarm.describe("saveBackup", {
     },
 
     filterFiles: function (filesBackups) {
-        let filesToUpdate = {};
-        Object.keys(this.hashFile).forEach(uid => {
+        const filesToUpdate = {};
+        Object.keys(this.hashFile).forEach((uid) => {
             if (filesBackups[uid]) {
                 filesToUpdate[uid] = this.hashFile[uid];
             }
@@ -154,7 +156,7 @@ $$.swarm.describe("saveBackup", {
 
     __backupFiles: function (files, filesBackups) {
         this.asyncDispatcher.dispatchEmpty(files.length);
-        files.forEach(file => {
+        files.forEach((file) => {
             const fileStream = fs.createReadStream(path.join(this.localFolder, file));
             const backupUrls = filesBackups[file].backups;
             const backupEngine = BackupEngine.getBackupEngine(backupUrls);
@@ -173,10 +175,10 @@ $$.swarm.describe("saveBackup", {
     __collectFiles: function (rawCSB, csbAlias) {
         const files = rawCSB.getAllAssets('global.FileReference');
         this.asyncDispatcher.dispatchEmpty(files.length);
-        files.forEach(FileReference => {
+        files.forEach((FileReference) => {
             const alias = FileReference.alias;
             const csbIdentifier = new CSBIdentifier(FileReference.dseed);
-            this.asyncDispatcher.markOneAsFinished(undefined, {csbIdentifier, alias})
+            this.asyncDispatcher.markOneAsFinished(undefined, {csbIdentifier, alias});
         });
         this.asyncDispatcher.markOneAsFinished();
     }
