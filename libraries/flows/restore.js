@@ -95,7 +95,7 @@ $$.swarm.describe("restore", {
     },
 
     createAuxFolder: function () {
-        $$.ensureFolderExists(path.join(this.localFolder, ".privateSky"), validator.reportOrContinue(this, "writeCSB", "Failed to create folder .privateSky"));
+        fs.mkdir(path.join(this.localFolder, ".privateSky"), {recursive: true}, validator.reportOrContinue(this, "writeCSB", "Failed to create folder .privateSky"));
     },
 
 

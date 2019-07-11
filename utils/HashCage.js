@@ -6,7 +6,7 @@ function HashCage(localFolder) {
 	const hashPath = path.join(hashFolder, 'hash');
 
 	function loadHash(callback) {
-		$$.ensureFolderExists(hashFolder, (err) => {
+		fs.mkdir(hashFolder, {recursive: true}, (err) => {
 			if (err) {
 				return callback(err);
 			}
@@ -23,7 +23,7 @@ function HashCage(localFolder) {
 	}
 
 	function saveHash(hashObj, callback) {
-		$$.ensureFolderExists(hashFolder, (err) => {
+		fs.mkdir(hashFolder, {recursive: true}, (err) => {
 			if (err) {
 				return callback(err);
 			}
