@@ -8,7 +8,7 @@ function getEndpoint(){
 }
 
 function getInitializedEDFS() {
-    const EDFS = require("../../edfs");
+    const EDFS = require("edfs");
     const endpoint = getEndpoint();
     const transportAlias = "pskwallet";
     $$.brickTransportStrategiesRegistry.add(transportAlias, new EDFS.HTTPBrickTransportStrategy(endpoint));
@@ -36,7 +36,7 @@ function addApp(archiveSeed, appPath) {
         throw new Error('Missing the second argument, the app path');
     }
 
-    const EDFS = require("../../edfs");
+    const EDFS = require("edfs");
     const edfs = getInitializedEDFS();
 
     const bar = edfs.loadBar(archiveSeed);
