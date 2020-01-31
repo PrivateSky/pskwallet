@@ -15,15 +15,21 @@ function getInitializedEDFS() {
     return EDFS.attach(transportAlias);
 }
 
-function createArchive(folderPath){
+function createArchive(folderPath, domainName){
     const path = require("path");
+    const EDFS = require("edfs");
     const edfs = getInitializedEDFS();
 
     edfs.createBarWithConstitution(path.resolve(folderPath), (err, archive)=>{
         if(err){
             throw err;
         }
-        console.log("New SEED:", archive.getSeed().toString());
+        archive.writeFile(EDFS.constants.CSB.DOMAIN_IDENTITY_FILE, domainName, ()=>{
+            if(err){
+                throw err;
+            }
+            console.log("SEED", archive.getSeed().toString());
+        });
     });
 }
 
@@ -49,6 +55,5 @@ function addApp(archiveSeed, appPath) {
     })
 }
 
-
-addCommand("createArchive", null, createArchive, "<folderPath> \t\t\t\t |create an archive containing constitutions folder <folderPath> ");
-addCommand("addApp", null, addApp, " <archiveSeed> <folderPath> \t\t\t\t |add an app to an existing archive");
+addCommand("create", "archive", createArchive, "<folderPath> <domainName> \t\t\t\t |create an archive containing constitutions folder <folderPath> for Domain <domainName>");
+addCommand("add", "app", addApp, " <archiveSeed> <folderPath> \t\t\t\t |add an app to an existing archive");
