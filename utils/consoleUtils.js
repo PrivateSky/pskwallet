@@ -6,7 +6,7 @@ function insertPassword(prompt, noTries, callback){
 	if(noTries === 0){
 		console.log("You have inserted an invalid pin 3 times");
 		console.log("Preparing to exit");
-
+		process.exit(0);
 	}else {
 		getPassword(prompt, function (err, pin) {
 			if(err) {

@@ -15,12 +15,12 @@ function getInitializedEDFS() {
     return EDFS.attach(transportAlias);
 }
 
-function createArchive(folderPath, domainName){
+function createCSB(domainName, constitutionPath){
     const path = require("path");
     const EDFS = require("edfs");
     const edfs = getInitializedEDFS();
 
-    edfs.createBarWithConstitution(path.resolve(folderPath), (err, archive)=>{
+    edfs.createBarWithConstitution(path.resolve(constitutionPath), (err, archive)=>{
         if(err){
             throw err;
         }
@@ -55,5 +55,20 @@ function addApp(archiveSeed, appPath) {
     })
 }
 
-addCommand("create", "archive", createArchive, "<folderPath> <domainName> \t\t\t\t |create an archive containing constitutions folder <folderPath> for Domain <domainName>");
+function createArchive(alias, folderPath) {
+    const path = require("path");
+    const edfs = getInitializedEDFS();
+    const bar = edfs.createBar();
+    bar.addFolder(path.resolve(folderPath), folderPath, (err) => {
+        if (err) {
+            throw err;
+        }
+
+        console.log("Added archive");
+    });
+
+}
+
+addCommand("create", "csb", createCSB, "<domainName> <constitutionPath> \t\t\t\t |create an archive containing constitutions folder <constitutionPath> for Domain <domainName>");
+addCommand("create", "archive", createArchive, "<alias> <folderPath> \t\t\t\t |create an archive containing constitutions folder <constitutionPath> for Domain <domainName>");
 addCommand("add", "app", addApp, " <archiveSeed> <folderPath> \t\t\t\t |add an app to an existing archive");
