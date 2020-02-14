@@ -56,7 +56,8 @@ function addApp(archiveSeed, appPath) {
 }
 
 function createArchive(alias, folderPath) {
-    const path = require("path");
+    const pth = "path";
+    const path = require(pth);
     const edfs = getInitializedEDFS();
     const bar = edfs.createBar();
     bar.addFolder(path.resolve(folderPath), folderPath, (err) => {
@@ -64,11 +65,29 @@ function createArchive(alias, folderPath) {
             throw err;
         }
 
-        console.log("Added archive");
+        console.log("SEED:", bar.getSeed().toString());
     });
 
 }
 
-addCommand("create", "csb", createCSB, "<domainName> <constitutionPath> \t\t\t\t |create an archive containing constitutions folder <constitutionPath> for Domain <domainName>");
-addCommand("create", "archive", createArchive, "<alias> <folderPath> \t\t\t\t |create an archive containing constitutions folder <constitutionPath> for Domain <domainName>");
+function createWallet(templateSeed) {
+    const edfs = getInitializedEDFS();
+    edfs.loadCSB(templateSeed, (err, rawCSB) => {
+        if (err) {
+            throw err;
+        }
+
+        rawCSB.clone((err, cloneSEED) => {
+            if (err) {
+                throw err;
+            }
+
+            console.log("Clone SEED:", cloneSEED.toString());
+        });
+    });
+}
+
+addCommand("create", "csb", createCSB, "<domainName> <constitutionPath> \t\t\t\t |creates an archive containing constitutions folder <constitutionPath> for Domain <domainName>");
+addCommand("create", "archive", createArchive, "<alias> <folderPath> \t\t\t\t |creates an archive containing constitutions folder <constitutionPath> for Domain <domainName>");
+addCommand("create", "wallet", createWallet, "<templateSeed> \t\t\t\t |creates a clone of the CSB whose SEED is <templateSeed>");
 addCommand("add", "app", addApp, " <archiveSeed> <folderPath> \t\t\t\t |add an app to an existing archive");
