@@ -1,6 +1,6 @@
-function getEndpoint(){
+function getEndpoint() {
     let endpoint = process.env.EDFS_ENDPOINT;
-    if(typeof endpoint === "undefined"){
+    if (typeof endpoint === "undefined") {
         console.log("Using default endpoint. To configure set ENV['EDFS_ENDPOINT']");
         endpoint = "http://localhost:8080";
     }
@@ -15,17 +15,17 @@ function getInitializedEDFS() {
     return EDFS.attach(transportAlias);
 }
 
-function createCSB(domainName, constitutionPath){
+function createCSB(domainName, constitutionPath) {
     const path = require("path");
     const EDFS = require("edfs");
     const edfs = getInitializedEDFS();
 
-    edfs.createBarWithConstitution(path.resolve(constitutionPath), (err, archive)=>{
-        if(err){
+    edfs.createBarWithConstitution(path.resolve(constitutionPath), (err, archive) => {
+        if (err) {
             throw err;
         }
-        archive.writeFile(EDFS.constants.CSB.DOMAIN_IDENTITY_FILE, domainName, ()=>{
-            if(err){
+        archive.writeFile(EDFS.constants.CSB.DOMAIN_IDENTITY_FILE, domainName, () => {
+            if (err) {
                 throw err;
             }
             console.log("SEED", archive.getSeed().toString());
@@ -34,11 +34,11 @@ function createCSB(domainName, constitutionPath){
 }
 
 function addApp(archiveSeed, appPath) {
-    if(!archiveSeed) {
+    if (!archiveSeed) {
         throw new Error('Missing first argument, the archive seed');
     }
 
-    if(!appPath) {
+    if (!appPath) {
         throw new Error('Missing the second argument, the app path');
     }
 
@@ -47,7 +47,7 @@ function addApp(archiveSeed, appPath) {
 
     const bar = edfs.loadBar(archiveSeed);
     bar.addFolder(appPath, EDFS.constants.CSB.APP_FOLDER, (err) => {
-        if(err) {
+        if (err) {
             throw err;
         }
 
@@ -72,18 +72,25 @@ function createArchive(alias, folderPath) {
 
 function createWallet(templateSeed) {
     const edfs = getInitializedEDFS();
-    edfs.loadCSB(templateSeed, (err, rawCSB) => {
+
+    edfs.clone(templateSeed, (err, cloneSEED) => {
         if (err) {
             throw err;
         }
 
-        rawCSB.clone((err, cloneSEED) => {
-            if (err) {
-                throw err;
-            }
+        console.log("Clone SEED:", cloneSEED.toString());
+    });
+}
 
-            console.log("Clone SEED:", cloneSEED.toString());
-        });
+function listFiles(seed, folderPath) {
+    const edfs = getInitializedEDFS();
+    const bar = edfs.loadBar(seed);
+    bar.listFiles(folderPath, (err, fileList) => {
+        if (err) {
+            throw err;
+        }
+
+        console.log("Files:", fileList);
     });
 }
 
@@ -91,3 +98,4 @@ addCommand("create", "csb", createCSB, "<domainName> <constitutionPath> \t\t\t\t
 addCommand("create", "archive", createArchive, "<alias> <folderPath> \t\t\t\t |creates an archive containing constitutions folder <constitutionPath> for Domain <domainName>");
 addCommand("create", "wallet", createWallet, "<templateSeed> \t\t\t\t |creates a clone of the CSB whose SEED is <templateSeed>");
 addCommand("add", "app", addApp, " <archiveSeed> <folderPath> \t\t\t\t |add an app to an existing archive");
+addCommand("list", "files", listFiles, " <archiveSeed> <folderPath> \t\t\t\t |add an app to an existing archive");
