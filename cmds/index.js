@@ -33,7 +33,7 @@ function createCSB(domainName, constitutionPath) {
     });
 }
 
-function addApp(archiveSeed, appPath) {
+function setApp(archiveSeed, appPath) {
     if (!archiveSeed) {
         throw new Error('Missing first argument, the archive seed');
     }
@@ -94,8 +94,34 @@ function listFiles(seed, folderPath) {
     });
 }
 
+function extractFolder(seed, barPath, fsFolderPath) {
+    const edfs = getInitializedEDFS();
+    const bar = edfs.loadBar(seed);
+    bar.extractFolder(fsFolderPath, barPath, (err) => {
+        if (err) {
+            throw err;
+        }
+
+        console.log("Extracted folder.");
+    });
+}
+
+function extractFile(seed, barPath, fsFilePath) {
+    const edfs = getInitializedEDFS();
+    const bar = edfs.loadBar(seed);
+    bar.extractFile(fsFilePath, barPath, (err) => {
+        if (err) {
+            throw err;
+        }
+
+        console.log("Extracted file.");
+    });
+}
 addCommand("create", "csb", createCSB, "<domainName> <constitutionPath> \t\t\t\t |creates an archive containing constitutions folder <constitutionPath> for Domain <domainName>");
 addCommand("create", "archive", createArchive, "<alias> <folderPath> \t\t\t\t |creates an archive containing constitutions folder <constitutionPath> for Domain <domainName>");
 addCommand("create", "wallet", createWallet, "<templateSeed> \t\t\t\t |creates a clone of the CSB whose SEED is <templateSeed>");
-addCommand("add", "app", addApp, " <archiveSeed> <folderPath> \t\t\t\t |add an app to an existing archive");
-addCommand("list", "files", listFiles, " <archiveSeed> <folderPath> \t\t\t\t |add an app to an existing archive");
+addCommand("set", "app", setApp, " <archiveSeed> <folderPath> \t\t\t\t |add an app to an existing archive");
+addCommand("list", "files", listFiles, " <archiveSeed> <folderPath> \t\t\t\t |prints the list of all files stored at path <folderPath> inside the archive whose SEED is <archiveSeed>");
+addCommand("extract", "folder", extractFolder, " <archiveSeed> <archivePath> <fsFolderPath> \t\t\t\t |extracts the folder stored at <archivePath> inside the archive whose SEED is <archiveSeed> and writes all the extracted file on disk at path <fsFolderPath>");
+addCommand("extract", "file", extractFile, " <archiveSeed> <archivePath> <fsFilePath> \t\t\t\t |extracts the folder stored at <archivePath> inside the archive whose SEED is <archiveSeed> and writes all the extracted file on disk at path <fsFilePath>");
+
