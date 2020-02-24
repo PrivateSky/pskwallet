@@ -1,3 +1,4 @@
+const utils = require("../utils/consoleUtils");
 function getEndpoint() {
     let endpoint = process.env.EDFS_ENDPOINT;
     if (typeof endpoint === "undefined") {
@@ -73,13 +74,18 @@ function createArchive(alias, folderPath) {
 
 function createWallet(templateSeed) {
     const edfs = getInitializedEDFS();
-
-    edfs.clone(templateSeed, (err, cloneSEED) => {
+    utils.insertPassword("Insert pin:", 3, (err, pin) => {
         if (err) {
             throw err;
         }
 
-        console.log("Clone SEED:", cloneSEED.toString());
+        edfs.createWallet(templateSeed, pin, (err) => {
+            if (err) {
+                throw err;
+            }
+
+            console.log("Wallet was created");
+        });
     });
 }
 
