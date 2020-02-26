@@ -75,7 +75,11 @@ function createArchive(alias, folderPath) {
 }
 
 function validatePin(pin) {
-    return !(typeof pin === "undefined" || pin.length < 4);
+    if(typeof pin === "undefined" || pin.length < 4) {
+        return false;
+    }
+
+    return !/[\x00-\x03]|[\x05-\x07]|[\x09]|[\x0B-\x0C]|[\x0E-\x1F]/.test(pin);
 }
 
 function createWallet(templateSeed) {
