@@ -1,5 +1,6 @@
 const utils = require("../utils/consoleUtils");
-const aliasesPath = "aliases";
+const AGENT_IDENTITY = "did:example:123456789abcdefghi";
+process.env.PSK_ROOT_INSTALATION_FOLDER = "/home/apparatus/Documents/privatesky";
 
 function getEndpoint() {
     let endpoint = process.env.EDFS_ENDPOINT;
@@ -18,23 +19,70 @@ function getInitializedEDFS() {
     return EDFS.attach(transportAlias);
 }
 
-function createCSB(domainName, constitutionPath) {
+function validatePin(pin) {
+    if (typeof pin === "undefined" || pin.length < 4) {
+        return false;
+    }
+
+    return !/[\x00-\x03]|[\x05-\x07]|[\x09]|[\x0B-\x0C]|[\x0E-\x1F]/.test(pin);
+}
+
+function createCSB(domainName, constitutionPath, noSave = false) {
     const pth = "path";
     const path = require(pth);
     const EDFS = require("edfs");
-    const edfs = getInitializedEDFS();
 
-    edfs.createBarWithConstitution(path.resolve(constitutionPath), (err, archive) => {
-        if (err) {
-            throw err;
-        }
-        archive.writeFile(EDFS.constants.CSB.DOMAIN_IDENTITY_FILE, domainName, () => {
+    if (noSave === false) {
+        utils.insertPassword({validationFunction: validatePin}, (err, pin) => {
             if (err) {
                 throw err;
             }
-            console.log("SEED", archive.getSeed().toString());
+
+            EDFS.attachWithPin(pin, (err, edfs) => {
+                if (err) {
+                    throw err;
+                }
+
+                edfs.loadWallet(undefined, pin, (err, wallet) => {
+                    if (err) {
+                        throw err;
+                    }
+
+                    edfs.createBarWithConstitution(path.resolve(constitutionPath), (err, archive) => {
+                        if (err) {
+                            throw err;
+                        }
+
+                        const dossier = require("dossier");
+                        dossier.load(wallet.getSeed(), AGENT_IDENTITY, (err, csb) => {
+                            if (err) {
+                                throw err;
+                            }
+
+                            csb.startTransaction("StandardCSBTransactions", "addFileAnchor", domainName, "csb", wallet.getMapDigest());
+                            console.log("The CSB was created and a reference to it has been added to the wallet.");
+                        });
+
+                    });
+                });
+            });
         });
-    });
+    } else {
+        const edfs = getInitializedEDFS();
+        edfs.createBarWithConstitution(path.resolve(constitutionPath), (err, archive) => {
+            if (err) {
+                throw err;
+            }
+
+            archive.writeFile(EDFS.constants.CSB.DOMAIN_IDENTITY_FILE, domainName, () => {
+                if (err) {
+                    throw err;
+                }
+                console.log("The CSB was created. Its SEED is the following.");
+                console.log("SEED", archive.getSeed().toString());
+            });
+        });
+    }
 }
 
 function setApp(archiveSeed, appPath) {
@@ -59,7 +107,7 @@ function setApp(archiveSeed, appPath) {
     })
 }
 
-function createArchive(alias, folderPath) {
+function createArchive(alias, folderPath, noSave = false) {
     const pth = "path";
     const path = require(pth);
     const edfs = getInitializedEDFS();
@@ -72,14 +120,6 @@ function createArchive(alias, folderPath) {
         console.log("SEED:", bar.getSeed().toString());
     });
 
-}
-
-function validatePin(pin) {
-    if(typeof pin === "undefined" || pin.length < 4) {
-        return false;
-    }
-
-    return !/[\x00-\x03]|[\x05-\x07]|[\x09]|[\x0B-\x0C]|[\x0E-\x1F]/.test(pin);
 }
 
 function createWallet(templateSeed) {
@@ -126,24 +166,62 @@ function createWallet(templateSeed) {
     }
 }
 
-function listFiles(alias, folderPath) {
+function listFiles(seed, folderPath) {
     const EDFS = require("edfs");
-    utils.insertPassword("Insert pin:", (err, pin) => {
+    const edfs = EDFS.attachWithSeed(seed);
+
+    console.log("folderPath", folderPath, typeof folderPath);
+    const bar = edfs.loadBar(seed);
+    bar.listFiles(folderPath, (err, fileList) => {
         if (err) {
             throw err;
         }
 
-        EDFS.attachWithPin(pin, (err, edfs) => {
-            const bar = edfs.loadBar();
-            bar.listFiles(folderPath, (err, fileList) => {
+        console.log("Files:", fileList);
+    });
+}
+
+function addFileToConstitution(csbSeed, filePath) {
+    const EDFS = require("edfs");
+    if (typeof filePath === "undefined") {
+        filePath = csbSeed;
+        utils.insertPassword({validationFunction: validatePin}, (err, pin) => {
+            if (err) {
+                throw err;
+            }
+
+            EDFS.attachWithPin(pin, (err, edfs) => {
                 if (err) {
                     throw err;
                 }
 
-                console.log("Files:", fileList);
+                edfs.loadWallet(undefined, pin, (err, wallet) => {
+                    if (err) {
+                        throw err;
+                    }
+
+                    wallet.addFile(filePath, EDFS.constants.CSB.CONSTITUTION_FOLDER, (err) => {
+                        if (err) {
+                            throw err;
+                        }
+
+                        console.log("Updated wallet's constitution.");
+                    });
+                });
+
             });
         });
-    });
+    } else {
+        const edfs = EDFS.attachWithSeed(csbSeed);
+        const bar = edfs.loadBar(csbSeed);
+        bar.addFile(filePath, EDFS.constants.CSB.CONSTITUTION_FOLDER, (err) => {
+            if (err) {
+                throw err;
+            }
+
+            console.log("Updated constitution.");
+        });
+    }
 }
 
 function extractFolder(seed, barPath, fsFolderPath) {
@@ -170,33 +248,9 @@ function extractFile(seed, barPath, fsFilePath) {
     });
 }
 
-function setAlias(archiveSeed, alias) {
-    utils.insertPassword("Insert pin:", 3, (err, pin) => {
-        if (err) {
-            throw err;
-        }
-
-        const EDFS = require("edfs");
-        EDFS.attachWithPin(pin, (err, edfs) => {
-            if (err) {
-                throw err;
-            }
-
-            const bar = edfs.loadBar();
-            bar.writeFile(aliasesPath + "/" + alias, archiveSeed.toString(), (err) => {
-                if (err) {
-                    throw err;
-                }
-
-                console.log("Added alias");
-            });
-        });
-    });
-}
-
-// addCommand("set", "alias", setAlias, "<archiveSeed> <alias> \t\t\t\t |creates an archive containing constitutions folder <constitutionPath> for Domain <domainName>");
-addCommand("create", "csb", createCSB, "<domainName> <constitutionPath> \t\t\t\t |creates an archive containing constitutions folder <constitutionPath> for Domain <domainName>");
-addCommand("create", "archive", createArchive, "<archiveSeed> <folderPath> \t\t\t\t\t |creates an archive containing constitutions folder <constitutionPath> for Domain <domainName>");
+addCommand("create", "csb", createCSB, "<domainName> <constitutionPath> <noSave>\t\t\t\t |creates an archive containing constitutions folder <constitutionPath> for Domain <domainName>");
+// addCommand("add", "file", addFileToConstitution, "<seed> <filePath> \t\t\t\t |adds the file at <filePath> to the CSB's whose SEED is <seed> constitution");
+addCommand("create", "archive", createArchive, "<archiveSeed> <folderPath> <noSave>\t\t\t\t\t |creates an archive containing constitutions folder <constitutionPath> for Domain <domainName>");
 addCommand("create", "wallet", createWallet, "<templateSeed> \t\t\t\t\t\t |creates a clone of the CSB whose SEED is <templateSeed>");
 addCommand("set", "app", setApp, " <archiveSeed> <folderPath> \t\t\t\t\t |add an app to an existing archive");
 addCommand("list", "files", listFiles, " <archiveSeed> <folderPath> \t\t\t\t |prints the list of all files stored at path <folderPath> inside the archive whose SEED is <archiveSeed>");
