@@ -1,6 +1,5 @@
 const utils = require("../utils/consoleUtils");
-const AGENT_IDENTITY = "did:example:123456789abcdefghi";
-process.env.PSK_ROOT_INSTALATION_FOLDER = "/home/apparatus/Documents/privatesky";
+const AGENT_IDENTITY = "psk-agent";
 
 function getEndpoint() {
     let endpoint = process.env.EDFS_ENDPOINT;
@@ -43,7 +42,7 @@ function createCSB(domainName, constitutionPath, noSave = false) {
                     throw err;
                 }
 
-                edfs.loadWallet(undefined, pin, (err, wallet) => {
+                edfs.loadWallet(undefined, pin, true, (err, wallet) => {
                     if (err) {
                         throw err;
                     }
@@ -181,49 +180,6 @@ function listFiles(seed, folderPath) {
     });
 }
 
-function addFileToConstitution(csbSeed, filePath) {
-    const EDFS = require("edfs");
-    if (typeof filePath === "undefined") {
-        filePath = csbSeed;
-        utils.insertPassword({validationFunction: validatePin}, (err, pin) => {
-            if (err) {
-                throw err;
-            }
-
-            EDFS.attachWithPin(pin, (err, edfs) => {
-                if (err) {
-                    throw err;
-                }
-
-                edfs.loadWallet(undefined, pin, (err, wallet) => {
-                    if (err) {
-                        throw err;
-                    }
-
-                    wallet.addFile(filePath, EDFS.constants.CSB.CONSTITUTION_FOLDER, (err) => {
-                        if (err) {
-                            throw err;
-                        }
-
-                        console.log("Updated wallet's constitution.");
-                    });
-                });
-
-            });
-        });
-    } else {
-        const edfs = EDFS.attachWithSeed(csbSeed);
-        const bar = edfs.loadBar(csbSeed);
-        bar.addFile(filePath, EDFS.constants.CSB.CONSTITUTION_FOLDER, (err) => {
-            if (err) {
-                throw err;
-            }
-
-            console.log("Updated constitution.");
-        });
-    }
-}
-
 function extractFolder(seed, barPath, fsFolderPath) {
     const edfs = getInitializedEDFS();
     const bar = edfs.loadBar(seed);
@@ -249,7 +205,6 @@ function extractFile(seed, barPath, fsFilePath) {
 }
 
 addCommand("create", "csb", createCSB, "<domainName> <constitutionPath> <noSave>\t\t\t\t |creates an archive containing constitutions folder <constitutionPath> for Domain <domainName>");
-// addCommand("add", "file", addFileToConstitution, "<seed> <filePath> \t\t\t\t |adds the file at <filePath> to the CSB's whose SEED is <seed> constitution");
 addCommand("create", "archive", createArchive, "<archiveSeed> <folderPath> <noSave>\t\t\t\t\t |creates an archive containing constitutions folder <constitutionPath> for Domain <domainName>");
 addCommand("create", "wallet", createWallet, "<templateSeed> \t\t\t\t\t\t |creates a clone of the CSB whose SEED is <templateSeed>");
 addCommand("set", "app", setApp, " <archiveSeed> <folderPath> \t\t\t\t\t |add an app to an existing archive");
