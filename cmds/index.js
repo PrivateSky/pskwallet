@@ -26,12 +26,27 @@ function validatePin(pin) {
     return !/[\x00-\x03]|[\x05-\x07]|[\x09]|[\x0B-\x0C]|[\x0E-\x1F]/.test(pin);
 }
 
-function createCSB(domainName, constitutionPath, noSave = false) {
+function createCSB(domainName, constitutionPath, noSave) {
     const pth = "path";
     const path = require(pth);
     const EDFS = require("edfs");
 
-    if (noSave === false) {
+    if (noSave === "nosave") {
+        const edfs = getInitializedEDFS();
+        edfs.createBarWithConstitution(path.resolve(constitutionPath), (err, archive) => {
+            if (err) {
+                throw err;
+            }
+
+            archive.writeFile(EDFS.constants.CSB.DOMAIN_IDENTITY_FILE, domainName, () => {
+                if (err) {
+                    throw err;
+                }
+                console.log("The CSB was created. Its SEED is the following.");
+                console.log("SEED", archive.getSeed().toString());
+            });
+        });
+    } else {
         utils.insertPassword({validationFunction: validatePin}, (err, pin) => {
             if (err) {
                 throw err;
@@ -47,38 +62,42 @@ function createCSB(domainName, constitutionPath, noSave = false) {
                         throw err;
                     }
 
-                    edfs.createBarWithConstitution(path.resolve(constitutionPath), (err, archive) => {
+                    const dossier = require("dossier");
+                    dossier.load(wallet.getSeed(), AGENT_IDENTITY, (err, csb) => {
                         if (err) {
-                            throw err;
+                            console.error(err);
+                            process.exit(1);
                         }
 
-                        const dossier = require("dossier");
-                        dossier.load(wallet.getSeed(), AGENT_IDENTITY, (err, csb) => {
+                        csb.startTransaction("StandardCSBTransactions", "domainLookup", domainName).onReturn((err, domain) => {
                             if (err) {
-                                throw err;
+                                console.log(err);
+                                process.exit(1);
                             }
+                            if (domain) {
+                                console.log(`Domain ${domainName} already exists!`);
+                                process.exit(1);
+                            }
+                            edfs.createBarWithConstitution(path.resolve(constitutionPath), (err, archive) => {
+                                if (err) {
+                                    throw err;
+                                }
 
-                            csb.startTransaction("StandardCSBTransactions", "addFileAnchor", domainName, "csb", wallet.getMapDigest());
-                            console.log("The CSB was created and a reference to it has been added to the wallet.");
+                                csb.startTransaction("StandardCSBTransactions", "addFileAnchor", domainName, "csb", wallet.getMapDigest()).onReturn((err, res) => {
+                                    if (err) {
+                                        console.error(err);
+                                        process.exit(1);
+                                    }
+
+                                    console.log("The CSB was created and a reference to it has been added to the wallet.");
+                                    console.log("Its SEED is:", archive.getSeed());
+                                    process.exit(0);
+                                });
+
+                            });
                         });
-
                     });
                 });
-            });
-        });
-    } else {
-        const edfs = getInitializedEDFS();
-        edfs.createBarWithConstitution(path.resolve(constitutionPath), (err, archive) => {
-            if (err) {
-                throw err;
-            }
-
-            archive.writeFile(EDFS.constants.CSB.DOMAIN_IDENTITY_FILE, domainName, () => {
-                if (err) {
-                    throw err;
-                }
-                console.log("The CSB was created. Its SEED is the following.");
-                console.log("SEED", archive.getSeed().toString());
             });
         });
     }
@@ -169,7 +188,6 @@ function listFiles(seed, folderPath) {
     const EDFS = require("edfs");
     const edfs = EDFS.attachWithSeed(seed);
 
-    console.log("folderPath", folderPath, typeof folderPath);
     const bar = edfs.loadBar(seed);
     bar.listFiles(folderPath, (err, fileList) => {
         if (err) {
