@@ -23,6 +23,7 @@ function validatePin(pin) {
         return false;
     }
 
+    //The regex below checks that the pin only contains utf-8 characters
     return !/[\x00-\x03]|[\x05-\x07]|[\x09]|[\x0B-\x0C]|[\x0E-\x1F]/.test(pin);
 }
 
@@ -43,7 +44,7 @@ function createCSB(domainName, constitutionPath, noSave) {
                     throw err;
                 }
                 console.log("The CSB was created. Its SEED is the following.");
-                console.log("SEED", archive.getSeed().toString());
+                console.log("SEED", archive.getSeed());
             });
         });
     } else {
@@ -150,6 +151,7 @@ function createWallet(templateSeed) {
 
     const EDFS = require("edfs");
     EDFS.checkForSeedCage(err => {
+        const edfs = getInitializedEDFS();
         if (!err) {
             utils.getFeedback("A wallet already exists. Do you want to create a new one?(y/n)", (err, ans) => {
                 if (err) {
@@ -157,28 +159,39 @@ function createWallet(templateSeed) {
                 }
 
                 if (ans[0] === "y") {
-                    __createWallet(true);
+                    __createWallet(edfs, true);
                 }
             });
         } else {
-            __createWallet(false);
+            __createWallet(edfs, false);
         }
     });
 
-    function __createWallet(overwrite) {
-        const edfs = getInitializedEDFS();
+    function __createWallet(edfs, overwrite) {
         utils.insertPassword({validationFunction: validatePin}, (err, pin) => {
             if (err) {
                 console.log(`Caught error: ${err.message}`);
                 process.exit(1);
             }
 
-            edfs.createWallet(templateSeed, pin, overwrite, (err, seed) => {
+            utils.insertPassword({prompt: "Confirm pin:", validationFunction: validatePin}, (err, newPin) => {
                 if (err) {
-                    throw err;
+                    console.log(`Caught error: ${err.message}`);
+                    process.exit(1);
                 }
 
-                console.log("Wallet with SEED was created. Please save the SEED:", seed);
+                if (pin !== newPin) {
+                    console.log("The PINs do not coincide. Try again.");
+                    __createWallet(edfs, overwrite);
+                } else {
+                    edfs.createWallet(templateSeed, pin, overwrite, (err, seed) => {
+                        if (err) {
+                            throw err;
+                        }
+
+                        console.log("Wallet with SEED was created. Please save the SEED:", seed);
+                    });
+                }
             });
         });
     }
@@ -222,7 +235,49 @@ function extractFile(seed, barPath, fsFilePath) {
     });
 }
 
+function restore(seed) {
+    const EDFS = require("edfs");
+    let edfs;
+    try {
+        edfs = EDFS.attachWithSeed(seed);
+    } catch (e) {
+        throw Error("The provided seed is invalid.");
+    }
+
+    __saveSeed();
+
+    function __saveSeed() {
+        utils.insertPassword({validationFunction: validatePin}, (err, pin) => {
+            if (err) {
+                console.log(`Caught error: ${err.message}`);
+                process.exit(1);
+            }
+
+            utils.insertPassword({prompt: "Confirm pin:", validationFunction: validatePin}, (err, newPin) => {
+                if (err) {
+                    console.log(`Caught error: ${err.message}`);
+                    process.exit(1);
+                }
+
+                if (pin !== newPin) {
+                    console.log("The PINs do not coincide. Try again.");
+                    __saveSeed();
+                } else {
+                    edfs.loadWallet(seed, pin, true, (err, wallet) => {
+                        if (err) {
+                            throw err;
+                        }
+
+                        console.log("Wallet was restored");
+                    });
+                }
+            });
+        });
+    }
+}
+
 addCommand("create", "csb", createCSB, "<domainName> <constitutionPath> <noSave>\t\t\t\t |creates an archive containing constitutions folder <constitutionPath> for Domain <domainName>");
+addCommand("restore", null, restore, "<seed> \t\t\t\t |Checks the seed is valid and allows the selection of a PIN");
 addCommand("create", "archive", createArchive, "<archiveSeed> <folderPath> <noSave>\t\t\t\t\t |creates an archive containing constitutions folder <constitutionPath> for Domain <domainName>");
 addCommand("create", "wallet", createWallet, "<templateSeed> \t\t\t\t\t\t |creates a clone of the CSB whose SEED is <templateSeed>");
 addCommand("set", "app", setApp, " <archiveSeed> <folderPath> \t\t\t\t\t |add an app to an existing archive");
