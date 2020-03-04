@@ -84,7 +84,7 @@ function createCSB(domainName, constitutionPath, noSave) {
                                     throw err;
                                 }
 
-                                csb.startTransaction("StandardCSBTransactions", "addFileAnchor", domainName, "csb", wallet.getMapDigest()).onReturn((err, res) => {
+                                csb.startTransaction("StandardCSBTransactions", "addFileAnchor", domainName, "csb", archive.getSeed(), wallet.getMapDigest()).onReturn((err, res) => {
                                     if (err) {
                                         console.error(err);
                                         process.exit(1);
@@ -197,18 +197,104 @@ function createWallet(templateSeed) {
     }
 }
 
-function listFiles(seed, folderPath) {
+function initEDFSContext(seed, pin, callback) {
     const EDFS = require("edfs");
-    const edfs = EDFS.attachWithSeed(seed);
+    if (!seed) {
+        if (pin) {
+            EDFS.attachWithPin(pin, (err, edfs) => callback(err, {edfs, pin}));
+        } else {
+            utils.insertPassword({validationFunction: validatePin}, (err, localPin) => {
+                if (err) {
+                    return callback(err);
+                }
 
-    const bar = edfs.loadBar(seed);
-    bar.listFiles(folderPath, (err, fileList) => {
-        if (err) {
-            throw err;
+                EDFS.attachWithPin(localPin, (err, edfs) => callback(err, {edfs, pin: localPin}));
+            });
         }
+    } else {
+        callback(undefined, {edfs: EDFS.attachWithSeed(seed)});
+    }
+}
 
-        console.log("Files:", fileList);
+function loadWallet(walletSeed, pin, callback) {
+    initEDFSContext(walletSeed, pin, (err, edfsContext) => {
+        if (err) {
+            return callback(err);
+        }
+        const edfs = edfsContext.edfs;
+        const readPin = edfsContext.pin;
+        console.log("got edfs context", edfs, readPin);
+        if (!walletSeed) {
+            if (readPin) {
+                edfs.loadWallet(walletSeed, readPin, true, callback);
+            } else {
+                utils.insertPassword({validationFunction: validatePin}, (err, localPin) => {
+                    if (err) {
+                        return callback(err);
+                    }
+
+                    edfs.loadWallet(walletSeed, localPin, true, callback);
+                });
+            }
+        } else {
+            edfs.loadWallet(walletSeed, pin, true, callback);
+        }
     });
+}
+
+function listFiles(alseed, folderPath) {
+    if (isAlias(alseed)) {
+        loadWallet(undefined, undefined, (err, wallet) => {
+            if (err) {
+                throw err;
+            }
+
+            const dossier = require("dossier");
+            dossier.load(wallet.getSeed(), AGENT_IDENTITY, (err, csb) => {
+                if (err) {
+                    console.error(err);
+                    process.exit(1);
+                }
+
+                csb.startTransaction("StandardCSBTransactions", "getSeed", alseed).onReturn((err, seed) => {
+                    if (err) {
+                        console.log(err);
+                        process.exit(1);
+                    }
+
+
+                    initEDFSContext(seed, undefined, (err, edfsContext) => {
+                        if (err) {
+                            console.log(err);
+                            process.exit(1);
+                        }
+
+                        __listFiles(edfsContext.edfs, seed);
+                        process.exit(0);
+                    });
+                });
+            });
+        });
+    } else {
+        initEDFSContext(alseed, undefined, (err, edfsContext) => {
+            if (err) {
+                throw err;
+            }
+
+            __listFiles(edfsContext.edfs, alseed);
+        });
+    }
+
+    function __listFiles(edfs, localSeed) {
+        const bar = edfs.loadBar(localSeed);
+        bar.listFiles(folderPath, (err, fileList) => {
+            if (err) {
+                throw err;
+            }
+
+            console.log("Files:", fileList);
+        });
+    }
 }
 
 function extractFolder(seed, barPath, fsFolderPath) {
@@ -276,12 +362,23 @@ function restore(seed) {
     }
 }
 
+function isAlias(str) {
+    const Seed = require("bar").Seed;
+    try {
+        new Seed(str)
+    }catch (e) {
+        return true;
+    }
+
+    return false;
+}
+
 addCommand("create", "csb", createCSB, "<domainName> <constitutionPath> <noSave>\t\t\t\t |creates an archive containing constitutions folder <constitutionPath> for Domain <domainName>");
 addCommand("restore", null, restore, "<seed> \t\t\t\t |Checks the seed is valid and allows the selection of a PIN");
 addCommand("create", "archive", createArchive, "<archiveSeed> <folderPath> <noSave>\t\t\t\t\t |creates an archive containing constitutions folder <constitutionPath> for Domain <domainName>");
 addCommand("create", "wallet", createWallet, "<templateSeed> \t\t\t\t\t\t |creates a clone of the CSB whose SEED is <templateSeed>");
 addCommand("set", "app", setApp, " <archiveSeed> <folderPath> \t\t\t\t\t |add an app to an existing archive");
-addCommand("list", "files", listFiles, " <archiveSeed> <folderPath> \t\t\t\t |prints the list of all files stored at path <folderPath> inside the archive whose SEED is <archiveSeed>");
+addCommand("list", "files", listFiles, " <archiveSeed>/<alias> <folderPath> \t\t\t\t |prints the list of all files stored at path <folderPath> inside the archive whose SEED is <archiveSeed>. If an alias is specified then the CSB's SEED is searched from the wallet.");
 addCommand("extract", "folder", extractFolder, " <archiveSeed> <archivePath> <fsFolderPath> \t\t |extracts the folder stored at <archivePath> inside the archive whose SEED is <archiveSeed> and writes all the extracted file on disk at path <fsFolderPath>");
 addCommand("extract", "file", extractFile, " <archiveSeed> <archivePath> <fsFilePath> \t\t |extracts the folder stored at <archivePath> inside the archive whose SEED is <archiveSeed> and writes all the extracted file on disk at path <fsFilePath>");
 
