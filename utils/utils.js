@@ -1,82 +1,104 @@
-const fs = require("fs");
-const path = require('path');
-// const crypto = require("pskcrypto");
+const consoleUtils = require("./consoleUtils");
 
-function generatePath(localFolder, csbIdentifier) {
-    return path.join(localFolder, csbIdentifier.getUid());
+function getEndpoint() {
+    let endpoint = process.env.EDFS_ENDPOINT;
+    if (typeof endpoint === "undefined") {
+        console.log("Using default endpoint. To configure set ENV['EDFS_ENDPOINT']");
+        endpoint = "http://localhost:8080";
+    }
+    return endpoint;
 }
 
-function processUrl(url, assetType) {
-    const splitUrl = url.split('/');
-    const aliasAsset = splitUrl.pop();
-    const CSBPath = splitUrl.join('/');
-    return {
-        CSBPath: CSBPath + ':' + assetType + ':' + aliasAsset,
-        alias: aliasAsset
-    };
+function getInitializedEDFS() {
+    const EDFS = require("edfs");
+    const endpoint = getEndpoint();
+    const transportAlias = "pskwallet";
+    $$.brickTransportStrategiesRegistry.add(transportAlias, new EDFS.HTTPBrickTransportStrategy(endpoint));
+    return EDFS.attach(transportAlias);
 }
 
-function deleteRecursively(inputPath, isRoot = true, callback) {
+function validatePin(pin) {
+    if (typeof pin === "undefined" || pin.length < 4) {
+        return false;
+    }
 
-    fs.stat(inputPath, function (err, stats) {
+    //The regex below checks that the pin only contains utf-8 characters
+    return !/[\x00-\x03]|[\x05-\x07]|[\x09]|[\x0B-\x0C]|[\x0E-\x1F]/.test(pin);
+}
+
+function getEDFS(seed, callback) {
+    const EDFS = require("edfs");
+    if (!seed) {
+        getPin((err, pin) => {
+            if (err) {
+                return callback(err);
+            }
+
+            EDFS.attachWithPin(pin, callback);
+        });
+
+    } else {
+        callback(undefined, EDFS.attachWithSeed(seed));
+    }
+}
+
+function loadWallet(walletSeed, callback) {
+    getEDFS(walletSeed, (err, edfs) => {
         if (err) {
-            callback(err, stats);
-            return;
+            return callback(err);
         }
-        if (stats.isFile()) {
-            fs.unlink(inputPath, (err) => {
-                if (err) {
-                    return callback(err, null);
-                } else {
-                    return callback(null, true);
-                }
-            });
-        } else if (stats.isDirectory()) {
-            fs.readdir(inputPath, (err, files) => {
-                if (err) {
-                    callback(err, null);
-                    return;
-                }
-                const f_length = files.length;
-                let f_delete_index = 0;
 
-                const checkStatus = () => {
-                    if (f_length === f_delete_index) {
-                        if(!isRoot) {
-                            fs.rmdir(inputPath, (err) => {
-                                if (err) {
-                                    return callback(err, null);
-                                } else {
-                                    return callback(null, true);
-                                }
-                            });
-                        }
-                        callback(null, true);
-                        return true;
-                    }
-                    return false;
-                };
-                if (!checkStatus()) {
-                    files.forEach((file) => {
-                        const tempPath = path.join(inputPath, file);
-                        deleteRecursively(tempPath, false,(err, status) => {
-                            if (!err) {
-                                f_delete_index++;
-                                checkStatus();
-                            } else {
-                                return callback(err, null);
-                            }
-                        });
-                    });
-                }
-            });
-        }
+
+        getPin((err, pin) => {
+            if (err) {
+                return callback(err);
+            }
+
+            edfs.loadWallet(walletSeed, pin, true, callback);
+        });
     });
 }
 
-module.exports = {
-    generatePath,
-    processUrl,
-    deleteRecursively
+function isAlias(str) {
+    const Seed = require("bar").Seed;
+    try {
+        new Seed(str)
+    } catch (e) {
+        return true;
+    }
+
+    return false;
+}
+
+function getOwnIdentity() {
+    return "pskwallet-identity";
+}
+
+let lastPin;
+let timeStamp;
+const PIN_LIFETIME = 5000;
+global.getPin = function (callback) {
+    const currentTimestamp = new Date().getTime();
+    if (!lastPin || (currentTimestamp - timeStamp) > PIN_LIFETIME) {
+        consoleUtils.insertPassword({validationFunction: validatePin}, (err, pin) => {
+            if (err) {
+                return callback(err);
+            }
+
+            lastPin = pin;
+            timeStamp = new Date().getTime();
+            callback(undefined, pin);
+        });
+    } else {
+        callback(undefined, lastPin);
+    }
 };
 
+module.exports = {
+    getInitializedEDFS,
+    validatePin,
+    isAlias,
+    loadWallet,
+    getEDFS,
+    getOwnIdentity
+};
