@@ -59,6 +59,35 @@ function loadWallet(walletSeed, callback) {
     });
 }
 
+function loadArchiveWithAlias(alias, callback) {
+    loadWallet(undefined, (err, wallet) => {
+        if (err) {
+            return callback(err);
+        }
+
+        const dossier = require("dossier");
+        dossier.load(wallet.getSeed(), getOwnIdentity(), (err, csb) => {
+            if (err) {
+                return callback(err);
+            }
+
+            csb.startTransaction("StandardCSBTransactions", "getSeed", alias).onReturn((err, seed) => {
+                if (err) {
+                    return callback(err);
+                }
+
+                getEDFS(seed, (err, edfs) => {
+                    if (err) {
+                        return callback(err);
+                    }
+
+                    callback(undefined, edfs.loadBar(seed));
+                });
+            });
+        });
+    });
+}
+
 function isAlias(str) {
     const Seed = require("bar").Seed;
     try {
@@ -100,5 +129,6 @@ module.exports = {
     isAlias,
     loadWallet,
     getEDFS,
-    getOwnIdentity
+    getOwnIdentity,
+    loadArchiveWithAlias
 };

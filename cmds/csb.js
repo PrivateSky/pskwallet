@@ -79,9 +79,9 @@ function createCSB(domainName, constitutionPath, noSave) {
     }
 }
 
-function setApp(archiveSeed, appPath) {
-    if (!archiveSeed) {
-        throw new Error('Missing first argument, the archive seed');
+function setApp(alseed, appPath) {
+    if (!alseed) {
+        throw new Error('Missing first argument, the archive seed or alais');
     }
 
     if (!appPath) {
@@ -89,17 +89,37 @@ function setApp(archiveSeed, appPath) {
     }
 
     const EDFS = require("edfs");
-    const edfs = utils.getInitializedEDFS();
+    if (utils.isAlias(alseed)) {
+        utils.loadArchiveWithAlias(alseed, (err, bar) => {
+            if (err) {
+                throw err;
+            }
 
-    const bar = edfs.loadBar(archiveSeed);
-    bar.addFolder(appPath, EDFS.constants.CSB.APP_FOLDER, (err) => {
-        if (err) {
-            throw err;
-        }
+            bar.addFolder(appPath, EDFS.constants.CSB.APP_FOLDER, (err) => {
+                if (err) {
+                    throw err;
+                }
 
-        console.log('All done');
-    })
+                console.log('All done');
+            })
+        });
+    } else {
+        utils.getEDFS(alseed, (err, edfs) => {
+            if (err) {
+                throw err;
+            }
+
+            const bar = edfs.loadBar(alseed);
+            bar.addFolder(appPath, EDFS.constants.CSB.APP_FOLDER, (err) => {
+                if (err) {
+                    throw err;
+                }
+
+                console.log('All done');
+            })
+        });
+    }
 }
 
 addCommand("create", "csb", createCSB, "<domainName> <constitutionPath> <noSave>\t\t\t\t |creates an archive containing constitutions folder <constitutionPath> for Domain <domainName>");
-addCommand("set", "app", setApp, " <archiveSeed> <folderPath> \t\t\t\t\t |add an app to an existing archive");
+addCommand("set", "app", setApp, " <seed>/<alias> <folderPath> \t\t\t\t\t |add an app to an existing archive");
