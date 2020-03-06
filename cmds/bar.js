@@ -1,5 +1,4 @@
 const utils = require("../utils/utils");
-const AGENT_IDENTITY = require("../utils/utils").getOwnIdentity();
 
 function listFiles(alseed, folderPath) {
     if (arguments.length === 1) {
@@ -19,41 +18,18 @@ function listFiles(alseed, folderPath) {
         });
     } else {
         if (utils.isAlias(alseed)) {
-            utils.loadWallet(undefined, (err, wallet) => {
+            utils.loadArchiveWithAlias(alseed, (err, bar) => {
                 if (err) {
                     throw err;
                 }
 
-                const dossier = require("dossier");
-                dossier.load(wallet.getSeed(), AGENT_IDENTITY, (err, csb) => {
+                bar.listFiles(folderPath, (err, fileList) => {
                     if (err) {
-                        console.error(err);
-                        process.exit(1);
+                        throw err;
                     }
 
-                    csb.startTransaction("StandardCSBTransactions", "getSeed", alseed).onReturn((err, seed) => {
-                        if (err) {
-                            console.log(err);
-                            process.exit(1);
-                        }
-
-                        utils.getEDFS(seed, (err, edfs) => {
-                            if (err) {
-                                console.log(err);
-                                process.exit(1);
-                            }
-
-                            const bar = edfs.loadBar(seed);
-                            bar.listFiles(folderPath, (err, fileList) => {
-                                if (err) {
-                                    throw err;
-                                }
-
-                                console.log("Files:", fileList);
-                                process.exit(0);
-                            });
-                        });
-                    });
+                    console.log("Files:", fileList);
+                    process.exit(0);
                 });
             });
         } else {

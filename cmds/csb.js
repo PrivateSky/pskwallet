@@ -1,4 +1,3 @@
-const consoleUtils = require("../utils/consoleUtils");
 const utils = require("../utils/utils");
 const AGENT_IDENTITY = require("../utils/utils").getOwnIdentity();
 
