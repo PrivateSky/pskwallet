@@ -105,5 +105,34 @@ function restore(seed) {
     }
 }
 
+function changePin() {
+    utils.loadWallet(undefined, (err, wallet) => {
+        if (err) {
+            throw err;
+        }
+
+        consoleUtils.insertPassword({prompt: "Insert a new PIN:", validationFunction: utils.validatePin}, (err, pin) => {
+            if (err) {
+                throw err;
+            }
+
+            utils.getEDFS(wallet.getSeed(), (err, edfs) => {
+                if (err) {
+                    throw err;
+                }
+
+                edfs.loadWallet(wallet.getSeed(), pin, true, (err) => {
+                    if (err) {
+                        throw err;
+                    }
+
+                    console.log("The PIN has been changed.");
+                });
+            });
+        });
+    });
+}
+
 addCommand("create", "wallet", createWallet, "<templateSeed> \t\t\t\t\t\t |creates a clone of the CSB whose SEED is <templateSeed>");
 addCommand("restore", null, restore, "<seed> \t\t\t\t |Checks the seed is valid and allows the selection of a PIN");
+addCommand("change", "pin", changePin, "\t\t\t\t |Asks for the PIN and then allows for the selection of a new PIN");
