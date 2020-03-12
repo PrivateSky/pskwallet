@@ -12,9 +12,7 @@ function getEndpoint() {
 function getInitializedEDFS() {
     const EDFS = require("edfs");
     const endpoint = getEndpoint();
-    const transportAlias = "pskwallet";
-    $$.brickTransportStrategiesRegistry.add(transportAlias, new EDFS.HTTPBrickTransportStrategy(endpoint));
-    return EDFS.attach(transportAlias);
+    return EDFS.attachToEndpoint(endpoint);
 }
 
 function validatePin(pin) {
