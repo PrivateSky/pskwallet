@@ -120,5 +120,167 @@ function setApp(alseed, appPath) {
     }
 }
 
+function mount(alseed, path, name, archiveIdentifier) {
+    if (arguments.length === 3) {
+        archiveIdentifier = name;
+        name = path;
+        path = alseed;
+        alseed = undefined;
+        utils.loadWallet((err, wallet) => {
+            if (err) {
+                throw err;
+            }
+
+            wallet.mount(path, name, archiveIdentifier, (err) => {
+                if (err) {
+                    throw err;
+                }
+
+                console.log("Successfully mounted");
+            });
+        });
+    } else {
+        if (utils.isAlias(alseed)) {
+            utils.loadArchiveWithAlias(alseed, (err, rawDossier) => {
+                if (err) {
+                    throw err;
+                }
+
+                rawDossier.mount(path, name, archiveIdentifier, (err) => {
+                    if (err) {
+                        throw err;
+                    }
+
+                    console.log("Successfully mounted.");
+                    process.exit(0);
+                });
+            });
+        } else {
+            utils.getEDFS(alseed, (err, edfs) => {
+                if (err) {
+                    throw err;
+                }
+
+                const rawDossier = edfs.loadRawDossier(alseed);
+                rawDossier.mount(path, name, archiveIdentifier, (err) => {
+                    if (err) {
+                        throw err;
+                    }
+
+                    console.log("Successfully mounted.");
+                });
+            });
+        }
+    }
+}
+
+function unmount(alseed, path, name) {
+    if (arguments.length === 2) {
+        name = path;
+        path = alseed;
+        alseed = undefined;
+        utils.loadWallet((err, wallet) => {
+            if (err) {
+                throw err;
+            }
+
+            wallet.unmount(path, name, (err) => {
+                if (err) {
+                    throw err;
+                }
+
+                console.log("Successfully unmounted");
+            });
+        });
+    } else {
+        if (utils.isAlias(alseed)) {
+            utils.loadArchiveWithAlias(alseed, (err, rawDossier) => {
+                if (err) {
+                    throw err;
+                }
+
+                rawDossier.unmount(path, name, (err) => {
+                    if (err) {
+                        throw err;
+                    }
+
+                    console.log("Successfully unmounted.");
+                    process.exit(0);
+                });
+            });
+        } else {
+            utils.getEDFS(alseed, (err, edfs) => {
+                if (err) {
+                    throw err;
+                }
+
+                const rawDossier = edfs.loadRawDossier(alseed);
+                rawDossier.unmount(path, name, (err) => {
+                    if (err) {
+                        throw err;
+                    }
+
+                    console.log("Successfully unmounted.");
+                });
+            });
+        }
+    }
+}
+
+function listMounts(alseed, path) {
+    if (arguments.length === 1) {
+        path = alseed;
+        alseed = undefined;
+        utils.loadWallet((err, wallet) => {
+            if (err) {
+                throw err;
+            }
+
+            wallet.listMountedDossiers(path, (err, mounts) => {
+                if (err) {
+                    throw err;
+                }
+
+                console.log(mounts);
+            });
+        });
+    } else {
+        if (utils.isAlias(alseed)) {
+            utils.loadArchiveWithAlias(alseed, (err, rawDossier) => {
+                if (err) {
+                    throw err;
+                }
+
+                rawDossier.listMountedDossiers(path, (err, mounts) => {
+                    if (err) {
+                        throw err;
+                    }
+
+                    console.log(mounts);
+                    process.exit(0);
+                });
+            });
+        } else {
+            utils.getEDFS(alseed, (err, edfs) => {
+                if (err) {
+                    throw err;
+                }
+
+                const rawDossier = edfs.loadRawDossier(alseed);
+                rawDossier.listMountedDossiers(path, (err, mounts) => {
+                    if (err) {
+                        throw err;
+                    }
+
+                    console.log(mounts);
+                });
+            });
+        }
+    }
+}
+
 addCommand("create", "csb", createCSB, "<domainName> <constitutionPath> <nosave>\t\t\t\t |creates an archive containing constitutions folder <constitutionPath> for Domain <domainName>");
 addCommand("set", "app", setApp, " <seed>/<alias> <folderPath> \t\t\t\t\t |add an app to an existing archive");
+addCommand("mount", null, mount, "<seed>/<alias> <path> <name> <archiveIdentifier> <> \t\t\t\t |Mounts the dossier having the seed <seed> at <path>/<name>");
+addCommand("unmount", null,  unmount, "<seed>/<alias> <path> <name>\t\t\t\t |Unmounts the dossier mounted at <path>/<name>");
+addCommand("list", "mounts",  listMounts, "<seed>/<alias> <path>\t\t\t\t |Lists the seeds of all dossiers mounted at <path>");

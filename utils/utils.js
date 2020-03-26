@@ -93,7 +93,7 @@ function loadArchiveWithAlias(alias, callback) {
                         return callback(err);
                     }
 
-                    callback(undefined, edfs.loadBar(seed));
+                    callback(undefined, edfs.loadRawDossier(seed));
                 });
             });
         });

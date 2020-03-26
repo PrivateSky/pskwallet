@@ -18,12 +18,12 @@ function listFiles(alseed, folderPath) {
         });
     } else {
         if (utils.isAlias(alseed)) {
-            utils.loadArchiveWithAlias(alseed, (err, bar) => {
+            utils.loadArchiveWithAlias(alseed, (err, rawDossier) => {
                 if (err) {
                     throw err;
                 }
 
-                bar.listFiles(folderPath, (err, fileList) => {
+                rawDossier.listFiles(folderPath, (err, fileList) => {
                     if (err) {
                         throw err;
                     }
@@ -38,8 +38,8 @@ function listFiles(alseed, folderPath) {
                     throw err;
                 }
 
-                const bar = edfs.loadBar(alseed);
-                bar.listFiles(folderPath, (err, fileList) => {
+                const rawDossier = edfs.loadRawDossier(alseed);
+                rawDossier.listFiles(folderPath, (err, fileList) => {
                     if (err) {
                         throw err;
                     }
@@ -53,12 +53,12 @@ function listFiles(alseed, folderPath) {
 
 function extractFolder(alseed, barPath, fsFolderPath) {
     if (utils.isAlias(alseed)) {
-        utils.loadArchiveWithAlias(alseed, (err, bar) => {
+        utils.loadArchiveWithAlias(alseed, (err, rawDossier) => {
             if (err) {
                 throw err;
             }
 
-            bar.extractFolder(fsFolderPath, barPath, (err) => {
+            rawDossier.extractFolder(fsFolderPath, barPath, (err) => {
                 if (err) {
                     throw err;
                 }
@@ -73,8 +73,8 @@ function extractFolder(alseed, barPath, fsFolderPath) {
                 throw err;
             }
 
-            const bar = edfs.loadBar(alseed);
-            bar.extractFolder(fsFolderPath, barPath, (err) => {
+            const rawDossier = edfs.loadRawDossier(alseed);
+            rawDossier.extractFolder(fsFolderPath, barPath, (err) => {
                 if (err) {
                     throw err;
                 }
@@ -87,12 +87,12 @@ function extractFolder(alseed, barPath, fsFolderPath) {
 
 function extractFile(alseed, barPath, fsFilePath) {
     if (utils.isAlias(alseed)) {
-        utils.loadArchiveWithAlias(alseed, (err, bar) => {
+        utils.loadArchiveWithAlias(alseed, (err, rawDossier) => {
             if (err) {
                 throw err;
             }
 
-            bar.extractFile(fsFilePath, barPath, (err) => {
+            rawDossier.extractFile(fsFilePath, barPath, (err) => {
                 if (err) {
                     throw err;
                 }
@@ -107,8 +107,8 @@ function extractFile(alseed, barPath, fsFilePath) {
                 throw err;
             }
 
-            const bar = edfs.loadBar(alseed);
-            bar.extractFile(fsFilePath, barPath, (err) => {
+            const rawDossier = edfs.loadRawDossier(alseed);
+            rawDossier.extractFile(fsFilePath, barPath, (err) => {
                 if (err) {
                     throw err;
                 }
