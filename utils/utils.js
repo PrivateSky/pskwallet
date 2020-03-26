@@ -26,7 +26,12 @@ function validatePin(pin) {
 
 function getEDFS(seed, callback) {
     const EDFS = require("edfs");
-    if (!seed) {
+    if (typeof seed === "function") {
+        callback = seed;
+        seed = undefined;
+    }
+
+    if (typeof seed === "undefined") {
         getPin((err, pin) => {
             if (err) {
                 return callback(err);
@@ -41,18 +46,27 @@ function getEDFS(seed, callback) {
 }
 
 function loadWallet(walletSeed, callback) {
+    if (typeof walletSeed === "function") {
+        callback = walletSeed;
+        walletSeed = undefined;
+    }
     getEDFS(walletSeed, (err, edfs) => {
         if (err) {
             return callback(err);
         }
-
 
         getPin((err, pin) => {
             if (err) {
                 return callback(err);
             }
 
-            edfs.loadWallet(walletSeed, pin, true, callback);
+            edfs.loadWallet(walletSeed, pin, true, (err, wallet) => {
+                if (err) {
+                    return callback(err);
+                }
+
+                callback(undefined, wallet);
+            });
         });
     });
 }
