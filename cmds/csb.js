@@ -29,7 +29,8 @@ function createCSB(domainName, constitutionPath, noSave) {
 
             EDFS.attachWithPin(pin, (err, edfs) => {
                 if (err) {
-                    throw err;
+                    console.error("Invalid pin");
+                    return;
                 }
 
                 edfs.loadWallet(undefined, pin, true, (err, wallet) => {

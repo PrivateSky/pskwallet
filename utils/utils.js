@@ -15,13 +15,22 @@ function getInitializedEDFS() {
     return EDFS.attachToEndpoint(endpoint);
 }
 
-function validatePin(pin) {
+function validatePin(pin, callback) {
     if (typeof pin === "undefined" || pin.length < 4) {
-        return false;
+        return callback(undefined, false)
     }
 
-    //The regex below checks that the pin only contains utf-8 characters
-    return !/[\x00-\x03]|[\x05-\x07]|[\x09]|[\x0B-\x0C]|[\x0E-\x1F]/.test(pin);
+    if (/[\x00-\x03]|[\x05-\x07]|[\x09]|[\x0B-\x0C]|[\x0E-\x1F]/.test(pin)) {
+        return callback(undefined, false);
+    }
+    const EDFS = require("edfs");
+    EDFS.attachWithPin(pin, (err) => {
+        if (err) {
+            return callback(undefined, false);
+        }
+
+        callback(undefined, true);
+    });
 }
 
 function getEDFS(seed, callback) {
@@ -34,6 +43,7 @@ function getEDFS(seed, callback) {
     if (typeof seed === "undefined") {
         getPin((err, pin) => {
             if (err) {
+                console.log("Error when loading EDFs");
                 return callback(err);
             }
 
@@ -41,7 +51,7 @@ function getEDFS(seed, callback) {
         });
 
     } else {
-        callback(undefined, EDFS.attachWithSeed(seed));
+        EDFS.attachWithSeed(seed, callback);
     }
 }
 

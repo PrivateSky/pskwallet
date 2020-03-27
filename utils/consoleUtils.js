@@ -25,15 +25,25 @@ function insertPassword(options, callback) {
         return callback(new Error(`You have inserted an invalid pin ${NO_TRIES} times`));
     } else {
         getPassword(options.prompt,  (err, pin)=> {
-            if (options.validationFunction && !options.validationFunction(pin)) {
-                if (options.noTries !== 1) {
-                    console.log("Validation failed. Maybe you have inserted an invalid character.");
-                    console.log("Try again");
-                }
-                options.noTries--;
-                insertPassword(options, callback);
+            if (options.validationFunction) {
+                options.validationFunction(pin, (err, status) => {
+                    if (err) {
+                        return callback(err);
+                    }
+
+                    if (!status) {
+                        if (options.noTries !== 1) {
+                            console.log("Validation failed. Maybe you have inserted an invalid character.");
+                            console.log("Try again");
+                        }
+                        options.noTries--;
+                        insertPassword(options, callback);
+                    }else {
+                        callback(undefined, pin);
+                    }
+                });
             } else {
-                return callback(null, pin);
+                return callback(undefined, pin);
             }
         });
     }
