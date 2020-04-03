@@ -23,6 +23,18 @@ function validatePin(pin, callback) {
     if (/[\x00-\x03]|[\x05-\x07]|[\x09]|[\x0B-\x0C]|[\x0E-\x1F]/.test(pin)) {
         return callback(undefined, false);
     }
+
+    return callback(undefined, true);
+}
+
+function checkPin(pin, callback) {
+    if (typeof pin === "undefined" || pin.length < 4) {
+        return callback(undefined, false)
+    }
+
+    if (/[\x00-\x03]|[\x05-\x07]|[\x09]|[\x0B-\x0C]|[\x0E-\x1F]/.test(pin)) {
+        return callback(undefined, false);
+    }
     const EDFS = require("edfs");
     EDFS.attachWithPin(pin, (err) => {
         if (err) {
@@ -131,7 +143,7 @@ const PIN_LIFETIME = 5000;
 global.getPin = function (callback) {
     const currentTimestamp = new Date().getTime();
     if (!lastPin || (currentTimestamp - timeStamp) > PIN_LIFETIME) {
-        consoleUtils.insertPassword({validationFunction: validatePin}, (err, pin) => {
+        consoleUtils.insertPassword({validationFunction: checkPin}, (err, pin) => {
             if (err) {
                 return callback(err);
             }
@@ -152,5 +164,6 @@ module.exports = {
     loadWallet,
     getEDFS,
     getOwnIdentity,
-    loadArchiveWithAlias
+    loadArchiveWithAlias,
+    checkPin
 };
