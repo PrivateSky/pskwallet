@@ -20,7 +20,7 @@ function validatePin(pin, callback) {
         return callback(undefined, false)
     }
 
-    if (/[\x00-\x03]|[\x05-\x07]|[\x09]|[\x0B-\x0C]|[\x0E-\x1F]/.test(pin)) {
+    if (/[\x00-\x03]|[\x05-\x07]/.test(pin)) {
         return callback(undefined, false);
     }
 
@@ -32,9 +32,10 @@ function checkPin(pin, callback) {
         return callback(undefined, false)
     }
 
-    if (/[\x00-\x03]|[\x05-\x07]|[\x09]|[\x0B-\x0C]|[\x0E-\x1F]/.test(pin)) {
+    if (/[\x00-\x03]|[\x05-\x07]/.test(pin)) {
         return callback(undefined, false);
     }
+
     const EDFS = require("edfs");
     EDFS.attachWithPin(pin, (err) => {
         if (err) {
