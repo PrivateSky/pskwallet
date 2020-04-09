@@ -8,7 +8,8 @@ function createCSB(domainName, constitutionPath, noSave) {
 
     if (noSave === "nosave") {
         const edfs = utils.getInitializedEDFS();
-        edfs.createBarWithConstitution(path.resolve(constitutionPath), (err, archive) => {
+        const archive = edfs.createBar();
+        archive.addFolder(path.resolve(constitutionPath), "/" + EDFS.constants.CSB.CODE_FOLDER + "/" + EDFS.constants.CSB.CONSTITUTION_FOLDER, (err) => {
             if (err) {
                 throw err;
             }
@@ -283,5 +284,5 @@ function listMounts(alseed, path) {
 addCommand("create", "csb", createCSB, "<domainName> <constitutionPath> <nosave>\t\t\t\t |creates an archive containing constitutions folder <constitutionPath> for Domain <domainName>");
 addCommand("set", "app", setApp, " <seed>/<alias> <folderPath> \t\t\t\t\t |add an app to an existing archive");
 addCommand("mount", null, mount, "<seed>/<alias> <path> <name> <archiveIdentifier> <> \t\t\t\t |Mounts the dossier having the seed <seed> at <path>/<name>");
-addCommand("unmount", null,  unmount, "<seed>/<alias> <path> <name>\t\t\t\t |Unmounts the dossier mounted at <path>/<name>");
-addCommand("list", "mounts",  listMounts, "<seed>/<alias> <path>\t\t\t\t |Lists the seeds of all dossiers mounted at <path>");
+addCommand("unmount", null, unmount, "<seed>/<alias> <path> <name>\t\t\t\t |Unmounts the dossier mounted at <path>/<name>");
+addCommand("list", "mounts", listMounts, "<seed>/<alias> <path>\t\t\t\t |Lists the seeds of all dossiers mounted at <path>");
