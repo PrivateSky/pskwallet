@@ -1,6 +1,9 @@
 const utils = require("../utils/utils");
 
 function listFiles(alseed, folderPath) {
+    if (arguments.length === 0) {
+        throw Error("Expected at least one argument. Received zero");
+    }
     if (arguments.length === 1) {
         folderPath = alseed;
         utils.loadWallet(undefined, (err, wallet) => {

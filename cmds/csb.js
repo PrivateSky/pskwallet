@@ -5,11 +5,11 @@ function createCSB(domainName, constitutionPath, noSave) {
     const pth = "path";
     const path = require(pth);
     const EDFS = require("edfs");
-
+    const pskPath = require("swarmutils").path;
     if (noSave === "nosave") {
         const edfs = utils.getInitializedEDFS();
         const archive = edfs.createBar();
-        archive.addFolder(path.resolve(constitutionPath), "/" + EDFS.constants.CSB.CODE_FOLDER + "/" + EDFS.constants.CSB.CONSTITUTION_FOLDER, (err) => {
+        archive.addFolder(path.resolve(constitutionPath), pskPath.join(EDFS.constants.CSB.CODE_FOLDER,EDFS.constants.CSB.CONSTITUTION_FOLDER), (err) => {
             if (err) {
                 throw err;
             }
@@ -27,13 +27,13 @@ function createCSB(domainName, constitutionPath, noSave) {
             if (err) {
                 throw err;
             }
-
             EDFS.attachWithPin(pin, (err, edfs) => {
                 if (err) {
                     console.error("Invalid pin");
                     return;
                 }
 
+                console.log("Attached with pin");
                 edfs.loadWallet(undefined, pin, true, (err, wallet) => {
                     if (err) {
                         throw err;
@@ -55,7 +55,8 @@ function createCSB(domainName, constitutionPath, noSave) {
                                 console.log(`Domain ${domainName} already exists!`);
                                 process.exit(1);
                             }
-                            edfs.createBarWithConstitution(path.resolve(constitutionPath), (err, archive) => {
+                            const archive = edfs.createBar();
+                            archive.addFolder(path.resolve(constitutionPath), pskPath.join(EDFS.constants.CSB.CODE_FOLDER,EDFS.constants.CSB.CONSTITUTION_FOLDER), (err, mapDigest) => {
                                 if (err) {
                                     throw err;
                                 }
