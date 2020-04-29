@@ -5,11 +5,10 @@ function createCSB(domainName, constitutionPath, noSave) {
     const pth = "path";
     const path = require(pth);
     const EDFS = require("edfs");
-    const pskPath = require("swarmutils").path;
     if (noSave === "nosave") {
         const edfs = utils.getInitializedEDFS();
         const archive = edfs.createBar();
-        archive.addFolder(path.resolve(constitutionPath), pskPath.join(EDFS.constants.CSB.CODE_FOLDER,EDFS.constants.CSB.CONSTITUTION_FOLDER), (err) => {
+        archive.addFolder(path.resolve(constitutionPath), "/", (err) => {
             if (err) {
                 throw err;
             }
@@ -56,12 +55,12 @@ function createCSB(domainName, constitutionPath, noSave) {
                                 process.exit(1);
                             }
                             const archive = edfs.createBar();
-                            archive.addFolder(path.resolve(constitutionPath), pskPath.join(EDFS.constants.CSB.CODE_FOLDER,EDFS.constants.CSB.CONSTITUTION_FOLDER), (err, mapDigest) => {
+                            archive.addFolder(path.resolve(constitutionPath), "/", (err, mapDigest) => {
                                 if (err) {
                                     throw err;
                                 }
 
-                                csb.startTransaction("StandardCSBTransactions", "addFileAnchor", domainName, "csb", archive.getSeed(), wallet.getMapDigest()).onReturn((err, res) => {
+                                csb.startTransaction("StandardCSBTransactions", "addFileAnchor", domainName, "csb", archive.getSeed()).onReturn((err, res) => {
                                     if (err) {
                                         console.error(err);
                                         process.exit(1);
@@ -124,6 +123,9 @@ function setApp(alseed, appPath) {
 }
 
 function mount(alseed, path, name, archiveIdentifier) {
+    if (arguments.length < 3) {
+        throw Error(`Insufficient arguments. Expected at least 3. Received ${arguments.length}`);
+    }
     if (arguments.length === 3) {
         archiveIdentifier = name;
         name = path;
@@ -178,6 +180,9 @@ function mount(alseed, path, name, archiveIdentifier) {
 }
 
 function unmount(alseed, path, name) {
+    if (arguments.length < 2) {
+        throw Error(`Insufficient arguments. Expected at least 2. Received ${arguments.length}`);
+    }
     if (arguments.length === 2) {
         name = path;
         path = alseed;
@@ -231,6 +236,9 @@ function unmount(alseed, path, name) {
 }
 
 function listMounts(alseed, path) {
+    if (arguments.length < 1) {
+        throw Error(`Insufficient arguments. Expected at least 1. Received ${arguments.length}`);
+    }
     if (arguments.length === 1) {
         path = alseed;
         alseed = undefined;

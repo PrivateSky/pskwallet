@@ -55,6 +55,9 @@ function listFiles(alseed, folderPath) {
 }
 
 function extractFolder(alseed, barPath, fsFolderPath) {
+    if (arguments.length < 3) {
+        throw Error(`Expected 3 arguments. Received ${arguments.length}`);
+    }
     if (utils.isAlias(alseed)) {
         utils.loadArchiveWithAlias(alseed, (err, rawDossier) => {
             if (err) {
@@ -89,6 +92,9 @@ function extractFolder(alseed, barPath, fsFolderPath) {
 }
 
 function extractFile(alseed, barPath, fsFilePath) {
+    if (arguments.length < 3) {
+        throw Error(`Expected 3 arguments. Received ${arguments.length}`);
+    }
     if (utils.isAlias(alseed)) {
         utils.loadArchiveWithAlias(alseed, (err, rawDossier) => {
             if (err) {

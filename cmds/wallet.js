@@ -2,6 +2,9 @@ const consoleUtils = require("../utils/consoleUtils");
 const utils = require("../utils/utils");
 
 function createWallet(templateSeed) {
+    if (!templateSeed) {
+        throw Error("No template seed received.")
+    }
     const Seed = require("bar").Seed;
     try {
         new Seed(templateSeed);
@@ -62,6 +65,9 @@ function createWallet(templateSeed) {
 
 
 function restore(seed) {
+    if (!seed) {
+        throw Error("No seed received.")
+    }
     const EDFS = require("edfs");
     let edfs;
     try {
