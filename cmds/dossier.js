@@ -1,7 +1,7 @@
 const utils = require("../utils/utils");
 const AGENT_IDENTITY = require("../utils/utils").getOwnIdentity();
 
-function createCSB(domainName, constitutionPath, noSave) {
+function createDossier(domainName, constitutionPath, noSave) {
     const pth = "path";
     const path = require(pth);
     const EDFS = require("edfs");
@@ -17,7 +17,7 @@ function createCSB(domainName, constitutionPath, noSave) {
                 if (err) {
                     throw err;
                 }
-                console.log("The CSB was created. Its SEED is the following.");
+                console.log("The dossier was created. Its SEED is the following.");
                 console.log("SEED", archive.getSeed());
             });
         });
@@ -290,7 +290,7 @@ function listMounts(alseed, path) {
     }
 }
 
-addCommand("create", "csb", createCSB, "<domainName> <constitutionPath> <nosave>\t\t\t\t |creates an archive containing constitutions folder <constitutionPath> for Domain <domainName>");
+addCommand("create", "dossier", createDossier, "<domainName> <constitutionPath> <nosave>\t\t\t\t |creates an archive containing constitutions folder <constitutionPath> for Domain <domainName>");
 addCommand("set", "app", setApp, " <seed>/<alias> <folderPath> \t\t\t\t\t |add an app to an existing archive");
 addCommand("mount", null, mount, "<seed>/<alias> <path> <name> <archiveIdentifier> <> \t\t\t\t |Mounts the dossier having the seed <seed> at <path>/<name>");
 addCommand("unmount", null, unmount, "<seed>/<alias> <path> <name>\t\t\t\t |Unmounts the dossier mounted at <path>/<name>");
