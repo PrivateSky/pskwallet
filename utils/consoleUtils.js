@@ -3,7 +3,7 @@ const readline = require(rl);
 const getPassword = require("./getPassword").readPassword;
 
 const NO_TRIES = 3;
-const DEFAULT_PROMPT = "Insert pin:";
+const DEFAULT_PROMPT = "Insert password:";
 
 function insertPassword(options, callback) {
     if (typeof options === "function") {
@@ -22,11 +22,11 @@ function insertPassword(options, callback) {
     }
 
     if (options.noTries === 0) {
-        return callback(new Error(`You have inserted an invalid pin ${NO_TRIES} times`));
+        return callback(new Error(`You have inserted an invalid password ${NO_TRIES} times`));
     } else {
-        getPassword(options.prompt,  (err, pin)=> {
+        getPassword(options.prompt,  (err, password)=> {
             if (options.validationFunction) {
-                options.validationFunction(pin, (err, status) => {
+                options.validationFunction(password, (err, status) => {
                     if (err) {
                         return callback(err);
                     }
@@ -39,11 +39,11 @@ function insertPassword(options, callback) {
                         options.noTries--;
                         insertPassword(options, callback);
                     }else {
-                        callback(undefined, pin);
+                        callback(undefined, password);
                     }
                 });
             } else {
-                return callback(undefined, pin);
+                return callback(undefined, password);
             }
         });
     }

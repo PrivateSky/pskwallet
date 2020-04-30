@@ -1,3 +1,3 @@
 require("./wallet");
 require("./bar");
-require("./csb");
+require("./dossier");

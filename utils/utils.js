@@ -15,29 +15,29 @@ function getInitializedEDFS() {
     return EDFS.attachToEndpoint(endpoint);
 }
 
-function validatePin(pin, callback) {
-    if (typeof pin === "undefined" || pin.length < 4) {
+function validatePassword(password, callback) {
+    if (typeof password === "undefined" || password.length < 4) {
         return callback(undefined, false)
     }
 
-    if (/[\x00-\x03]|[\x05-\x07]/.test(pin)) {
+    if (/[\x00-\x03]|[\x05-\x07]/.test(password)) {
         return callback(undefined, false);
     }
 
     return callback(undefined, true);
 }
 
-function checkPin(pin, callback) {
-    if (typeof pin === "undefined" || pin.length < 4) {
+function checkPassword(password, callback) {
+    if (typeof password === "undefined" || password.length < 4) {
         return callback(undefined, false)
     }
 
-    if (/[\x00-\x03]|[\x05-\x07]/.test(pin)) {
+    if (/[\x00-\x03]|[\x05-\x07]/.test(password)) {
         return callback(undefined, false);
     }
 
     const EDFS = require("edfs");
-    EDFS.attachWithPin(pin, (err) => {
+    EDFS.attachWithPassword(password, (err) => {
         if (err) {
             return callback(undefined, false);
         }
@@ -54,13 +54,13 @@ function getEDFS(seed, callback) {
     }
 
     if (typeof seed === "undefined") {
-        getPin((err, pin) => {
+        getPassword((err, password) => {
             if (err) {
                 console.log("Error when loading EDFs");
                 return callback(err);
             }
 
-            EDFS.attachWithPin(pin, callback);
+            EDFS.attachWithPassword(password, callback);
         });
 
     } else {
@@ -78,12 +78,12 @@ function loadWallet(walletSeed, callback) {
             return callback(err);
         }
 
-        getPin((err, pin) => {
+        getPassword((err, password) => {
             if (err) {
                 return callback(err);
             }
 
-            edfs.loadWallet(walletSeed, pin, true, (err, wallet) => {
+            edfs.loadWallet(walletSeed, password, true, (err, wallet) => {
                 if (err) {
                     return callback(err);
                 }
@@ -138,33 +138,32 @@ function getOwnIdentity() {
     return "pskwallet-identity";
 }
 
-let lastPin;
+let lastPassword;
 let timeStamp;
-const PIN_LIFETIME = 5000;
-global.getPin = function (callback) {
+const PASSWORD_LIFETIME = 5000;
+global.getPassword = function (callback) {
     const currentTimestamp = new Date().getTime();
-    if (!lastPin || (currentTimestamp - timeStamp) > PIN_LIFETIME) {
-        consoleUtils.insertPassword({validationFunction: checkPin}, (err, pin) => {
+    if (!lastPassword || (currentTimestamp - timeStamp) > PASSWORD_LIFETIME) {
+        consoleUtils.insertPassword({validationFunction: checkPassword}, (err, password) => {
             if (err) {
                 return callback(err);
             }
 
-            lastPin = pin;
+            lastPassword = password;
             timeStamp = new Date().getTime();
-            callback(undefined, pin);
+            callback(undefined, password);
         });
     } else {
-        callback(undefined, lastPin);
+        callback(undefined, lastPassword);
     }
 };
 
 module.exports = {
     getInitializedEDFS,
-    validatePin,
+    validatePassword,
     isAlias,
     loadWallet,
     getEDFS,
     getOwnIdentity,
     loadArchiveWithAlias,
-    checkPin
 };

@@ -22,18 +22,18 @@ function createCSB(domainName, constitutionPath, noSave) {
             });
         });
     } else {
-        getPin((err, pin) => {
+        getPassword((err, password) => {
             if (err) {
                 throw err;
             }
-            EDFS.attachWithPin(pin, (err, edfs) => {
+            EDFS.attachWithPassword(password, (err, edfs) => {
                 if (err) {
-                    console.error("Invalid pin");
+                    console.error("Invalid password");
                     return;
                 }
 
-                console.log("Attached with pin");
-                edfs.loadWallet(undefined, pin, true, (err, wallet) => {
+                console.log("Attached with password");
+                edfs.loadWallet(undefined, password, true, (err, wallet) => {
                     if (err) {
                         throw err;
                     }

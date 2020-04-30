@@ -31,26 +31,26 @@ function createWallet(templateSeed) {
     });
 
     function __createWallet(edfs, overwrite) {
-        consoleUtils.insertPassword({validationFunction: utils.validatePin}, (err, pin) => {
+        consoleUtils.insertPassword({validationFunction: utils.validatePassword}, (err, password) => {
             if (err) {
                 console.log(`Caught error: ${err.message}`);
                 process.exit(1);
             }
 
             consoleUtils.insertPassword({
-                prompt: "Confirm pin:",
-                validationFunction: utils.validatePin
-            }, (err, newPin) => {
+                prompt: "Confirm password:",
+                validationFunction: utils.validatePassword
+            }, (err, newPassword) => {
                 if (err) {
                     console.log(`Caught error: ${err.message}`);
                     process.exit(1);
                 }
 
-                if (pin !== newPin) {
-                    console.log("The PINs do not coincide. Try again.");
+                if (password !== newPassword) {
+                    console.log("The passwords do not coincide. Try again.");
                     __createWallet(edfs, overwrite);
                 } else {
-                    edfs.createWallet(templateSeed, pin, overwrite, (err, seed) => {
+                    edfs.createWallet(templateSeed, password, overwrite, (err, seed) => {
                         if (err) {
                             throw err;
                         }
@@ -79,26 +79,26 @@ function restore(seed) {
     __saveSeed();
 
     function __saveSeed() {
-        consoleUtils.insertPassword({validationFunction: utils.validatePin}, (err, pin) => {
+        consoleUtils.insertPassword({validationFunction: utils.validatePassword}, (err, password) => {
             if (err) {
                 console.log(`Caught error: ${err.message}`);
                 process.exit(1);
             }
 
             consoleUtils.insertPassword({
-                prompt: "Confirm pin:",
-                validationFunction: utils.validatePin
-            }, (err, newPin) => {
+                prompt: "Confirm password:",
+                validationFunction: utils.validatePassword
+            }, (err, newPassword) => {
                 if (err) {
                     console.log(`Caught error: ${err.message}`);
                     process.exit(1);
                 }
 
-                if (pin !== newPin) {
-                    console.log("The PINs do not coincide. Try again.");
+                if (password !== newPassword) {
+                    console.log("The passwords do not coincide. Try again.");
                     __saveSeed();
                 } else {
-                    edfs.loadWallet(seed, pin, true, (err, wallet) => {
+                    edfs.loadWallet(seed, password, true, (err, wallet) => {
                         if (err) {
                             throw err;
                         }
@@ -111,13 +111,13 @@ function restore(seed) {
     }
 }
 
-function changePin() {
+function changePassword() {
     utils.loadWallet((err, wallet) => {
         if (err) {
             throw err;
         }
 
-        consoleUtils.insertPassword({prompt: "Insert a new PIN:", validationFunction: utils.validatePin}, (err, pin) => {
+        consoleUtils.insertPassword({prompt: "Insert a new password:", validationFunction: utils.validatePassword}, (err, password) => {
             if (err) {
                 throw err;
             }
@@ -127,12 +127,12 @@ function changePin() {
                     throw err;
                 }
 
-                edfs.loadWallet(wallet.getSeed(), pin, true, (err) => {
+                edfs.loadWallet(wallet.getSeed(), password, true, (err) => {
                     if (err) {
                         throw err;
                     }
 
-                    console.log("The PIN has been changed.");
+                    console.log("The password has been changed.");
                 });
             });
         });
@@ -141,6 +141,6 @@ function changePin() {
 
 
 addCommand("create", "wallet", createWallet, "<templateSeed> \t\t\t\t\t\t |creates a clone of the CSB whose SEED is <templateSeed>");
-addCommand("restore", null, restore, "<seed> \t\t\t\t |Checks the seed is valid and allows the selection of a PIN");
-addCommand("change", "pin", changePin, "\t\t\t\t |Asks for the PIN and then allows for the selection of a new PIN");
+addCommand("restore", null, restore, "<seed> \t\t\t\t |Checks the seed is valid and allows the selection of a password");
+addCommand("change", "password", changePassword, "\t\t\t\t |Asks for the password and then allows for the selection of a new password");
 
