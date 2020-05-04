@@ -54,7 +54,7 @@ function listFiles(alseed, folderPath) {
     }
 }
 
-function extractFolder(alseed, barPath, fsFolderPath) {
+function getApp(alseed, barPath, fsFolderPath) {
     if (arguments.length < 3) {
         throw Error(`Expected 3 arguments. Received ${arguments.length}`);
     }
@@ -129,6 +129,6 @@ function extractFile(alseed, barPath, fsFilePath) {
 }
 
 addCommand("list", "files", listFiles, " <archiveSeed>/<alias> <folderPath> \t\t\t\t |prints the list of all files stored at path <folderPath> inside the archive whose SEED is <archiveSeed>. If an alias is specified then the CSB's SEED is searched from the wallet.");
-addCommand("extract", "folder", extractFolder, " <archiveSeed> <archivePath> <fsFolderPath> \t\t |extracts the folder stored at <archivePath> inside the archive whose SEED is <archiveSeed> and writes all the extracted file on disk at path <fsFolderPath>");
-addCommand("extract", "file", extractFile, " <archiveSeed> <archivePath> <fsFilePath> \t\t |extracts the folder stored at <archivePath> inside the archive whose SEED is <archiveSeed> and writes all the extracted file on disk at path <fsFilePath>");
+addCommand("get", "app", getApp, " <archiveSeed>/<alias> <archivePath> <fsFolderPath> \t\t |extracts the folder stored at <archivePath> inside the archive whose SEED is <archiveSeed> and writes all the extracted file on disk at path <fsFolderPath>");
+addCommand("extract", "file", extractFile, " <archiveSeed>/<alias> <archivePath> <fsFilePath> \t\t |extracts the folder stored at <archivePath> inside the archive whose SEED is <archiveSeed> and writes all the extracted file on disk at path <fsFilePath>");
 
