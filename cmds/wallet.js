@@ -70,45 +70,43 @@ function restore(seed) {
     }
     const EDFS = require("edfs");
     let edfs;
-    try {
-        edfs = EDFS.attachWithSeed(seed);
-    } catch (e) {
-        throw Error("The provided seed is invalid.");
-    }
+    EDFS.attachWithSeed(seed, (err, edfs) => {
+        if (err) {
+            throw err;
+        }__saveSeed();
 
-    __saveSeed();
-
-    function __saveSeed() {
-        consoleUtils.insertPassword({validationFunction: utils.validatePassword}, (err, password) => {
-            if (err) {
-                console.log(`Caught error: ${err.message}`);
-                process.exit(1);
-            }
-
-            consoleUtils.insertPassword({
-                prompt: "Confirm password:",
-                validationFunction: utils.validatePassword
-            }, (err, newPassword) => {
+        function __saveSeed() {
+            consoleUtils.insertPassword({validationFunction: utils.validatePassword}, (err, password) => {
                 if (err) {
                     console.log(`Caught error: ${err.message}`);
                     process.exit(1);
                 }
 
-                if (password !== newPassword) {
-                    console.log("The passwords do not coincide. Try again.");
-                    __saveSeed();
-                } else {
-                    edfs.loadWallet(seed, password, true, (err, wallet) => {
-                        if (err) {
-                            throw err;
-                        }
+                consoleUtils.insertPassword({
+                    prompt: "Confirm password:",
+                    validationFunction: utils.validatePassword
+                }, (err, newPassword) => {
+                    if (err) {
+                        console.log(`Caught error: ${err.message}`);
+                        process.exit(1);
+                    }
 
-                        console.log("Wallet was restored");
-                    });
-                }
+                    if (password !== newPassword) {
+                        console.log("The passwords do not coincide. Try again.");
+                        __saveSeed();
+                    } else {
+                        edfs.loadWallet(seed, password, true, (err, wallet) => {
+                            if (err) {
+                                throw err;
+                            }
+
+                            console.log("Wallet was restored");
+                        });
+                    }
+                });
             });
-        });
-    }
+        }
+    });
 }
 
 function changePassword() {
