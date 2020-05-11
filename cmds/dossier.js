@@ -190,7 +190,7 @@ function mount(alseed, path, archiveIdentifier) {
 
                         console.log("Successfully mounted.");
                     });
-		});
+                });
             });
         }
     }
@@ -243,11 +243,12 @@ function unmount(alseed, path) {
                         throw err;
                     }
                     rawDossier.unmount(path, (err) => {
-                    if (err) {
-                        throw err;
-                    }
+                        if (err) {
+                            throw err;
+                        }
 
-                    console.log("Successfully unmounted.");
+                        console.log("Successfully unmounted.");
+                    });
                 });
             });
         }
