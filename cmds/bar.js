@@ -41,13 +41,18 @@ function listFiles(alseed, folderPath) {
                     throw err;
                 }
 
-                const rawDossier = edfs.loadRawDossier(alseed);
-                rawDossier.listFiles(folderPath, (err, fileList) => {
+                edfs.loadRawDossier(alseed, (err, rawDossier) => {
                     if (err) {
                         throw err;
                     }
 
+                    rawDossier.listFiles(folderPath, (err, fileList) => {
+                        if (err) {
+                            throw err;
+                        }
+
                     console.log("Files:", fileList);
+                });
                 });
             });
         }
@@ -79,13 +84,18 @@ function getApp(alseed, barPath, fsFolderPath) {
                 throw err;
             }
 
-            const rawDossier = edfs.loadRawDossier(alseed);
-            rawDossier.extractFolder(fsFolderPath, barPath, (err) => {
+            edfs.loadRawDossier(alseed, (err, rawDossier) => {
                 if (err) {
                     throw err;
                 }
 
-                console.log("Extracted folder.");
+                rawDossier.extractFolder(fsFolderPath, barPath, (err) => {
+                    if (err) {
+                        throw err;
+                    }
+
+                    console.log("Extracted folder.");
+                });
             });
         });
     }
@@ -116,13 +126,18 @@ function extractFile(alseed, barPath, fsFilePath) {
                 throw err;
             }
 
-            const rawDossier = edfs.loadRawDossier(alseed);
-            rawDossier.extractFile(fsFilePath, barPath, (err) => {
+            edfs.loadRawDossier(alseed, (err, rawDossier) => {
                 if (err) {
                     throw err;
                 }
 
-                console.log("Extracted file.");
+                rawDossier.extractFile(fsFilePath, barPath, (err) => {
+                    if (err) {
+                        throw err;
+                    }
+
+                    console.log("Extracted file.");
+                });
             });
         });
     }

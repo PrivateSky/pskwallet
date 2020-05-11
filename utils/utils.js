@@ -116,7 +116,12 @@ function loadArchiveWithAlias(alias, callback) {
                         return callback(err);
                     }
 
-                    callback(undefined, edfs.loadRawDossier(seed));
+                    edfs.loadRawDossier(seed, (err, rawDossier) => {
+                        if (err) {
+                            return callback(err);
+                        }
+                        callback(undefined, rawDossier);
+                    })
                 });
             });
         });
