@@ -1,13 +1,14 @@
 const utils = require("../utils/utils");
 const AGENT_IDENTITY = require("../utils/utils").getOwnIdentity();
-
-function createDossier(domainName, constitutionPath, noSave) {
-    const pth = "path";
-    const path = require(pth);
-    const EDFS = require("edfs");
-    if (noSave === "nosave") {
-        const edfs = utils.getInitializedEDFS();
-        const archive = edfs.createBar();
+const pth = "path";
+const path = require(pth);
+const EDFS = require("edfs");
+function createTemplateDossier(domainName, constitutionPath) {
+    const edfs = utils.getInitializedEDFS();
+    edfs.createBar((err, archive) => {
+        if (err) {
+            throw err;
+        }
         archive.load((err) => {
             if (err) {
                 throw err;
@@ -26,7 +27,12 @@ function createDossier(domainName, constitutionPath, noSave) {
                     console.log("SEED", archive.getSeed());
                 });
             });
-        })
+        });
+    });
+}
+function createDossier(domainName, constitutionPath, noSave) {
+    if (noSave === "nosave") {
+        createTemplateDossier(domainName, constitutionPath);
     } else {
         getPassword((err, password) => {
             if (err) {
@@ -38,7 +44,6 @@ function createDossier(domainName, constitutionPath, noSave) {
                     return;
                 }
 
-                console.log("Attached with password");
                 edfs.loadWallet(undefined, password, true, (err, wallet) => {
                     if (err) {
                         throw err;
@@ -60,30 +65,35 @@ function createDossier(domainName, constitutionPath, noSave) {
                                 console.log(`Domain ${domainName} already exists!`);
                                 process.exit(1);
                             }
-                            const archive = edfs.createBar();
-                            archive.load((err) => {
+                            edfs.createBar((err, archive) => {
                                 if (err) {
                                     throw err;
                                 }
 
-                                archive.addFolder(path.resolve(constitutionPath), "/", (err, mapDigest) => {
+                                archive.load((err) => {
                                     if (err) {
                                         throw err;
                                     }
 
-                                    csb.startTransaction("StandardCSBTransactions", "addFileAnchor", domainName, "csb", archive.getSeed()).onReturn((err, res) => {
+                                    archive.addFolder(path.resolve(constitutionPath), "/", (err, mapDigest) => {
                                         if (err) {
-                                            console.error(err);
-                                            process.exit(1);
+                                            throw err;
                                         }
 
-                                        console.log("The CSB was created and a reference to it has been added to the wallet.");
-                                        console.log("Its SEED is:", archive.getSeed());
-                                        process.exit(0);
-                                    });
+                                        csb.startTransaction("StandardCSBTransactions", "addFileAnchor", domainName, "csb", archive.getSeed()).onReturn((err, res) => {
+                                            if (err) {
+                                                console.error(err);
+                                                process.exit(1);
+                                            }
 
-                                });
-                            })
+                                            console.log("The CSB was created and a reference to it has been added to the wallet.");
+                                            console.log("Its SEED is:", archive.getSeed());
+                                            process.exit(0);
+                                        });
+
+                                    });
+                                })
+                            });
                         });
                     });
                 });
