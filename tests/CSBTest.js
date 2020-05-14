@@ -43,7 +43,7 @@ const s = $$.swarm.describe("CSBTest", {
                 this.localFolder = localFolder;
 
                 //start virtualMq
-                this.virtualMq = VirtualMQ.createVirtualMQ(PORT, tempFolder, () => {
+                this.virtualMq = VirtualMQ.createPskWebServer(PORT, tempFolder, () => {
                     // this.createCSB(this.CSBPath, backupUrl, undefined, "attachFile", this.CSBPath + "/anne", fileName);
                     this.createCSB(this.CSBPath, backupUrl, undefined, "listCSBs");
                 });
