@@ -1,20 +1,18 @@
 const consoleUtils = require("../utils/consoleUtils");
 const utils = require("../utils/utils");
+const EDFS = require("edfs");
 
-function createWallet(templateSeed) {
-    if (!templateSeed) {
+function createWallet(templateKeySSI) {
+    if (!templateKeySSI) {
         throw Error("No template seed received.")
     }
-    const Seed = require("bar").Seed;
     try {
-        new Seed(templateSeed);
+        require("key-ssi-resolver").KeySSIFactory.create(templateKeySSI)
     } catch (e) {
         throw Error("Invalid template seed");
     }
 
-    const EDFS = require("edfs");
     EDFS.checkForSeedCage(err => {
-        const edfs = utils.getInitializedEDFS();
         if (!err) {
             consoleUtils.getFeedback("A wallet already exists. Do you want to create a new one?(y/n)", (err, ans) => {
                 if (err) {
@@ -22,15 +20,15 @@ function createWallet(templateSeed) {
                 }
 
                 if (ans[0] === "y") {
-                    __createWallet(edfs, true);
+                    __createWallet(true);
                 }
             });
         } else {
-            __createWallet(edfs, false);
+            __createWallet(false);
         }
     });
 
-    function __createWallet(edfs, overwrite) {
+    function __createWallet(overwrite) {
         consoleUtils.insertPassword({validationFunction: utils.validatePassword}, (err, password) => {
             if (err) {
                 console.log(`Caught error: ${err.message}`);
@@ -48,14 +46,14 @@ function createWallet(templateSeed) {
 
                 if (password !== newPassword) {
                     console.log("The passwords do not coincide. Try again.");
-                    __createWallet(edfs, overwrite);
+                    __createWallet(overwrite);
                 } else {
-                    edfs.createWallet(templateSeed, password, overwrite, (err, seed) => {
+                    EDFS.createDSU("Wallet", {password, overwrite, templateKeySSI}, (err, keySSI) => {
                         if (err) {
                             throw err;
                         }
 
-                        console.log("Wallet with SEED was created. Please save the SEED:", seed);
+                        console.log("Wallet with KeySSI was created. Please save the KeySSI:", keySSI);
                     });
                 }
             });
@@ -64,49 +62,47 @@ function createWallet(templateSeed) {
 }
 
 
-function restore(seed) {
-    if (!seed) {
-        throw Error("No seed received.")
+function restore(keySSI) {
+    if (!keySSI) {
+        throw Error("No keySSI received.")
     }
-    const EDFS = require("edfs");
-    let edfs;
-    EDFS.attachWithSeed(seed, (err, edfs) => {
-        if (err) {
-            throw err;
-        }__saveSeed();
 
-        function __saveSeed() {
-            consoleUtils.insertPassword({validationFunction: utils.validatePassword}, (err, password) => {
+    if (err) {
+        throw err;
+    }
+    __saveKeySSI();
+
+    function __saveKeySSI() {
+        consoleUtils.insertPassword({validationFunction: utils.validatePassword}, (err, password) => {
+            if (err) {
+                console.log(`Caught error: ${err.message}`);
+                process.exit(1);
+            }
+
+            consoleUtils.insertPassword({
+                prompt: "Confirm password:",
+                validationFunction: utils.validatePassword
+            }, (err, newPassword) => {
                 if (err) {
                     console.log(`Caught error: ${err.message}`);
                     process.exit(1);
                 }
 
-                consoleUtils.insertPassword({
-                    prompt: "Confirm password:",
-                    validationFunction: utils.validatePassword
-                }, (err, newPassword) => {
-                    if (err) {
-                        console.log(`Caught error: ${err.message}`);
-                        process.exit(1);
-                    }
+                if (password !== newPassword) {
+                    console.log("The passwords do not coincide. Try again.");
+                    __saveKeySSI();
+                } else {
+                    EDFS.resolveSSI(keySSI, "Wallet", {password, overwrite: true}, (err, wallet) => {
+                        if (err) {
+                            throw err;
+                        }
 
-                    if (password !== newPassword) {
-                        console.log("The passwords do not coincide. Try again.");
-                        __saveSeed();
-                    } else {
-                        edfs.loadWallet(seed, password, true, (err, wallet) => {
-                            if (err) {
-                                throw err;
-                            }
-
-                            console.log("Wallet was restored");
-                        });
-                    }
-                });
+                        console.log("Wallet was restored");
+                    });
+                }
             });
-        }
-    });
+        });
+    }
 }
 
 function changePassword() {
@@ -115,23 +111,20 @@ function changePassword() {
             throw err;
         }
 
-        consoleUtils.insertPassword({prompt: "Insert a new password:", validationFunction: utils.validatePassword}, (err, password) => {
+        consoleUtils.insertPassword({
+            prompt: "Insert a new password:",
+            validationFunction: utils.validatePassword
+        }, (err, password) => {
             if (err) {
                 throw err;
             }
 
-            utils.getEDFS(wallet.getSeed(), (err, edfs) => {
+            EDFS.resolveSSI(wallet.getKeySSI(), "Wallet", {password, overwrite: true}, (err) => {
                 if (err) {
                     throw err;
                 }
 
-                edfs.loadWallet(wallet.getSeed(), password, true, (err) => {
-                    if (err) {
-                        throw err;
-                    }
-
-                    console.log("The password has been changed.");
-                });
+                console.log("The password has been changed.");
             });
         });
     });

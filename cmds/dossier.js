@@ -3,9 +3,11 @@ const AGENT_IDENTITY = require("../utils/utils").getOwnIdentity();
 const pth = "path";
 const path = require(pth);
 const EDFS = require("edfs");
+const RAW_DOSSIER_TYPE = "RawDossier";
+const BAR_TYPE = "Bar";
+
 function createTemplateDossier(domainName, constitutionPath) {
-    const edfs = utils.getInitializedEDFS();
-    edfs.createBar((err, archive) => {
+    EDFS.createDSU(BAR_TYPE, (err, archive) => {
         if (err) {
             throw err;
         }
@@ -24,12 +26,13 @@ function createTemplateDossier(domainName, constitutionPath) {
                         throw err;
                     }
                     console.log("The dossier was created. Its SEED is the following.");
-                    console.log("SEED", archive.getSeed());
+                    console.log("SEED", archive.getKeySSI());
                 });
             });
         });
     });
 }
+
 function createDossier(domainName, constitutionPath, noSave) {
     if (noSave === "nosave") {
         createTemplateDossier(domainName, constitutionPath);
@@ -38,62 +41,56 @@ function createDossier(domainName, constitutionPath, noSave) {
             if (err) {
                 throw err;
             }
-            EDFS.attachWithPassword(password, (err, edfs) => {
+
+            EDFS.loadWallet(undefined, {password, overwrite: true}, (err, wallet) => {
                 if (err) {
-                    console.error("Invalid password");
-                    return;
+                    throw err;
                 }
 
-                edfs.loadWallet(undefined, password, true, (err, wallet) => {
+                const dossier = require("dossier");
+                dossier.load(wallet.getKeySSI(), AGENT_IDENTITY, (err, csb) => {
                     if (err) {
-                        throw err;
+                        console.error(err);
+                        process.exit(1);
                     }
 
-                    const dossier = require("dossier");
-                    dossier.load(wallet.getSeed(), AGENT_IDENTITY, (err, csb) => {
+                    csb.startTransaction("StandardCSBTransactions", "domainLookup", domainName).onReturn((err, domain) => {
                         if (err) {
-                            console.error(err);
+                            console.log(err);
                             process.exit(1);
                         }
-
-                        csb.startTransaction("StandardCSBTransactions", "domainLookup", domainName).onReturn((err, domain) => {
+                        if (domain) {
+                            console.log(`Domain ${domainName} already exists!`);
+                            process.exit(1);
+                        }
+                        EDFS.createDSU(BAR_TYPE, (err, archive) => {
                             if (err) {
-                                console.log(err);
-                                process.exit(1);
+                                throw err;
                             }
-                            if (domain) {
-                                console.log(`Domain ${domainName} already exists!`);
-                                process.exit(1);
-                            }
-                            edfs.createBar((err, archive) => {
+
+                            archive.load((err) => {
                                 if (err) {
                                     throw err;
                                 }
 
-                                archive.load((err) => {
+                                archive.addFolder(path.resolve(constitutionPath), "/", (err, mapDigest) => {
                                     if (err) {
                                         throw err;
                                     }
 
-                                    archive.addFolder(path.resolve(constitutionPath), "/", (err, mapDigest) => {
+                                    csb.startTransaction("StandardCSBTransactions", "addFileAnchor", domainName, "csb", archive.getSeed()).onReturn((err, res) => {
                                         if (err) {
-                                            throw err;
+                                            console.error(err);
+                                            process.exit(1);
                                         }
 
-                                        csb.startTransaction("StandardCSBTransactions", "addFileAnchor", domainName, "csb", archive.getSeed()).onReturn((err, res) => {
-                                            if (err) {
-                                                console.error(err);
-                                                process.exit(1);
-                                            }
-
-                                            console.log("The CSB was created and a reference to it has been added to the wallet.");
-                                            console.log("Its SEED is:", archive.getSeed());
-                                            process.exit(0);
-                                        });
-
+                                        console.log("The CSB was created and a reference to it has been added to the wallet.");
+                                        console.log("Its SEED is:", archive.getSeed());
+                                        process.exit(0);
                                     });
-                                })
-                            });
+
+                                });
+                            })
                         });
                     });
                 });
@@ -111,7 +108,6 @@ function setApp(alseed, appPath) {
         throw new Error('Missing the second argument, the app path');
     }
 
-    const EDFS = require("edfs");
     if (utils.isAlias(alseed)) {
         utils.loadArchiveWithAlias(alseed, (err, bar) => {
             if (err) {
@@ -127,24 +123,18 @@ function setApp(alseed, appPath) {
             })
         });
     } else {
-        utils.getEDFS(alseed, (err, edfs) => {
+        EDFS.resolveSSI(alseed, BAR_TYPE, (err, bar) => {
             if (err) {
                 throw err;
             }
 
-            edfs.loadBar(alseed, (err, bar) => {
+            bar.addFolder(appPath, "app", (err) => {
                 if (err) {
                     throw err;
                 }
 
-                bar.addFolder(appPath, EDFS.constants.CSB.APP_FOLDER, (err) => {
-                    if (err) {
-                        throw err;
-                    }
-
-                    console.log('All done');
-                })
-            });
+                console.log('All done');
+            })
         });
     }
 }
@@ -187,19 +177,13 @@ function mount(alseed, path, archiveIdentifier) {
                 });
             });
         } else {
-            utils.getEDFS(alseed, (err, edfs) => {
-                if (err) {
-                    throw err;
-                }
+            EDFS.loadDSU(alseed, RAW_DOSSIER_TYPE, (err, rawDossier) => {
+                rawDossier.mount(path, archiveIdentifier, (err) => {
+                    if (err) {
+                        throw err;
+                    }
 
-                edfs.loadRawDossier(alseed, (err, rawDossier) => {
-                    rawDossier.mount(path, archiveIdentifier, (err) => {
-                        if (err) {
-                            throw err;
-                        }
-
-                        console.log("Successfully mounted.");
-                    });
+                    console.log("Successfully mounted.");
                 });
             });
         }
@@ -243,22 +227,16 @@ function unmount(alseed, path) {
                 });
             });
         } else {
-            utils.getEDFS(alseed, (err, edfs) => {
+            EDFS.loadDSU(alseed, RAW_DOSSIER_TYPE, (err, rawDossier) => {
                 if (err) {
                     throw err;
                 }
-
-                edfs.loadRawDossier(alseed, (err, rawDossier) => {
+                rawDossier.unmount(path, (err) => {
                     if (err) {
                         throw err;
                     }
-                    rawDossier.unmount(path, (err) => {
-                        if (err) {
-                            throw err;
-                        }
 
-                        console.log("Successfully unmounted.");
-                    });
+                    console.log("Successfully unmounted.");
                 });
             });
         }
@@ -302,12 +280,7 @@ function listMounts(alseed, path) {
                 });
             });
         } else {
-            utils.getEDFS(alseed, (err, edfs) => {
-                if (err) {
-                    throw err;
-                }
-
-                edfs.loadRawDossier(alseed, (err, rawDossier) => {
+                EDFS.loadDSU(alseed, RAW_DOSSIER_TYPE, (err, rawDossier) => {
                     if (err) {
                         throw err;
                     }
@@ -320,7 +293,6 @@ function listMounts(alseed, path) {
                         console.log(mounts);
                     });
                 });
-            });
         }
     }
 }

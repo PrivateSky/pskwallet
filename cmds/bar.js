@@ -1,4 +1,6 @@
 const utils = require("../utils/utils");
+const EDFS = require("edfs");
+const RAW_DOSSIER_TYPE = "RawDossier";
 
 function listFiles(alseed, folderPath) {
     if (arguments.length === 0) {
@@ -36,23 +38,17 @@ function listFiles(alseed, folderPath) {
                 });
             });
         } else {
-            utils.getEDFS(alseed, (err, edfs) => {
+            EDFS.resolveSSI(alseed, RAW_DOSSIER_TYPE, (err, rawDossier) => {
                 if (err) {
                     throw err;
                 }
 
-                edfs.loadRawDossier(alseed, (err, rawDossier) => {
+                rawDossier.listFiles(folderPath, (err, fileList) => {
                     if (err) {
                         throw err;
                     }
 
-                    rawDossier.listFiles(folderPath, (err, fileList) => {
-                        if (err) {
-                            throw err;
-                        }
-
                     console.log("Files:", fileList);
-                });
                 });
             });
         }
@@ -79,23 +75,19 @@ function getApp(alseed, barPath, fsFolderPath) {
             });
         });
     } else {
-        utils.getEDFS(alseed, (err, edfs) => {
+
+
+        EDFS.resolveSSI(alseed, RAW_DOSSIER_TYPE, (err, rawDossier) => {
             if (err) {
                 throw err;
             }
 
-            edfs.loadRawDossier(alseed, (err, rawDossier) => {
+            rawDossier.extractFolder(fsFolderPath, barPath, (err) => {
                 if (err) {
                     throw err;
                 }
 
-                rawDossier.extractFolder(fsFolderPath, barPath, (err) => {
-                    if (err) {
-                        throw err;
-                    }
-
-                    console.log("Extracted folder.");
-                });
+                console.log("Extracted folder.");
             });
         });
     }
@@ -121,23 +113,18 @@ function extractFile(alseed, barPath, fsFilePath) {
             });
         });
     } else {
-        utils.getEDFS(alseed, (err, edfs) => {
+
+        EDFS.resolveSSI(alseed, RAW_DOSSIER_TYPE, (err, rawDossier) => {
             if (err) {
                 throw err;
             }
 
-            edfs.loadRawDossier(alseed, (err, rawDossier) => {
+            rawDossier.extractFile(fsFilePath, barPath, (err) => {
                 if (err) {
                     throw err;
                 }
 
-                rawDossier.extractFile(fsFilePath, barPath, (err) => {
-                    if (err) {
-                        throw err;
-                    }
-
-                    console.log("Extracted file.");
-                });
+                console.log("Extracted file.");
             });
         });
     }
