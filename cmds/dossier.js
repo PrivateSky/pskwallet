@@ -25,8 +25,14 @@ function createTemplateDossier(domainName, constitutionPath) {
                     if (err) {
                         throw err;
                     }
-                    console.log("The dossier was created. Its SEED is the following.");
-                    console.log("SEED", archive.getKeySSI());
+                    archive.getKeySSI((err, keySSI) => {
+                        if (err) {
+                            throw err;
+                        }
+
+                        console.log("The dossier was created. Its SEED is the following.");
+                        console.log("SEED", keySSI);
+                    });
                 });
             });
         });
@@ -48,49 +54,54 @@ function createDossier(domainName, constitutionPath, noSave) {
                 }
 
                 const dossier = require("dossier");
-                dossier.load(wallet.getKeySSI(), AGENT_IDENTITY, (err, csb) => {
+                wallet.getKeySSI((err, keySSI) => {
                     if (err) {
-                        console.error(err);
-                        process.exit(1);
+                        throw err;
                     }
-
-                    csb.startTransaction("StandardCSBTransactions", "domainLookup", domainName).onReturn((err, domain) => {
+                    dossier.load(keySSI, AGENT_IDENTITY, (err, csb) => {
                         if (err) {
-                            console.log(err);
+                            console.error(err);
                             process.exit(1);
                         }
-                        if (domain) {
-                            console.log(`Domain ${domainName} already exists!`);
-                            process.exit(1);
-                        }
-                        EDFS.createDSU(BAR_TYPE, (err, archive) => {
-                            if (err) {
-                                throw err;
-                            }
 
-                            archive.load((err) => {
+                        csb.startTransaction("StandardCSBTransactions", "domainLookup", domainName).onReturn((err, domain) => {
+                            if (err) {
+                                console.log(err);
+                                process.exit(1);
+                            }
+                            if (domain) {
+                                console.log(`Domain ${domainName} already exists!`);
+                                process.exit(1);
+                            }
+                            EDFS.createDSU(BAR_TYPE, (err, archive) => {
                                 if (err) {
                                     throw err;
                                 }
 
-                                archive.addFolder(path.resolve(constitutionPath), "/", (err, mapDigest) => {
+                                archive.load((err) => {
                                     if (err) {
                                         throw err;
                                     }
 
-                                    csb.startTransaction("StandardCSBTransactions", "addFileAnchor", domainName, "csb", archive.getSeed()).onReturn((err, res) => {
+                                    archive.addFolder(path.resolve(constitutionPath), "/", (err, mapDigest) => {
                                         if (err) {
-                                            console.error(err);
-                                            process.exit(1);
+                                            throw err;
                                         }
 
-                                        console.log("The CSB was created and a reference to it has been added to the wallet.");
-                                        console.log("Its SEED is:", archive.getSeed());
-                                        process.exit(0);
-                                    });
+                                        csb.startTransaction("StandardCSBTransactions", "addFileAnchor", domainName, "csb", archive.getSeed()).onReturn((err, res) => {
+                                            if (err) {
+                                                console.error(err);
+                                                process.exit(1);
+                                            }
 
-                                });
-                            })
+                                            console.log("The CSB was created and a reference to it has been added to the wallet.");
+                                            console.log("Its SEED is:", archive.getSeed());
+                                            process.exit(0);
+                                        });
+
+                                    });
+                                })
+                            });
                         });
                     });
                 });
@@ -280,19 +291,19 @@ function listMounts(alseed, path) {
                 });
             });
         } else {
-                EDFS.loadDSU(alseed, RAW_DOSSIER_TYPE, (err, rawDossier) => {
+            EDFS.loadDSU(alseed, RAW_DOSSIER_TYPE, (err, rawDossier) => {
+                if (err) {
+                    throw err;
+                }
+
+                rawDossier.listMountedDossiers(path, (err, mounts) => {
                     if (err) {
                         throw err;
                     }
 
-                    rawDossier.listMountedDossiers(path, (err, mounts) => {
-                        if (err) {
-                            throw err;
-                        }
-
-                        console.log(mounts);
-                    });
+                    console.log(mounts);
                 });
+            });
         }
     }
 }
