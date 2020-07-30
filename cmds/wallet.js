@@ -119,12 +119,17 @@ function changePassword() {
                 throw err;
             }
 
-            EDFS.resolveSSI(wallet.getKeySSI(), "Wallet", {password, overwrite: true}, (err) => {
+            wallet.getKeySSI((err, keySSI) => {
                 if (err) {
                     throw err;
                 }
+                EDFS.resolveSSI(keySSI, "Wallet", {password, overwrite: true}, (err) => {
+                    if (err) {
+                        throw err;
+                    }
 
-                console.log("The password has been changed.");
+                    console.log("The password has been changed.");
+                });
             });
         });
     });

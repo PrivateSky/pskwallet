@@ -1,5 +1,6 @@
 const consoleUtils = require("./consoleUtils");
 const EDFS = require("edfs");
+
 function getEndpoint() {
     let endpoint = process.env.EDFS_ENDPOINT;
     if (typeof endpoint === "undefined") {
@@ -61,15 +62,19 @@ function loadArchiveWithAlias(alias, callback) {
         }
 
         const dossier = require("dossier");
-        dossier.load(wallet.getKeySSI(), getOwnIdentity(), (err, csb) => {
+        wallet.getKeySSI((err, keySSI) => {
             if (err) {
                 return callback(err);
             }
-
-            csb.startTransaction("StandardCSBTransactions", "getSeed", alias).onReturn((err, keySSI) => {
+            dossier.load(keySSI, getOwnIdentity(), (err, csb) => {
                 if (err) {
                     return callback(err);
                 }
+
+                csb.startTransaction("StandardCSBTransactions", "getSeed", alias).onReturn((err, keySSI) => {
+                    if (err) {
+                        return callback(err);
+                    }
 
                     EDFS.resolveSSI(keySSI, "RawDossier", (err, rawDossier) => {
                         if (err) {
@@ -77,6 +82,7 @@ function loadArchiveWithAlias(alias, callback) {
                         }
                         callback(undefined, rawDossier);
                     })
+                });
             });
         });
     });
