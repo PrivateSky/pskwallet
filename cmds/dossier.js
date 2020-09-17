@@ -2,7 +2,7 @@ const utils = require("../utils/utils");
 const AGENT_IDENTITY = require("../utils/utils").getOwnIdentity();
 const pth = "path";
 const path = require(pth);
-const EDFS = require("edfs");
+const openDSU = require("opendsu");
 const RAW_DOSSIER_TYPE = "RawDossier";
 const BAR_TYPE = "Bar";
 
@@ -21,7 +21,7 @@ function createTemplateDossier(domainName, constitutionPath) {
                     throw err;
                 }
 
-                archive.writeFile(EDFS.constants.CSB.DOMAIN_IDENTITY_FILE, domainName, () => {
+                archive.writeFile(openDSU.constants.DOMAIN_IDENTITY_FILE, domainName, () => {
                     if (err) {
                         throw err;
                     }
@@ -125,7 +125,7 @@ function setApp(alseed, appPath) {
                 throw err;
             }
 
-            bar.addFolder(appPath, EDFS.constants.CSB.APP_FOLDER, (err) => {
+            bar.addFolder(appPath, openDSU.constants.APP_FOLDER, (err) => {
                 if (err) {
                     throw err;
                 }
