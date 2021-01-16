@@ -25,7 +25,7 @@ function createTemplateDossier(domainName, constitutionPath) {
                     if (err) {
                         throw err;
                     }
-                    archive.getKeySSI((err, keySSI) => {
+                    archive.getKeySSIAsString((err, keySSI) => {
                         if (err) {
                             throw err;
                         }
@@ -54,7 +54,7 @@ function createDossier(domainName, constitutionPath, noSave) {
                 }
 
                 const dossier = require("dossier");
-                wallet.getKeySSI((err, keySSI) => {
+                wallet.getKeySSIAsString((err, keySSI) => {
                     if (err) {
                         throw err;
                     }

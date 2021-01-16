@@ -119,7 +119,7 @@ function changePassword() {
                 throw err;
             }
 
-            wallet.getKeySSI((err, keySSI) => {
+            wallet.getKeySSIAsString((err, keySSI) => {
                 if (err) {
                     throw err;
                 }

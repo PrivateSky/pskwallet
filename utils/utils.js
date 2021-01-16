@@ -62,7 +62,7 @@ function loadArchiveWithAlias(alias, callback) {
         }
 
         const dossier = require("dossier");
-        wallet.getKeySSI((err, keySSI) => {
+        wallet.getKeySSIAsString((err, keySSI) => {
             if (err) {
                 return callback(err);
             }
