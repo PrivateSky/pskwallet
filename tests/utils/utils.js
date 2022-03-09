@@ -2,7 +2,7 @@ const fs = require("fs");
 const path = require("path");
 
 function deleteRecursively(inputPath, callback) {
-
+    const removeDir = require("swarmutils").removeDir;
     fs.stat(inputPath, function (err, stats) {
         if (err) {
             callback(err, stats);
@@ -27,7 +27,7 @@ function deleteRecursively(inputPath, callback) {
 
                 const checkStatus = function () {
                     if (f_length === f_delete_index) {
-                        fs.rmdir(inputPath, function (err) {
+                        removeDir(inputPath, function (err) {
                             if (err) {
                                 callback(err, null);
                             } else {
